@@ -1,0 +1,29 @@
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+model User {
+  id        String     @id
+  email     String     @unique
+  firstName String?    // NULL until profile completed
+  lastName  String?
+  slugName  String     // Username extracted from email - always set
+  avatarUrl String?
+  phone     String?    // NULL until phone verified
+  gender    Gender?
+  college   String?
+  dob       DateTime?  // Date of birth
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Aadhaar verification
+  aadhaarNumber String? // Full Aadhaar number (stored securely, never sent to frontend)
+  aadhaarS3Key  String? // S3 key for uploaded Aadhaar image (temporary)
+
+  // universal relations
+  role  Role?
+  admin Admin?
+}

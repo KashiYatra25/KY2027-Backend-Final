@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "JS", "data/seeder.ts", "data/mongo.seeder.ts"]
+}

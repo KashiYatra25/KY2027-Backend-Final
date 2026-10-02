@@ -1,0 +1,97 @@
+"""
+Account/User status
+"""
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+"""
+Gender options
+"""
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+"""
+Role levels
+"""
+enum RoleLevel {
+  SUPER_ADMIN
+  ADMIN
+  USER
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# TYPES - User Profile (Prisma/PostgreSQL)
+# ═══════════════════════════════════════════════════════════════════
+
+"""
+User profile information stored in PostgreSQL
+"""
+type UserProfile {
+  id: ID!
+  email: String!
+  firstName: String
+  lastName: String
+  slugName: String!
+  avatarUrl: String
+  phone: String
+  gender: Gender
+  college: String
+  dob: String
+  joinedAt: String!
+  aadhaarNumber: String
+  role: Role
+}
+
+"""
+User role information
+"""
+type Role {
+  id: ID!
+  level: RoleLevel!
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# TYPES - Account Progress (MongoDB)
+# ═══════════════════════════════════════════════════════════════════
+
+"""
+Profile completion verification steps
+"""
+type VerificationSteps {
+  aadhaarUploaded: Boolean!
+  aadhaarVerified: Boolean!
+  college: Boolean!
+  phone: Boolean!
+}
+
+"""
+Account progress tracking from MongoDB
+"""
+type AccountProgress {
+  steps: VerificationSteps!
+  completedSteps: Int!
+  totalSteps: Int!
+  completionPercentage: Int!
+  currentStep: Int!
+  isProfileComplete: Boolean!
+  accountStatus: AccountStatus!
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# COMBINED TYPES - For flexible querying
+# ═══════════════════════════════════════════════════════════════════
+
+"""
+Combined user data with profile and progress
+Used when both profile details and progress are needed (e.g., profile page)
+"""
+type UserWithProgress {
+  profile: UserProfile!
+  progress: AccountProgress!
+}

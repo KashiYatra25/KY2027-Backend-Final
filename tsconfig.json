@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowJs": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "sourceMap": true,
+    "outDir": "./JS",
+     "paths": {
+      "@root/*" : ["./*"],
+      "@lib/env/*": ["./lib/env/*"],
+      "@lib/prisma/*": ["./databaseManagers/prisma/*"],
+      "@lib/mongo/*": ["./databaseManagers/mongoose/*"],
+      "@app/*": ["./app/*"],
+      "@constants/*": ["./constants/*"],
+      "@server/*": ["./server/*"],
+      "@cluster/*": ["./server/clusterManager/*"],
+      "@api/*": ["./routes/*"],
+      "@controller/*": ["./controller/*"],
+      "@middleware/*": ["./middleware/*"],
+      "@schemas/*": ["./middleware/schemas/*"],
+      "@utils/*": ["./utils/*"],
+      "@helper/*": ["./utils/helper/*"],
+      "@email/*": ["./services/email/*"],
+      "@gql/*": ["./graphql/*"],
+      "@routes/*": ["./routes/*"],
+      "@redis/*": ["./services/redis/*"],
+      "@services/*": ["./services/*"]
+    }
+  },
+   "exclude": ["node_modules", "JS", "test"]
+}

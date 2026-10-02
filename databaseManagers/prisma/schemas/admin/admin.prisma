@@ -1,0 +1,14 @@
+model Admin {
+  id          String           @id @default(uuid())
+  name        String?
+  designation AdminDesignation
+  userId      String           @unique
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum AdminDesignation {
+  SUPER_ADMIN
+  ADMIN
+}

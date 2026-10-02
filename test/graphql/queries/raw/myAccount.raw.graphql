@@ -1,0 +1,396 @@
+# ═══════════════════════════════════════════════════════════════════
+# MY ACCOUNT QUERIES - Raw GraphQL for Postman
+# ═══════════════════════════════════════════════════════════════════
+# Copy any query below and paste in Postman GraphQL body
+# Don't forget to add: Authorization: Bearer <token>
+# ═══════════════════════════════════════════════════════════════════
+
+
+# ───────────────────────────────────────────────────────────────────
+# FULL QUERY - Everything
+# ───────────────────────────────────────────────────────────────────
+
+query GetMyAccountFull {
+  myAccount {
+    profile {
+      id
+      email
+      firstName
+      lastName
+      slugName
+      avatarUrl
+      phone
+      gender
+      college
+      dob
+      joinedAt
+      adhaarNumber
+      role {
+        id
+        level
+      }
+    }
+    progress {
+      steps {
+        aadhaarUploaded
+        aadhaarVerified
+        college
+        phone
+      }
+      completedSteps
+      totalSteps
+      completionPercentage
+      currentStep
+      isProfileComplete
+      accountStatus
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# PROFILE ONLY - All Fields
+# ───────────────────────────────────────────────────────────────────
+
+query GetMyProfile {
+  myAccount {
+    profile {
+      id
+      email
+      firstName
+      lastName
+      slugName
+      avatarUrl
+      phone
+      gender
+      college
+      dob
+      joinedAt
+      adhaarNumber
+      role {
+        id
+        level
+      }
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# PROFILE - Basic Info
+# ───────────────────────────────────────────────────────────────────
+
+query GetMyProfileBasic {
+  myAccount {
+    profile {
+      id
+      email
+      firstName
+      lastName
+      avatarUrl
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# PROFILE - Contact Info
+# ───────────────────────────────────────────────────────────────────
+
+query GetMyProfileContact {
+  myAccount {
+    profile {
+      id
+      email
+      phone
+      college
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# PROFILE - Identity (Aadhaar related)
+# ───────────────────────────────────────────────────────────────────
+
+query GetMyProfileIdentity {
+  myAccount {
+    profile {
+      id
+      firstName
+      lastName
+      gender
+      dob
+      adhaarNumber
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# PROFILE - With Role
+# ───────────────────────────────────────────────────────────────────
+
+query GetMyProfileWithRole {
+  myAccount {
+    profile {
+      id
+      email
+      slugName
+      role {
+        id
+        level
+      }
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# PROGRESS ONLY - All Fields
+# ───────────────────────────────────────────────────────────────────
+
+query GetMyProgress {
+  myAccount {
+    progress {
+      steps {
+        aadhaarUploaded
+        aadhaarVerified
+        college
+        phone
+      }
+      completedSteps
+      totalSteps
+      completionPercentage
+      currentStep
+      isProfileComplete
+      accountStatus
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# PROGRESS - Steps Only
+# ───────────────────────────────────────────────────────────────────
+
+query GetMyProgressSteps {
+  myAccount {
+    progress {
+      steps {
+        aadhaarUploaded
+        aadhaarVerified
+        college
+        phone
+      }
+      currentStep
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# PROGRESS - Status Only
+# ───────────────────────────────────────────────────────────────────
+
+query GetMyProgressStatus {
+  myAccount {
+    progress {
+      isProfileComplete
+      accountStatus
+      completionPercentage
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# MINIMAL - Check Account Exists
+# ───────────────────────────────────────────────────────────────────
+
+query CheckMyAccount {
+  myAccount {
+    profile {
+      id
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# MINIMAL - Is Profile Complete?
+# ───────────────────────────────────────────────────────────────────
+
+query IsProfileComplete {
+  myAccount {
+    progress {
+      isProfileComplete
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# MINIMAL - Current Step
+# ───────────────────────────────────────────────────────────────────
+
+query GetCurrentStep {
+  myAccount {
+    progress {
+      currentStep
+      completedSteps
+      totalSteps
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# NAVBAR - For navigation display
+# ───────────────────────────────────────────────────────────────────
+
+query GetNavbarData {
+  myAccount {
+    profile {
+      id
+      firstName
+      avatarUrl
+      slugName
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# PROFILE PAGE - Full profile display
+# ───────────────────────────────────────────────────────────────────
+
+query GetProfilePageData {
+  myAccount {
+    profile {
+      id
+      email
+      firstName
+      lastName
+      slugName
+      avatarUrl
+      phone
+      gender
+      college
+      dob
+      joinedAt
+      adhaarNumber
+    }
+    progress {
+      isProfileComplete
+      completionPercentage
+      accountStatus
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# COMPLETE PROFILE PAGE - For step wizard
+# ───────────────────────────────────────────────────────────────────
+
+query GetCompleteProfilePageData {
+  myAccount {
+    profile {
+      id
+      firstName
+      lastName
+      phone
+      college
+      adhaarNumber
+    }
+    progress {
+      steps {
+        aadhaarUploaded
+        aadhaarVerified
+        college
+        phone
+      }
+      currentStep
+      completedSteps
+      totalSteps
+      isProfileComplete
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# AADHAAR STATUS - Check upload/verification status
+# ───────────────────────────────────────────────────────────────────
+
+query GetAadhaarStatus {
+  myAccount {
+    profile {
+      adhaarNumber
+    }
+    progress {
+      steps {
+        aadhaarUploaded
+        aadhaarVerified
+      }
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# EDGE CASE - Nullable Fields
+# ───────────────────────────────────────────────────────────────────
+
+query GetNullableFields {
+  myAccount {
+    profile {
+      firstName
+      lastName
+      avatarUrl
+      phone
+      gender
+      college
+      dob
+      adhaarNumber
+      role {
+        id
+        level
+      }
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# EDGE CASE - JoinedAt (when user joined)
+# ───────────────────────────────────────────────────────────────────
+
+query GetJoinedAt {
+  myAccount {
+    profile {
+      id
+      joinedAt
+    }
+  }
+}
+
+
+# ───────────────────────────────────────────────────────────────────
+# EDGE CASE - Enum Fields
+# ───────────────────────────────────────────────────────────────────
+
+query GetEnumFields {
+  myAccount {
+    profile {
+      gender
+      role {
+        level
+      }
+    }
+    progress {
+      accountStatus
+    }
+  }
+}
