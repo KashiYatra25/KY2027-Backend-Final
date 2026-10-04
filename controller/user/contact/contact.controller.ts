@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import type { ContactSchemaType } from "@middleware/schemas/user/contact.schema.js";
+import type { ContactSchemaType } from "@root/controller/middleware/schemas/user/contact.schema.js";
 
 /**
  * POST /contact
@@ -24,7 +24,7 @@ const submitContact = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Message sent successfully",
-      success : true 
+      success: true,
     });
   },
 );

@@ -1,4 +1,5 @@
 import { aadhaarRouter } from "@api/aadhaar/aadhaar.route.js";
+import { adminRouter } from "@api/admin/admin.route.js";
 import { userRouter } from "@api/user/user.route.js";
 import { corsOptions } from "@constants/cors.options.js";
 import { env } from "@lib/env/environment.js";
@@ -23,6 +24,7 @@ app.use(cors(corsOptions));
 
 
 app.use(`${env.BASE_API_ENDPOINT}/user`, userRouter);
+app.use(`${env.BASE_API_ENDPOINT}/admin`, adminRouter);
 app.use(`${env.BASE_API_ENDPOINT}/aadhaar`, aadhaarRouter);
 
 app.use(globalErrorHandler);

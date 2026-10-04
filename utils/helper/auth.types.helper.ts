@@ -21,11 +21,3 @@ export interface AuthenticatedRequestWithVerifiedPhoneNumberAndEmail extends Req
     role : RoleLevel
   };
 }
-
-// Admin authenticated request
-export interface AuthenticatedAdminRequest extends Request {
-  admin: {
-    id: string;
-    email: string;
-  };
-}

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "target": "ES2022",
@@ -14,8 +15,9 @@
     "noImplicitOverride": true,
     "sourceMap": true,
     "outDir": "./JS",
-     "paths": {
-      "@root/*" : ["./*"],
+    "baseUrl": ".",
+    "paths": {
+      "@root/*": ["./*"],
       "@lib/env/*": ["./lib/env/*"],
       "@lib/prisma/*": ["./databaseManagers/prisma/*"],
       "@lib/mongo/*": ["./databaseManagers/mongoose/*"],
@@ -25,8 +27,8 @@
       "@cluster/*": ["./server/clusterManager/*"],
       "@api/*": ["./routes/*"],
       "@controller/*": ["./controller/*"],
-      "@middleware/*": ["./middleware/*"],
-      "@schemas/*": ["./middleware/schemas/*"],
+      "@middleware/*": ["controller/middleware/*"],
+      "@schemas/*": ["controller/middleware/schemas/*"],
       "@utils/*": ["./utils/*"],
       "@helper/*": ["./utils/helper/*"],
       "@email/*": ["./services/email/*"],
@@ -36,5 +38,5 @@
       "@services/*": ["./services/*"]
     }
   },
-   "exclude": ["node_modules", "JS", "test"]
+  "exclude": ["node_modules", "JS", "test"]
 }

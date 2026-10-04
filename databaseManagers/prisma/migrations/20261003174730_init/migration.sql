@@ -1,8 +1,5 @@
 -- CreateEnum
-CREATE TYPE "AdminDesignation" AS ENUM ('SUPER_ADMIN', 'ADMIN');
-
--- CreateEnum
-CREATE TYPE "RoleLevel" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'USER');
+CREATE TYPE "RoleLevel" AS ENUM ('MASTER_ADMIN', 'MANAGER', 'OPERATOR', 'USER');
 
 -- CreateEnum
 CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY');
@@ -10,13 +7,21 @@ CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY');
 -- CreateTable
 CREATE TABLE "Admin" (
     "id" TEXT NOT NULL,
-    "name" TEXT,
-    "designation" "AdminDesignation" NOT NULL,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "password" TEXT NOT NULL,
 
     CONSTRAINT "Admin_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Contact" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+
+    CONSTRAINT "Contact_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable

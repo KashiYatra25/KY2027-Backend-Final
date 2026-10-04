@@ -41,7 +41,11 @@ AccountProgressSchema.index({ userId: 1 });
 
 export type AccountProgressSchemaType = InferSchemaType<
   typeof AccountProgressSchema
->;
+> & {
+  createdAt : Date,
+  updatedAt : Date, 
+}
+
 export type AccountProgressDoc = HydratedDocument<AccountProgressSchemaType>;
 
 export const AccountProgressModel = connInstance.getModel<AccountProgressDoc>(

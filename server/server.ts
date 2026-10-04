@@ -4,7 +4,7 @@ import { env } from "@lib/env/environment.js";
 import { createApolloServer } from "@root/graphql/engine/engine";
 import { fileURLToPath } from "url";
 import { expressMiddleware } from "@as-integrations/express5";
-import { graphQLContextMiddleware } from "@root/middleware/protect/protect.factory.middleware";
+import { graphQLContextMiddleware } from "@root/controller/middleware/protect/protect.route.factory.middleware";
 
 // Create HTTP server from Express app (required for Apollo drain plugin)
 const httpServer = http.createServer(app);
@@ -27,10 +27,10 @@ const filename = fileURLToPath(import.meta.url);
 if (process.argv[1] === filename) {
   // Create Apollo server with httpServer for proper drain handling
   const apolloServer = createApolloServer(httpServer);
-  
+
   // Start Apollo server first
   await apolloServer.start();
-  
+
   // Add GraphQL middleware
   app.use(
     `${env.BASE_API_ENDPOINT}/graphql`,
@@ -38,7 +38,7 @@ if (process.argv[1] === filename) {
       context: graphQLContextMiddleware,
     }),
   );
-  
+
   // Now start listening
   await startServer();
 }

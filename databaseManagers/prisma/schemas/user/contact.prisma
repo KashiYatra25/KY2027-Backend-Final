@@ -1,0 +1,7 @@
+
+
+model Contact {
+    id      String     @default(uuid()) @id
+    email    String     
+    description String
+}

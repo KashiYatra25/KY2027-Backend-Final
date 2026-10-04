@@ -27,4 +27,11 @@ export {
   type AccountProgressSchemaType,
 } from './user/accountProgress.model.js';
 
+export { 
+  AccountSuspensionModel, 
+  AccountSuspensionSchema,
+  type AccountSuspensionDoc,
+  type AccountSuspensionSchemaType,
+} from './user/accountSuspension.model.js';
+
 export { connInstance, MongoDbConnection } from './connection.js';

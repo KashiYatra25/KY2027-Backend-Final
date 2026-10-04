@@ -4,10 +4,10 @@ import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
+import type { UpdateProfileSchemaType } from "@root/controller/middleware/schemas/user/profile.schema";
+import { ForbiddenErrorResponse } from "zodex-axon/errors";
+import { checkForProfileCompletion } from "@root/controller/helper/checkWhetherProfileIsCompleted";
 
-interface UpdateProfileBody {
-  college: string;
-}
 /**
  * PATCH /user/profile
  * Update user's college
@@ -15,7 +15,7 @@ interface UpdateProfileBody {
 const updateProfile = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: UpdateProfileBody },
+      { body: UpdateProfileSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,

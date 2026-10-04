@@ -4,5 +4,4 @@ export type {
   User,
   Gender,
   Admin,
-  AdminDesignation,
 } from "@prisma/client";

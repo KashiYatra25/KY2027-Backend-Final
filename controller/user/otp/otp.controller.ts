@@ -5,12 +5,15 @@ import { prisma } from "../../../prisma.js";
 import type {
   OtpGenerationSchemaType,
   OtpVerificationSchemaType,
-} from "@middleware/schemas/user/otp.schema.js";
+} from "@root/controller/middleware/schemas/user/otp.schema.js";
 import { generateOtp as createOtp } from "@utils/basic.func.helper.js";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import type { NextFunction, Response } from "express";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
-import { AccountProgressModel, VerificationTokenModel } from "@root/databaseManagers/mongoose/index.js";
+import {
+  AccountProgressModel,
+  VerificationTokenModel,
+} from "@root/databaseManagers/mongoose/index.js";
 
 const getOtp = catchAsync(
   async (

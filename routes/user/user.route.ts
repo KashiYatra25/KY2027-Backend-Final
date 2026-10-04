@@ -2,29 +2,28 @@ import {
   authenticateUser,
   updatePhoneNumber,
   initiatePhoneNumberChange,
-} from "@root/controller/user/auth/user.auth.controller.js";
-import {
-  updateProfile,
-} from "@root/controller/user/profile/profile.controller.js";
-import { submitContact } from "@root/controller/user/contact/contact.controller.js";
-import { restProtectMiddleware } from "@middleware/protect/protect.factory.middleware.js";
+} from "@controller/user/auth/index.js";
+import { updateProfile } from "@controller/user/profile/profile.controller.js";
+import { submitContact } from "@controller/user/contact/contact.controller.js";
+import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
+import { validateCSRFToken } from "@middleware/user/auth/index.js";
 import {
   changePhoneNumberSchema,
   userAuthSchema,
-} from "@middleware/schemas/user/userAuth.schema.js";
-import { updateProfileSchema } from "@middleware/schemas/user/profile.schema.js";
-import { contactSchema } from "@middleware/schemas/user/contact.schema.js";
+} from "@schemas/user/userAuth.schema.js";
+import { updateProfileSchema } from "@schemas/user/profile.schema.js";
+import { contactSchema } from "@schemas/user/contact.schema.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import {
   otpThrottleMiddleware,
   otpRateLimitMiddleware,
 } from "@middleware/limiters/otp.middleware.js";
-import { getOtp, verifyOtp } from "@root/controller/user/otp/otp.controller.js";
+import { getOtp, verifyOtp } from "@controller/user/otp/otp.controller.js";
 import {
   otpGenerationSchema,
   otpVerificationSchema,
-} from "@middleware/schemas/user/otp.schema.js";
+} from "@schemas/user/otp.schema.js";
 
 export const userRouter: ExpressRouter = Router();
 
@@ -54,6 +53,7 @@ userRouter.get("/initialisePhoneNumberChange", initiatePhoneNumberChange);
 
 userRouter.patch(
   "/updatePhoneNumber",
+  validateCSRFToken,
   RequestGuardMiddleware({ body: changePhoneNumberSchema }),
   updatePhoneNumber,
 );

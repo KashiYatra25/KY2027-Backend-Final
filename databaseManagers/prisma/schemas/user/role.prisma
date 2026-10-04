@@ -8,7 +8,8 @@ model Role {
 }
 
 enum RoleLevel {
-  SUPER_ADMIN
-  ADMIN
+  MASTER_ADMIN
+  MANAGER
+  OPERATOR
   USER
 }
