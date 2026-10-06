@@ -1,6 +1,6 @@
 /**
  * Payment gRPC Client
- * 
+ *
  * Typed client for communicating with Go payment service.
  * Uses generated types from proto/payment/v1/payment.proto
  */
@@ -44,9 +44,9 @@ function promisify<TRequest, TResponse>(
   method: (
     request: TRequest,
     metadata: grpc.Metadata,
-    callback: (error: grpc.ServiceError | null, response: TResponse) => void
+    callback: (error: grpc.ServiceError | null, response: TResponse) => void,
   ) => grpc.ClientUnaryCall,
-  request: TRequest
+  request: TRequest,
 ): Promise<TResponse> {
   return new Promise((resolve, reject) => {
     method.call(client, request, createAuthMetadata(), (error, response) => {
@@ -96,14 +96,18 @@ class PaymentClient {
   /**
    * Create a payment order
    */
-  async createPayment(request: CreatePaymentRequest): Promise<CreatePaymentResponse> {
+  async createPayment(
+    request: CreatePaymentRequest,
+  ): Promise<CreatePaymentResponse> {
     return promisify(this.client, this.client.createPayment, request);
   }
 
   /**
    * Get payment status
    */
-  async getPaymentStatus(request: GetPaymentStatusRequest): Promise<GetPaymentStatusResponse> {
+  async getPaymentStatus(
+    request: GetPaymentStatusRequest,
+  ): Promise<GetPaymentStatusResponse> {
     return promisify(this.client, this.client.getPaymentStatus, request);
   }
 
@@ -117,7 +121,10 @@ class PaymentClient {
 
       this.client.waitForReady(deadline, (error) => {
         if (error) {
-          console.error("[gRPC] PaymentService health check failed:", error.message);
+          console.error(
+            "[gRPC] PaymentService health check failed:",
+            error.message,
+          );
           resolve(false);
         } else {
           resolve(true);
