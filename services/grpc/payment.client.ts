@@ -28,18 +28,28 @@ export {
 };
 
 /**
- * Promisify a gRPC callback-based method
+ * Create metadata with auth token
+ */
+function createAuthMetadata(): grpc.Metadata {
+  const metadata = new grpc.Metadata();
+  metadata.set("authorization", `Bearer ${env.PAYMENT_SERVICE_TOKEN}`);
+  return metadata;
+}
+
+/**
+ * Promisify a gRPC callback-based method with auth
  */
 function promisify<TRequest, TResponse>(
   client: PaymentServiceClient,
   method: (
     request: TRequest,
+    metadata: grpc.Metadata,
     callback: (error: grpc.ServiceError | null, response: TResponse) => void
   ) => grpc.ClientUnaryCall,
   request: TRequest
 ): Promise<TResponse> {
   return new Promise((resolve, reject) => {
-    method.call(client, request, (error, response) => {
+    method.call(client, request, createAuthMetadata(), (error, response) => {
       if (error) {
         reject(error);
       } else {
@@ -61,7 +71,8 @@ class PaymentClient {
     const port = env.PAYMENT_GRPC_PORT || "50051";
     const address = `${host}:${port}`;
 
-    // TODO: Use TLS in production
+    // No TLS — internal service communication within AWS VPC.
+    // See KY27_backend_go/docs/ADR.md for rationale.
     const credentials = grpc.credentials.createInsecure();
 
     this.client = new PaymentServiceClient(address, credentials, {
