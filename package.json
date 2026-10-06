@@ -16,7 +16,9 @@
     "seed-mongo": "npx tsx data/mongo.seeder.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "proto:gen": "buf generate",
+    "proto:lint": "buf lint proto"
   },
   "keywords": [
     "express",
@@ -38,6 +40,7 @@
     "@aws-sdk/client-sns": "^3.1061.0",
     "@aws-sdk/client-textract": "^3.1142.0",
     "@aws-sdk/s3-request-presigner": "^3.1142.0",
+    "@bufbuild/protobuf": "^2.16.0",
     "@grpc/grpc-js": "^1.14.5",
     "@grpc/proto-loader": "^0.7.15",
     "@prisma/adapter-pg": "^6.9.0",
@@ -71,6 +74,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-ssm": "^3.1141.0",
+    "@bufbuild/buf": "^1.73.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -87,6 +91,7 @@
     "eslint-import-resolver-typescript": "^4.4.5",
     "nodemon": "^3.1.14",
     "prisma": "^7.10.0",
+    "ts-proto": "^2.13.0",
     "typescript": "^6.0.3"
   }
 }

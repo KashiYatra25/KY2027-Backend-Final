@@ -1,5 +1,6 @@
 allowBuilds:
   '@apollo/protobufjs': true
+  '@bufbuild/buf': true
   '@prisma/engines': true
   bcrypt: true
   msgpackr-extract: true

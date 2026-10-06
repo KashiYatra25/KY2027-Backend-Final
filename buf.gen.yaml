@@ -1,0 +1,15 @@
+version: v2
+plugins:
+  - local:
+      - npx
+      - protoc-gen-ts_proto
+    out: gen
+    opt:
+      - esModuleInterop=true
+      - outputServices=grpc-js
+      - env=node
+      - useOptionals=messages
+      - exportCommonSymbols=false
+      - useDate=string
+inputs:
+  - directory: proto

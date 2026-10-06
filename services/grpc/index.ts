@@ -1,17 +1,11 @@
-// gRPC Client Exports
+// Payment gRPC Client
 export {
   getPaymentClient,
   closePaymentClient,
-  type CreateOrderRequest,
-  type CreateOrderResponse,
-  type VerifyPaymentRequest,
-  type VerifyPaymentResponse,
+  type CreatePaymentRequest,
+  type CreatePaymentResponse,
   type GetPaymentStatusRequest,
   type GetPaymentStatusResponse,
-  type ProcessRefundRequest,
-  type ProcessRefundResponse,
-  type GetUserPaymentsRequest,
-  type GetUserPaymentsResponse,
-  type OrderItem,
-  type Payment,
+  type Buyer,
+  PaymentStatus,
 } from "./payment.client.js";
