@@ -4,7 +4,7 @@ import type { UserAuthSchemaType } from "@root/controller/middleware/schemas/use
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/index.js";
-import { AccountProgressModel, IpSecurityModel, PurchaseModel } from "@lib/mongo/index.js";
+import { AccountProgressModel, IpSecurityModel } from "@lib/mongo/index.js";
 
 /**
  * Authenticate user - creates or updates user record
@@ -40,6 +40,7 @@ export const authenticateUser = catchAsync(
           googleAvatarUrl: avatarUrl || null,
           role: { create: { level: "USER" } },
           isFromIITBhu,
+          isPaidUser: isFromIITBhu, // IIT BHU users are auto-paid
         },
         include: {
           role: {
@@ -72,23 +73,8 @@ export const authenticateUser = catchAsync(
         userId: user.id,
         email: user.email,
         role: user.role?.level,
+        isPaidUser: user.isPaidUser,
       });
-
-      // Auto-create free purchase for IIT BHU users
-      if (isFromIITBhu) {
-        await PurchaseModel.create({
-          userId: user.id,
-          orderId: `IITBHU-FREE-${user.id}`,
-          items: [{ passId: "iitbhu-free-pass", quantity: 1 }],
-          totalAmount: 0,
-          paymentMethod: "IIT_BHU_FREE",
-          purchasedAt: new Date(),
-        });
-        logger.info("Auto-created free pass for IIT BHU user", {
-          userId: user.id,
-          email: user.email,
-        });
-      }
     } else {
       logger.debug("Returning user authenticated", {
         userId: user.id,

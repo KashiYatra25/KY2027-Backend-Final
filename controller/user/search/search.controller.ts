@@ -2,7 +2,6 @@ import type { NextFunction, Request, Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
-import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import type { SearchUsersQueryType } from "@schemas/user/search.schema.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
 
@@ -12,7 +11,7 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/au
  * Search for PAID users by name or email.
  * Only returns users who:
  * - Have completed profile (have firstName)
- * - Have at least one purchase (paid pass or IIT_BHU_FREE)
+ * - Have isPaidUser = true (paid pass or IIT BHU)
  * 
  * Frontend should debounce this (300ms recommended)
  */
@@ -28,15 +27,12 @@ const searchUsers = catchAsync(
     const { q, limit = 10 } = req.validatedQuery ?? { q: "" };
     const searchQuery = q.trim().toLowerCase();
 
-    // 1. Get all paid user IDs from purchases (includes IIT_BHU_FREE)
-    const paidUserIds = await PurchaseModel.distinct("userId");
-
-    // 2. Search users who are paid and match query
+    // Search users who are paid and match query
     const users = await prisma.user.findMany({
       where: {
         AND: [
           { id: { not: currentUserId } },        // Exclude current user
-          { id: { in: paidUserIds } },           // Only paid users
+          { isPaidUser: true },                  // Only paid users
           { firstName: { not: null } },          // Only completed profiles
           {
             OR: [

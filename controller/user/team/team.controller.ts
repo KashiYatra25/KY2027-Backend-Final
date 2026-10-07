@@ -3,7 +3,7 @@ import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest, NotFound } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
-import { TeamModel, PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
+import { TeamModel } from "@root/databaseManagers/mongoose/index.js";
 import { randomUUID } from "crypto";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
 import type { CreateTeamType } from "@schemas/team/team.schema.js";
@@ -44,11 +44,11 @@ const createTeam = catchAsync(
       return;
     }
 
-    // 3. Check all members exist and have completed profile
+    // 3. Check all members exist, have completed profile, and have paid
     const allMemberIds = [creatorId, ...memberIds];
     const users = await prisma.user.findMany({
       where: { id: { in: allMemberIds } },
-      select: { id: true, firstName: true, email: true },
+      select: { id: true, firstName: true, email: true, isPaidUser: true },
     });
 
     if (users.length !== allMemberIds.length) {
@@ -73,14 +73,9 @@ const createTeam = catchAsync(
       return;
     }
 
-    // 4. Check all members have paid pass (includes IIT_BHU_FREE)
-    const paidUserIds = await PurchaseModel.distinct("userId", {
-      userId: { $in: allMemberIds },
-    });
-    
-    if (paidUserIds.length !== allMemberIds.length) {
-      const unpaidIds = allMemberIds.filter((id) => !paidUserIds.includes(id));
-      const unpaidUsers = users.filter((u) => unpaidIds.includes(u.id));
+    // 4. Check all members have paid (isPaidUser = true)
+    const unpaidUsers = users.filter((u) => !u.isPaidUser);
+    if (unpaidUsers.length > 0) {
       new BadRequest().handleResponse(res, {
         info: "Some members have not purchased a pass",
         data: { 

@@ -3,7 +3,7 @@ import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound, BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
-import { EventRegistrationModel, TeamModel, PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
+import { EventRegistrationModel, TeamModel } from "@root/databaseManagers/mongoose/index.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
 import type {
   GetEventsQueryType,
@@ -219,9 +219,12 @@ const registerForEvent = catchAsync(
         );
       }
 
-      // Check if user has paid (has a purchase record)
-      const hasPaid = await PurchaseModel.exists({ userId });
-      if (!hasPaid) {
+      // Check if user has paid (isPaidUser = true)
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { isPaidUser: true },
+      });
+      if (!user?.isPaidUser) {
         return next(
           new BadRequest().handleResponse(res, {
             info: "You must purchase a pass before registering for events",
