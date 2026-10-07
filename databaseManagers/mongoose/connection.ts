@@ -1,4 +1,5 @@
 import { env } from "@lib/env/environment.js";
+import { logger } from "@logger/index.js";
 import mongoose, { type ConnectOptions, Document, Model, Schema } from "mongoose";
 
 export class MongoDbConnection {
@@ -14,29 +15,23 @@ export class MongoDbConnection {
     mongoose
       .connect(env.Mongodb_Database_URL, options)
       .then(() => {
-        console.log("Connected to MongoDB database");
+        logger.info("MongoDB connected");
       })
-      .catch((err) => {
-        console.log("Error connecting to MongoDB database:", err);
+      .catch((err: unknown) => {
+        logger.error("MongoDB connection failed", { error: (err as Error).message });
       })
       .finally(() => {
-        console.log("MongoDB connection handshake attempt finished");
+        logger.debug("MongoDB connection handshake attempt finished");
       });
     process.nextTick(() => this.spyOnConnection());
   }
 
   private spyOnConnection() {
-    this.connection.on("open", () => console.log("MongoDB: open"));
-    this.connection.on("disconnected", () =>
-      console.log("MongoDB: disconnected"),
-    );
-    this.connection.on("reconnected", () =>
-      console.log("MongoDB: reconnected"),
-    );
-    this.connection.on("disconnecting", () =>
-      console.log("MongoDB: disconnecting"),
-    );
-    this.connection.on("close", () => console.log("MongoDB: close"));
+    this.connection.on("open", () => logger.info("MongoDB: connection open"));
+    this.connection.on("disconnected", () => logger.warn("MongoDB: disconnected"));
+    this.connection.on("reconnected", () => logger.info("MongoDB: reconnected"));
+    this.connection.on("disconnecting", () => logger.warn("MongoDB: disconnecting"));
+    this.connection.on("close", () => logger.info("MongoDB: connection closed"));
   }
 
   public static getInstance(): MongoDbConnection {

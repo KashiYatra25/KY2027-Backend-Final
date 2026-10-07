@@ -1,5 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { env } from '@lib/env/environment.js';
+import { logger } from '@logger/index.js';
 import { PrismaClient, Prisma } from '@prisma/client';
 
 const adapter = new PrismaPg({
@@ -19,6 +20,8 @@ export const prisma =
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
+
+logger.debug("Prisma client initialised", { env: process.env.NODE_ENV });
 
 export const ReadCommittedTransationIsolationLevel =
   Prisma.TransactionIsolationLevel.ReadCommitted;

@@ -35,7 +35,8 @@
       "@gql/*": ["./graphql/*"],
       "@routes/*": ["./routes/*"],
       "@redis/*": ["./services/redis/*"],
-      "@services/*": ["./services/*"]
+      "@services/*": ["./services/*"],
+      "@logger/*": ["./lib/logger/*"]
     }
   },
   "exclude": ["node_modules", "JS", "test"]

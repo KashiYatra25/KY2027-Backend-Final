@@ -1,6 +1,7 @@
 import { RedisSingleConnectionHandler } from "redis-axon/connection/connection.js";
 import Redlock from "redlock";
 import { env } from "@lib/env/environment.js";
+import { logger } from "@logger/index.js";
 
 // Create Redis connection
 const redisService = new RedisSingleConnectionHandler({
@@ -15,6 +16,7 @@ const redisService = new RedisSingleConnectionHandler({
 });
 
 await redisService.ConnectToService();
+logger.info("Redis connected", { host: env.REDIS_HOST, port: env.REDIS_PORT });
 
 // Create Redlock instance for distributed locking
 export const redlock = new Redlock(
@@ -23,7 +25,13 @@ export const redlock = new Redlock(
 );
 
 // Graceful shutdown handlers
-process.on("SIGTERM", () => redisService.gracefulShutdown());
-process.on("SIGINT", () => redisService.gracefulShutdown());
+process.on("SIGTERM", () => {
+  logger.info("SIGTERM received — shutting down Redis");
+  redisService.gracefulShutdown();
+});
+process.on("SIGINT", () => {
+  logger.info("SIGINT received — shutting down Redis");
+  redisService.gracefulShutdown();
+});
 
 export { redisService };
