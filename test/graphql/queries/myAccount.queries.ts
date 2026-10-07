@@ -18,13 +18,15 @@ query GetMyAccountFull {
       firstName
       lastName
       slugName
-      avatarUrl
+      candidatePhotoUrl
+      googleAvatarUrl
       phone
       gender
       college
       dob
       joinedAt
-      adhaarNumber
+      aadhaarNumber
+      isFromIITBhu
       role {
         id
         level
@@ -61,13 +63,15 @@ query GetMyProfile {
       firstName
       lastName
       slugName
-      avatarUrl
+      candidatePhotoUrl
+      googleAvatarUrl
       phone
       gender
       college
       dob
       joinedAt
-      adhaarNumber
+      aadhaarNumber
+      isFromIITBhu
       role {
         id
         level
@@ -85,7 +89,8 @@ query GetMyProfileBasic {
       email
       firstName
       lastName
-      avatarUrl
+      candidatePhotoUrl
+      googleAvatarUrl
     }
   }
 }
@@ -113,7 +118,8 @@ query GetMyProfileIdentity {
       lastName
       gender
       dob
-      adhaarNumber
+      aadhaarNumber
+      isFromIITBhu
     }
   }
 }
@@ -234,7 +240,8 @@ query GetNavbarData {
     profile {
       id
       firstName
-      avatarUrl
+      candidatePhotoUrl
+      googleAvatarUrl
       slugName
     }
   }
@@ -250,13 +257,15 @@ query GetProfilePageData {
       firstName
       lastName
       slugName
-      avatarUrl
+      candidatePhotoUrl
+      googleAvatarUrl
       phone
       gender
       college
       dob
       joinedAt
-      adhaarNumber
+      aadhaarNumber
+      isFromIITBhu
     }
     progress {
       isProfileComplete
@@ -276,7 +285,8 @@ query GetCompleteProfilePageData {
       lastName
       phone
       college
-      adhaarNumber
+      aadhaarNumber
+      isFromIITBhu
     }
     progress {
       steps {
@@ -302,7 +312,7 @@ export const MY_ACCOUNT_AADHAAR_STATUS = `
 query GetAadhaarStatus {
   myAccount {
     profile {
-      adhaarNumber
+      aadhaarNumber
     }
     progress {
       steps {
@@ -324,12 +334,13 @@ query GetNullableFields {
     profile {
       firstName
       lastName
-      avatarUrl
+      candidatePhotoUrl
+      googleAvatarUrl
       phone
       gender
       college
       dob
-      adhaarNumber
+      aadhaarNumber
       role {
         id
         level
