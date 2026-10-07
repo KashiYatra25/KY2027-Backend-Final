@@ -16,11 +16,10 @@ export const checkWhetherProfileIsCompleteMiddleware = catchAsync(
     });
 
     if (isProfileCompleted.isComplete === false) {
-      return next(
-        new ForbiddenErrorResponse().handleResponse(res, {
-          info: "User profile is not complete",
-        }),
-      );
+      new ForbiddenErrorResponse().handleResponse(res, {
+        info: "User profile is not complete",
+      });
+      return;
     }
 
     next();

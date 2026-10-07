@@ -10,7 +10,7 @@ import type { ProfileUpdationSchemaType } from "../../schemas/user/profile.schem
  * Middleware to check if college details have already been submitted.
  * Returns Forbidden error if college is in request body and already completed.
  */
-export const checkProfileUpdationAlreadyDoneOrNot = catchAsync(
+export const blockIfProfileAlreadyCompleted = catchAsync(
   async (
     req: VerifiedRequest<
       { body: ProfileUpdationSchemaType },

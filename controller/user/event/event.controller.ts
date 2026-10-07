@@ -3,10 +3,11 @@ import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound, BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
-import { EventRegistrationModel } from "@lib/mongo/event/eventRegistration.model.js";
+import { EventRegistrationModel, TeamModel } from "@root/databaseManagers/mongoose/index.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
 import type {
   GetEventsQueryType,
+  RegisterForEventType,
 } from "@root/controller/middleware/schemas/event/event.schema.js";
 
 /**
@@ -69,7 +70,7 @@ const getEventBySlug = catchAsync(
   async (
     req: Request,
     res: Response,
-    _next: NextFunction,
+    next: NextFunction,
   ): Promise<void> => {
     const slug = req.params.slug as string;
 
@@ -78,10 +79,11 @@ const getEventBySlug = catchAsync(
     });
 
     if (!event) {
-      new NotFound().handleResponse(res, {
-        info: "Event not found",
-      });
-      return;
+      return next(
+        new NotFound().handleResponse(res, {
+          info: "Event not found",
+        }),
+      );
     }
 
     new OkResponseStrategy().handleResponse(res, {
@@ -93,18 +95,20 @@ const getEventBySlug = catchAsync(
 
 /**
  * POST /events/:slug/register
- * Register current user for an individual event
+ * Register for an event
+ * - INDIVIDUAL: type="individual"
+ * - DUO/TEAM: type="team" with teamId
  */
 const registerForEvent = catchAsync(
   async (
-    req: Request,
+    req: Request & { validatedData?: RegisterForEventType },
     res: Response,
-    _next: NextFunction,
+    next: NextFunction,
   ): Promise<void> => {
-    // Cast to get user from auth middleware
     const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
     const slug = req.params.slug as string;
     const { id: userId } = authReq.user;
+    const body = req.validatedData!;
 
     // 1. Check event exists and registration is open
     const event = await prisma.event.findUnique({
@@ -112,58 +116,211 @@ const registerForEvent = catchAsync(
     });
 
     if (!event) {
-      new NotFound().handleResponse(res, {
-        info: "Event not found",
-      });
-      return;
+      return next(
+        new NotFound().handleResponse(res, {
+          info: "Event not found",
+        }),
+      );
     }
 
     if (!event.registrationOpen) {
-      new BadRequest().handleResponse(res, {
-        info: "Registration is closed for this event",
-      });
-      return;
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Registration is closed for this event",
+        }),
+      );
     }
 
-    // 2. Check if it's an individual event
-    if (event.participationType !== "INDIVIDUAL") {
-      new BadRequest().handleResponse(res, {
-        info: `This is a ${event.participationType.toLowerCase()} event. Use team registration instead.`,
+    // 2. Handle based on request type (discriminated union)
+    if (body.type === "individual") {
+      // Validate event allows individual participation
+      if (event.participationType !== "INDIVIDUAL") {
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: `This is a ${event.participationType.toLowerCase()} event. Please register with a team.`,
+          }),
+        );
+      }
+
+      // Check if already registered
+      const existingRegistration = await EventRegistrationModel.findOne({
+        eventSlug: slug,
+        userId,
       });
-      return;
-    }
 
-    // 3. Check if already registered
-    const existingRegistration = await EventRegistrationModel.findOne({
-      eventSlug: slug,
-      userId,
-    });
+      if (existingRegistration) {
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: "You are already registered for this event",
+          }),
+        );
+      }
 
-    if (existingRegistration) {
-      new BadRequest().handleResponse(res, {
-        info: "You are already registered for this event",
+      // Create registration
+      const registration = await EventRegistrationModel.create({
+        eventSlug: slug,
+        participationType: "individual",
+        userId,
+        status: "confirmed",
       });
-      return;
+
+      new OkResponseStrategy().handleResponse(res, {
+        info: "Successfully registered for event",
+        data: {
+          registrationId: registration._id,
+          eventSlug: event.slug,
+          eventName: event.name,
+          status: registration.status,
+        },
+      });
+    } else {
+      // body.type === "team"
+      // Validate event allows team/duo participation
+      if (event.participationType === "INDIVIDUAL") {
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: "This is an individual event. Please register without a team.",
+          }),
+        );
+      }
+
+      const teamId = body.teamId;
+
+      // 1. Find team
+      const team = await TeamModel.findOne({ teamId });
+      if (!team) {
+        return next(
+          new NotFound().handleResponse(res, {
+            info: "Team not found",
+          }),
+        );
+      }
+
+      // 2. Check user is in team
+      const userInTeam = team.members.some((m) => m.userId === userId);
+      if (!userInTeam) {
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: "You are not a member of this team",
+          }),
+        );
+      }
+
+      // 3. Check team size fits event requirements
+      const teamSize = team.members.length;
+      const minSize = event.minTeamSize ?? 1;
+      const maxSize = event.maxTeamSize ?? 100;
+
+      // DUO must be exactly 2
+      if (event.participationType === "DUO" && teamSize !== 2) {
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: `This is a duo event. Team must have exactly 2 members, but has ${teamSize}.`,
+          }),
+        );
+      }
+
+      // TEAM must be within range
+      if (event.participationType === "TEAM") {
+        if (teamSize < minSize || teamSize > maxSize) {
+          return next(
+            new BadRequest().handleResponse(res, {
+              info: `Team size must be between ${minSize} and ${maxSize}, but has ${teamSize} members.`,
+            }),
+          );
+        }
+      }
+
+      // 4. Check team not already registered for this event
+      const existingTeamReg = await EventRegistrationModel.findOne({
+        eventSlug: slug,
+        teamId,
+      });
+
+      if (existingTeamReg) {
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: "This team is already registered for this event",
+          }),
+        );
+      }
+
+      // 5. Check no team member is already registered (individually or via another team)
+      const memberIds = team.members.map((m) => m.userId);
+      
+      // Get all team IDs that these members belong to
+      const memberTeamIds = await getTeamIdsForUsers(memberIds);
+      
+      const existingMemberRegs = await EventRegistrationModel.find({
+        eventSlug: slug,
+        $or: [
+          { userId: { $in: memberIds } },
+          { teamId: { $in: memberTeamIds } },
+        ],
+      });
+
+      if (existingMemberRegs.length > 0) {
+        // Find which members are already registered
+        const regUserIds = existingMemberRegs
+          .filter((r) => r.userId)
+          .map((r) => r.userId as string);
+        
+        const regTeamIds = existingMemberRegs
+          .filter((r) => r.teamId)
+          .map((r) => r.teamId as string);
+
+        // Get members who are in those teams
+        const conflictingTeams = await TeamModel.find({ 
+          teamId: { $in: regTeamIds } 
+        }).lean();
+        const teamMemberIds = conflictingTeams.flatMap((t) => 
+          t.members.map((m) => m.userId)
+        );
+
+        const conflictingMemberIds = [...new Set([...regUserIds, ...teamMemberIds])]
+          .filter((id) => memberIds.includes(id));
+
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: "Some team members are already registered for this event",
+            data: { conflictingMemberIds },
+          }),
+        );
+      }
+
+      // 6. Create registration
+      const participationType = event.participationType === "DUO" ? "duo" : "team";
+      const registration = await EventRegistrationModel.create({
+        eventSlug: slug,
+        participationType,
+        teamId,
+        status: "confirmed",
+      });
+
+      new OkResponseStrategy().handleResponse(res, {
+        info: "Team successfully registered for event",
+        data: {
+          registrationId: registration._id,
+          eventSlug: event.slug,
+          eventName: event.name,
+          teamId: team.teamId,
+          teamName: team.name,
+          memberCount: teamSize,
+          status: registration.status,
+        },
+      });
     }
-
-    // 4. Create registration
-    const registration = await EventRegistrationModel.create({
-      eventSlug: slug,
-      participationType: "individual",
-      userId,
-      status: "confirmed", // individual registrations are instant
-    });
-
-    new OkResponseStrategy().handleResponse(res, {
-      info: "Successfully registered for event",
-      data: {
-        registrationId: registration._id,
-        eventSlug: event.slug,
-        eventName: event.name,
-        status: registration.status,
-      },
-    });
   },
 );
+
+/**
+ * Get all team IDs that any of the given users belong to
+ */
+async function getTeamIdsForUsers(userIds: string[]): Promise<string[]> {
+  const teams = await TeamModel.find({
+    "members.userId": { $in: userIds },
+  }).select("teamId").lean();
+  return teams.map((t) => t.teamId);
+}
 
 export { getEvents, getEventBySlug, registerForEvent };

@@ -55,4 +55,11 @@ export {
   type PassSchemaType,
 } from "./passes/pass.model.js";
 
+export {
+  PurchaseModel,
+  PurchaseSchema,
+  type PurchaseDoc,
+  type PurchaseSchemaType,
+} from "./purchase/purchase.model.js";
+
 export { connInstance, MongoDbConnection } from "./connection.js";
