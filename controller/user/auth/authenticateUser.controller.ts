@@ -1,22 +1,22 @@
 import { OkResponseStrategy } from "zodex-axon/responses";
 import type { Response } from "express";
-import type { UserAuthSchemaType } from "@schemas/user/userAuth.schema.js";
+import type { UserAuthSchemaType } from "@root/controller/middleware/schemas/user/user.auth.schema.js";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { prisma } from "@root/prisma.js";
-import {
-  AccountProgressModel,
-  IpSecurityModel,
-} from "@lib/mongo/index.js";
+import { logger } from "@logger/index.js";
+import { AccountProgressModel, IpSecurityModel } from "@lib/mongo/index.js";
 
 /**
  * Authenticate user - creates or updates user record
  */
 export const authenticateUser = catchAsync(
-  async (
-    req: VerifiedRequest<{ body: UserAuthSchemaType }>,
-    res: Response,
-  ) => {
+  async (req: VerifiedRequest<{ body: UserAuthSchemaType }>, res: Response) => {
     const { email, slugName, id, avatarUrl } = req.validatedData;
+    let isFromIITBhu = false;
+
+    if (email.endsWith("itbhu.ac.in")) {
+      isFromIITBhu = true;
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -31,14 +31,15 @@ export const authenticateUser = catchAsync(
       prisma.user.upsert({
         where: { email },
         update: {
-          ...(avatarUrl && { avatarUrl }),
+          ...(avatarUrl && { googleAvatarUrl: avatarUrl }),
         },
         create: {
           id,
           email,
           slugName,
-          avatarUrl: avatarUrl || null,
+          googleAvatarUrl: avatarUrl || null,
           role: { create: { level: "USER" } },
+          isFromIITBhu,
         },
         include: {
           role: {
@@ -59,14 +60,25 @@ export const authenticateUser = catchAsync(
       IpSecurityModel.create({
         userId: id,
         ipAddress:
-          (req.headers["x-forwarded-for"] as string)
-            ?.split(",")[0]
-            ?.trim() ||
+          (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
           req.ip ||
           "unknown",
         userAgent: req.headers["user-agent"] || "unknown",
       }),
     ]);
+
+    if (isNewUser) {
+      logger.info("New user registered", {
+        userId: user.id,
+        email: user.email,
+        role: user.role?.level,
+      });
+    } else {
+      logger.debug("Returning user authenticated", {
+        userId: user.id,
+        role: user.role?.level,
+      });
+    }
 
     new OkResponseStrategy().handleResponse(res, {
       info: "User authenticated successfully",
