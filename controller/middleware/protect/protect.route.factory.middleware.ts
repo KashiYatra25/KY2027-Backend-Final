@@ -6,6 +6,7 @@ import type {
 
 import { type RoleLevel } from "@lib/prisma/index.js";
 import { env } from "@lib/env/environment.js";
+import { logger } from "@logger/index.js";
 import type { NextFunction, Request, Response } from "express";
 import { decode } from "next-auth/jwt";
 import { type BaseRequestHandler, catchAsync } from "zodex-axon/core";
@@ -54,31 +55,29 @@ async function decodeAndFindUser(sessionToken: string) {
 
 function createRestMiddleware() {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    // DEBUG: Log all cookies received
-    console.log("🔐 All cookies received:", req.cookies);
-    console.log("🔐 Cookie keys:", Object.keys(req.cookies || {}));
-
     const sessionToken = extractSessionToken(req);
-    console.log(
-      "🔐 Extracted session token:",
-      sessionToken ? "Found" : "NOT FOUND",
-    );
 
-    if (!sessionToken)
+    if (!sessionToken) {
+      logger.warn("REST auth: no session token", { ip: req.ip, path: req.path });
       return next(
         new BadRequest().handleResponse(res, {
           info: "Authentication required",
         }),
       );
+    }
 
     const user = await decodeAndFindUser(sessionToken);
 
-    if (!user)
+    if (!user) {
+      logger.warn("REST auth: invalid session or user not found", { ip: req.ip, path: req.path });
       return next(
         new BadRequest().handleResponse(res, {
           info: "Invalid session or user not found",
         }),
       );
+    }
+
+    logger.debug("REST auth: user authenticated", { userId: user.id, role: user.role, path: req.path });
 
     (req as AuthenticatedUserRequestWithVerifiedEmail).user = {
       id: user.id,
@@ -138,12 +137,19 @@ function createRestRoleChecker(
     ) => {
       const userRole = req.user?.role;
 
-      if (!userRole || !requiredRoles.includes(userRole))
+      if (!userRole || !requiredRoles.includes(userRole)) {
+        logger.warn("REST role check failed", {
+          userId: req.user?.id,
+          userRole,
+          requiredRoles,
+          path: req.path,
+        });
         return next(
           new UnauthorizedAccess().handleResponse(res, {
             info: "Insufficient permissions",
           }),
         );
+      }
 
       next();
     },

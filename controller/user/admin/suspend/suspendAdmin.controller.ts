@@ -2,13 +2,14 @@ import { prisma } from "@root/prisma";
 import type { Response } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
+import { logger } from "@logger/index.js";
 import {
   AdminSecurityStepperModel,
   AccountProgressModel,
   AccountSuspensionModel,
 } from "@root/databaseManagers/mongoose";
-import type { AdminSuspendSchemaType } from "@root/controller/middleware/schemas/admin/admin.schema";
-import type { AdminSuspendRequestWithTargetUser } from "@root/controller/middleware/admin/suspend";
+import type { AdminSuspendSchemaType } from "@schemas/admin/admin.schema.js";
+import type { AdminSuspendRequestWithTargetUser } from "@middleware/admin/suspend/types.js";
 
 /**
  * Suspend an admin - removes admin record and demotes role to USER
@@ -67,6 +68,14 @@ export const suspendAdmin = catchAsync(
         suspendedBy,
         suspendedOn: new Date().toISOString(),
       },
+    });
+
+    logger.info("Admin suspended", {
+      suspendedUserId: targetUserId,
+      suspendedAdminId: targetAdminId,
+      previousRole: targetRole,
+      suspendedBy,
+      reason: reason ?? "No reason provided",
     });
   },
 );

@@ -17,12 +17,18 @@ export const userAuthSchema = z.object({
   avatarUrl: z.url().optional(),
 });
 
-export const changePhoneNumberSchema = z.object({
-  newPhoneNumber: z
-    .string()
-    .min(10, "Phone number must be at least 10 digits")
-    .max(15, "Phone number must be at most 15 digits"),
-});
+
+// Currently we are not allowing any phone number changes
+// export const changePhoneNumberSchema = z.object({
+//   newPhoneNumber: z
+//     .string()
+//     .min(10, "Phone number must be at least 10 digits")
+//     .max(15, "Phone number must be at most 15 digits"),
+// });
+
+// export type ChangePhoneNumberSchemaType = z.infer<
+//   typeof changePhoneNumberSchema
+// >;
 
 export const gqlUserVerificationSchema = z.object({
   id: z.string().min(1, "User ID is required"),
@@ -32,7 +38,4 @@ export const gqlUserVerificationSchema = z.object({
 export type UserAuthSchemaType = z.infer<typeof userAuthSchema>;
 export type GqlUserVerificationSchemaType = z.infer<
   typeof gqlUserVerificationSchema
->;
-export type ChangePhoneNumberSchemaType = z.infer<
-  typeof changePhoneNumberSchema
 >;

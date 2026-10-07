@@ -1,3 +1,7 @@
+// OTP controller is commented out since OTP service is not being used currently
+// If in the future we plan to use OTP service, we will uncomment this section
+
+/*
 import { BadRequest } from "zodex-axon/errors";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { CryptoService } from "@utils/helper/crypto.encryption.helper.js";
@@ -116,3 +120,4 @@ const verifyOtp = catchAsync(
 );
 
 export { getOtp, verifyOtp };
+*/

@@ -3,6 +3,7 @@ import { CryptoService } from "@utils/helper/crypto.encryption.helper.js";
 import type { Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
+import { logger } from "@logger/index.js";
 import type { AdminInviteRequestWithTargetUser } from "@root/controller/middleware/admin/invite";
 
 /**
@@ -39,6 +40,13 @@ export const makeUserAdmin = catchAsync(
       });
 
       return { user, newAdmin };
+    });
+
+    logger.info("User promoted to admin", {
+      promotedBy: req.user.id,
+      targetUserId,
+      targetRole,
+      adminId: newAdmin.id,
     });
 
     // TODO: Send email via BullMQ
