@@ -4,7 +4,7 @@ import {
   extractAadhaarData,
   updateUserInfoBasedOnAdhaarData,
   getAdhaarUploadConfirmation,
-} from "@root/controller/user/aadhaar/aadhaar.controller.js";
+} from "@root/controller/user/aadhaar/index.js";
 import { restProtectMiddleware } from "@root/controller/middleware/protect/protect.route.factory.middleware.js";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import {
