@@ -1,0 +1,17 @@
+enum CAApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model CaApplication {
+  id        String              @id @default(cuid())
+  userId    String              @unique
+  status    CAApplicationStatus @default(PENDING)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caProfile CaProfile?
+}
