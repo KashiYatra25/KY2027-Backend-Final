@@ -34,4 +34,25 @@ export {
   type AccountSuspensionSchemaType,
 } from './user/accountSuspension.model.js';
 
+export { 
+  PassModel, 
+  PassSchema,
+  type PassDoc,
+  type PassSchemaType,
+} from './passes/pass.model.js';
+
+export { 
+  CartModel, 
+  CartSchema,
+  type CartDoc,
+  type CartSchemaType,
+} from './cart/cart.model.js';
+
+export { 
+  PurchaseModel, 
+  PurchaseSchema,
+  type PurchaseDoc,
+  type PurchaseSchemaType,
+} from './purchase/purchase.model.js';
+
 export { connInstance, MongoDbConnection } from './connection.js';
