@@ -31,13 +31,15 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
           firstName: true,
           lastName: true,
           slugName: true,
-          avatarUrl: true,
+          candidatePhotoUrl: true,
+          googleAvatarUrl: true,
           phone: true,
           gender: true,
           college: true,
           dob: true,
           createdAt: true,
           aadhaarNumber: true,
+          isFromIITBhu: true,
           role: {
             select: {
               id: true,

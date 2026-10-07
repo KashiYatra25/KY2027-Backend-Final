@@ -14,13 +14,15 @@ export type UserProfileData = {
   firstName: string | null;
   lastName: string | null;
   slugName: string;
-  avatarUrl: string | null;
+  candidatePhotoUrl: string | null;
+  googleAvatarUrl: string | null;
   phone: string | null;
   gender: Gender | null;
   college: string | null;
   dob: string | null;
   joinedAt: string;
   aadhaarNumber: string | null;
+  isFromIITBhu: boolean;
   role: Pick<Role, 'id' | 'level'> | null;
 };
 
