@@ -44,6 +44,7 @@ const getEvents = catchAsync(
         slug: true,
         name: true,
         tagline: true,
+        description: true,
         category: true,
         participationType: true,
         minTeamSize: true,
