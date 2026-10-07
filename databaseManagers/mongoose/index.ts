@@ -48,4 +48,11 @@ export {
   type TeamSchemaType,
 } from "./team/team.model.js";
 
+export {
+  PassModel,
+  PassSchema,
+  type PassDoc,
+  type PassSchemaType,
+} from "./passes/pass.model.js";
+
 export { connInstance, MongoDbConnection } from "./connection.js";
