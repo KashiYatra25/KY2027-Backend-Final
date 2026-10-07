@@ -11,7 +11,8 @@ model User {
   firstName String?    // NULL until profile completed
   lastName  String?
   slugName  String     // Username extracted from email - always set
-  avatarUrl String?
+  candidatePhotoUrl String?
+  googleAvatarUrl String?
   phone     String?    // NULL until phone verified
   gender    Gender?
   college   String?
@@ -22,8 +23,12 @@ model User {
   // Aadhaar verification
   aadhaarNumber String? // Full Aadhaar number (stored securely, never sent to frontend)
   aadhaarS3Key  String? // S3 key for uploaded Aadhaar image (temporary)
+  isFromIITBhu  Boolean @default(false)
 
-  // universal relations
-  role  Role?
-  admin Admin?
+  // Universal relations
+  role          Role?
+  admin         Admin?
+  caApplication CaApplication?
+  caProfile     CaProfile?
+  couponUsages  CouponUsage[]
 }
