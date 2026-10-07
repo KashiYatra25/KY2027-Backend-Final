@@ -34,4 +34,18 @@ export {
   type AccountSuspensionSchemaType,
 } from './user/accountSuspension.model.js';
 
+export { 
+  EventRegistrationModel, 
+  EventRegistrationSchema,
+  type EventRegistrationDoc,
+  type EventRegistrationSchemaType,
+} from './event/eventRegistration.model.js';
+
+export { 
+  TeamModel, 
+  TeamSchema,
+  type TeamDoc,
+  type TeamSchemaType,
+} from './team/team.model.js';
+
 export { connInstance, MongoDbConnection } from './connection.js';

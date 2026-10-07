@@ -1,0 +1,40 @@
+enum EventCategory {
+  NATRAJ
+  CROSSWINDZ
+  BANDISH
+  ABHINAY
+  MIRAGE
+  TOOLIKA
+  ENQUIZTA
+  SAMWAAD
+  ZAIKA
+}
+
+enum ParticipationType {
+  INDIVIDUAL
+  DUO
+  TEAM
+}
+
+model Event {
+  id                   String            @id @default(uuid())
+  slug                 String            @unique                // URL-friendly identifier like "cut-a-rug"
+  name                 String
+  tagline              String
+  description          String
+  category             EventCategory
+  participationType    ParticipationType
+  minTeamSize          Int?                                     // null for individual
+  maxTeamSize          Int?                                     // null for individual
+  registrationOpen     Boolean           @default(true)
+  imageUrl             String?
+  rules                String[]          @default([])
+  prizePool            String?
+  venue                String?
+  startsAt             DateTime?
+  endsAt               DateTime?
+  registrationDeadline DateTime?
+  maxParticipants      Int?                                     // null = unlimited
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+}

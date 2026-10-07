@@ -27,3 +27,6 @@ pnpm-debug.log*
 
 # Test coverage
 coverage
+
+# Seeder (contains event data - temporary)
+data/seeder.ts
