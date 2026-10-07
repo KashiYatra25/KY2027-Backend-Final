@@ -3,7 +3,7 @@ import {
   getCaApplicationStatus,
 } from "@controller/user/ca/index.js";
 import { restProtectMiddleware, roleChecker } from "@middleware/protect/protect.route.factory.middleware.js";
-import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/checkWhetherProfileIsComplete.middleware.js";
+import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
 import { caApplicationSchema } from "@schemas/user/caApplication.schema.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";

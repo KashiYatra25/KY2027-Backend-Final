@@ -9,6 +9,7 @@ import {
 import {
   getEventsQuerySchema,
   eventSlugParamSchema,
+  registerForEventSchema,
 } from "@schemas/event/event.schema.js";
 
 export const eventRouter: ExpressRouter = Router();
@@ -29,8 +30,10 @@ eventRouter.get(
 // Protected routes - auth required
 eventRouter.use(restProtectMiddleware);
 
+// Register for event
+// Profile check not needed - payment requires profile completion first
 eventRouter.post(
   "/:slug/register",
-  RequestGuardMiddleware({ params: eventSlugParamSchema }),
+  RequestGuardMiddleware({ params: eventSlugParamSchema, body: registerForEventSchema }),
   registerForEvent,
 );
