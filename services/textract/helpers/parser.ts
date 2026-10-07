@@ -1,4 +1,5 @@
 import type { AadhaarData } from "../types.js";
+import { logger } from "@logger/index.js";
 import { AADHAAR_REGEX, DOB_PATTERNS, GENDER_PATTERNS, NAME_EXCLUSIONS } from "./constants.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -76,11 +77,10 @@ function extractAadhaarNumber(lines: string[]): string | undefined {
       
       // Validate using Verhoeff checksum
       if (isValidAadhaarChecksum(aadhaarNumber)) {
-        console.log(`Aadhaar ${aadhaarNumber} passed Verhoeff validation`);
+        logger.debug("Aadhaar passed Verhoeff validation", { aadhaarLast4: aadhaarNumber.slice(-4) });
         return aadhaarNumber;
       } else {
-        console.log(`Aadhaar ${aadhaarNumber} FAILED Verhoeff validation - skipping`);
-        // Continue searching for a valid Aadhaar number
+        logger.debug("Aadhaar failed Verhoeff validation — skipping", { aadhaarLast4: aadhaarNumber.slice(-4) });
       }
     }
   }
@@ -310,7 +310,7 @@ function calculateNameScore(line: string, index: number, dobLineIndex: number, g
  */
 function extractName(lines: string[]): string | undefined {
   // First, log rawText for debugging
-  console.log("Textract raw lines:", JSON.stringify(lines, null, 2));
+  logger.debug("Textract raw lines", { lineCount: lines.length, lines });
   
   // Find DOB line index (name appears before this)
   let dobLineIndex = -1;
@@ -359,7 +359,7 @@ function extractName(lines: string[]): string | undefined {
     }
   }
   
-  console.log("Name candidates with scores:", candidates);
+  logger.debug("Name candidates with scores", { candidates });
   
   // Sort by score descending and return best match
   candidates.sort((a, b) => b.score - a.score);
