@@ -1,0 +1,74 @@
+// ═══════════════════════════════════════════════════════════════════
+// COUPON SCHEMA
+// Discount coupons for pass purchases
+// ═══════════════════════════════════════════════════════════════════
+
+enum CouponType {
+  PERCENTAGE  // e.g., 10% off
+  FIXED       // e.g., ₹200 off
+}
+
+enum CouponStatus {
+  ACTIVE
+  EXPIRED
+  DISABLED
+}
+
+model Coupon {
+  id              String       @id @default(cuid())
+  code            String       @unique  // e.g., "EARLY20", "CA100"
+  description     String?               // Optional description for admin
+  
+  // Discount configuration
+  type            CouponType            // PERCENTAGE or FIXED
+  value           Int                   // 20 for 20% or 200 for ₹200
+  
+  // Usage limits
+  maxUsageCount   Int?                  // Total times coupon can be used (null = unlimited)
+  maxUsagePerUser Int       @default(1) // Times a single user can use it
+  currentUsageCount Int     @default(0) // Track total usage
+  
+  // Validity period
+  validFrom       DateTime   @default(now())
+  validUntil      DateTime?             // null = no expiry
+  
+  // Status
+  status          CouponStatus @default(ACTIVE)
+  
+  // Pass restrictions (null = applicable to all passes)
+  applicablePassIds String[]  @default([]) // Empty = all passes
+  
+  // Metadata
+  createdBy       String?               // Admin who created it
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  
+  // Relations
+  usages          CouponUsage[]
+}
+
+model CouponUsage {
+  id            String   @id @default(cuid())
+  
+  // References
+  couponId      String
+  userId        String
+  
+  // Usage details
+  discountAmount Int               // Actual discount applied
+  
+  // Payment reference (to be linked with payment/order later)
+  orderId       String?  @unique   // Will be set when payment system is integrated
+  
+  // Timestamps
+  usedAt        DateTime @default(now())
+  
+  // Relations
+  coupon        Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  
+  // Indexes
+  @@index([couponId])
+  @@index([userId])
+  @@unique([couponId, userId, orderId]) // Prevent duplicate usage per order
+}
