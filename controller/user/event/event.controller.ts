@@ -3,7 +3,7 @@ import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound, BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
-import { EventRegistrationModel, TeamModel } from "@root/databaseManagers/mongoose/index.js";
+import { EventRegistrationModel, TeamModel, PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
 import type {
   GetEventsQueryType,
@@ -215,6 +215,16 @@ const registerForEvent = catchAsync(
         return next(
           new BadRequest().handleResponse(res, {
             info: `This is a ${event.participationType.toLowerCase()} event. Please register with a team.`,
+          }),
+        );
+      }
+
+      // Check if user has paid (has a purchase record)
+      const hasPaid = await PurchaseModel.exists({ userId });
+      if (!hasPaid) {
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: "You must purchase a pass before registering for events",
           }),
         );
       }

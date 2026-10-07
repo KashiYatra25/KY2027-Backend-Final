@@ -10,7 +10,7 @@ export const createTeamSchema = z.object({
       message: "Team name can only contain letters, numbers, spaces, hyphens and underscores",
     }),
   members: z
-    .array(z.uuid({ message: "Invalid member ID" }))
+    .array(z.string().min(1, { message: "Invalid member ID" }))
     .min(1, { message: "Team must have at least 1 other member" })
     .max(9, { message: "Team can have at most 10 members including you" }),
 });

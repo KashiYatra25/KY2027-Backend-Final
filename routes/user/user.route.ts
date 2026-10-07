@@ -3,6 +3,7 @@ import { updateProfile } from "@controller/user/profile/index.js";
 import { submitContact } from "@controller/user/contact/index.js";
 import { searchUsers } from "@controller/user/search/index.js";
 import { getMyRegistrations } from "@controller/user/event/index.js";
+import { getPaymentStatus } from "@controller/user/payment/index.js";
 import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
 import { blockIfProfileAlreadyCompleted } from "@middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
 import { profileUpdationSchema } from "@schemas/user/profile.schema.js";
@@ -38,6 +39,9 @@ userRouter.get(
 
 // Get user's event registrations
 userRouter.get("/registrations", getMyRegistrations);
+
+// Get user's payment status
+userRouter.get("/payment-status", getPaymentStatus);
 
 userRouter.patch(
   "/profile",

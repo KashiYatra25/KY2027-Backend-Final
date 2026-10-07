@@ -7,12 +7,12 @@ import type { SearchUsersQueryType } from "@schemas/user/search.schema.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
 
 /**
- * GET /users/search?q=<query>&limit=<limit>
+ * GET /user/search?q=<query>&limit=<limit>
  * 
  * Search for PAID users by name or email.
  * Only returns users who:
  * - Have completed profile (have firstName)
- * - Have at least one purchase (paid pass)
+ * - Have at least one purchase (paid pass or IIT_BHU_FREE)
  * 
  * Frontend should debounce this (300ms recommended)
  */
@@ -28,7 +28,7 @@ const searchUsers = catchAsync(
     const { q, limit = 10 } = req.validatedQuery ?? { q: "" };
     const searchQuery = q.trim().toLowerCase();
 
-    // 1. Get all paid user IDs from purchases
+    // 1. Get all paid user IDs from purchases (includes IIT_BHU_FREE)
     const paidUserIds = await PurchaseModel.distinct("userId");
 
     // 2. Search users who are paid and match query

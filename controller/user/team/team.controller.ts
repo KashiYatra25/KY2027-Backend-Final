@@ -73,7 +73,7 @@ const createTeam = catchAsync(
       return;
     }
 
-    // 4. Check all members have paid pass
+    // 4. Check all members have paid pass (includes IIT_BHU_FREE)
     const paidUserIds = await PurchaseModel.distinct("userId", {
       userId: { $in: allMemberIds },
     });
