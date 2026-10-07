@@ -1,29 +1,13 @@
-import {
-  authenticateUser,
-  updatePhoneNumber,
-  initiatePhoneNumberChange,
-} from "@controller/user/auth/index.js";
-import { updateProfile } from "@controller/user/profile/profile.controller.js";
-import { submitContact } from "@controller/user/contact/contact.controller.js";
+import { authenticateUser } from "@controller/user/auth/index.js";
+import { submitContact } from "@controller/user/contact/index.js";
+import { updateProfile } from "@controller/user/profile/index.js";
 import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
-import { validateCSRFToken } from "@middleware/user/auth/index.js";
-import {
-  changePhoneNumberSchema,
-  userAuthSchema,
-} from "@schemas/user/userAuth.schema.js";
-import { updateProfileSchema } from "@schemas/user/profile.schema.js";
+import { checkProfileUpdationAlreadyDoneOrNot } from "@middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
+import { profileUpdationSchema } from "@schemas/user/profile.schema.js";
 import { contactSchema } from "@schemas/user/contact.schema.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
-import {
-  otpThrottleMiddleware,
-  otpRateLimitMiddleware,
-} from "@middleware/limiters/otp.middleware.js";
-import { getOtp, verifyOtp } from "@controller/user/otp/otp.controller.js";
-import {
-  otpGenerationSchema,
-  otpVerificationSchema,
-} from "@schemas/user/otp.schema.js";
+import { userAuthSchema } from "@schemas/user/user.auth.schema.js";
 
 export const userRouter: ExpressRouter = Router();
 
@@ -44,31 +28,34 @@ userRouter.use(restProtectMiddleware);
 
 userRouter.patch(
   "/profile",
-  RequestGuardMiddleware({ body: updateProfileSchema }),
+  RequestGuardMiddleware({ body: profileUpdationSchema }),
+  checkProfileUpdationAlreadyDoneOrNot,
   updateProfile,
 );
 
 // Phone number change flow
-userRouter.get("/initialisePhoneNumberChange", initiatePhoneNumberChange);
+// userRouter.get("/initialisePhoneNumberChange", initiatePhoneNumberChange);
 
-userRouter.patch(
-  "/updatePhoneNumber",
-  validateCSRFToken,
-  RequestGuardMiddleware({ body: changePhoneNumberSchema }),
-  updatePhoneNumber,
-);
 
-// OTP routes
-userRouter.use("/otp", otpThrottleMiddleware, otpRateLimitMiddleware);
+// we are not allowing the phone number updates for now
+// userRouter.patch(
+//   "/updatePhoneNumber",
+//   validateCSRFToken,
+//   RequestGuardMiddleware({ body: changePhoneNumberSchema }),
+//   updatePhoneNumber,
+// );
 
-userRouter.post(
-  "/otp/getOtp",
-  RequestGuardMiddleware({ body: otpGenerationSchema }),
-  getOtp,
-);
+// OTP routes -> if in case in future we required to use otp
+// userRouter.use("/otp", otpThrottleMiddleware, otpRateLimitMiddleware);
 
-userRouter.post(
-  "/otp/verifyOtp",
-  RequestGuardMiddleware({ body: otpVerificationSchema }),
-  verifyOtp,
-);
+// userRouter.post(
+//   "/otp/getOtp",
+//   RequestGuardMiddleware({ body: otpGenerationSchema }),
+//   getOtp,
+// );
+
+// userRouter.post(
+//   "/otp/verifyOtp",
+//   RequestGuardMiddleware({ body: otpVerificationSchema }),
+//   verifyOtp,
+// );
