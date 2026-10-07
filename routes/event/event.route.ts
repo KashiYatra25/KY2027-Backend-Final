@@ -1,7 +1,6 @@
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
-import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
 import {
   getEvents,
   getEventBySlug,
@@ -31,10 +30,10 @@ eventRouter.get(
 // Protected routes - auth required
 eventRouter.use(restProtectMiddleware);
 
-// Register for event - requires completed profile
+// Register for event
+// Profile check not needed - payment requires profile completion first
 eventRouter.post(
   "/:slug/register",
-  checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ params: eventSlugParamSchema, body: registerForEventSchema }),
   registerForEvent,
 );
