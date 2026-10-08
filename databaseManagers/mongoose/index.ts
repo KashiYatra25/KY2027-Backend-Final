@@ -55,4 +55,11 @@ export {
   type PassSchemaType,
 } from "./passes/pass.model.js";
 
+export {
+  CartModel,
+  CartSchema,
+  type CartDoc,
+  type CartSchemaType,
+} from "./cart/cart.model.js";
+
 export { connInstance, MongoDbConnection } from "./connection.js";
