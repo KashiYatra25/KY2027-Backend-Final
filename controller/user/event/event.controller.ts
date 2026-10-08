@@ -80,7 +80,7 @@ const getMyRegistrations = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Registrations fetched successfully",
-      data: registrationsWithDetails,
+      registrations: registrationsWithDetails,
       count: registrationsWithDetails.length,
     });
   },
@@ -134,7 +134,7 @@ const getEvents = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Events fetched successfully",
-      data: events,
+      events,
     });
   },
 );
@@ -165,7 +165,7 @@ const getEventBySlug = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Event fetched successfully",
-      data: event,
+      event,
     });
   },
 );
@@ -256,12 +256,10 @@ const registerForEvent = catchAsync(
 
       new OkResponseStrategy().handleResponse(res, {
         info: "Successfully registered for event",
-        data: {
-          registrationId: registration._id,
-          eventSlug: event.slug,
-          eventName: event.name,
-          status: registration.status,
-        },
+        registrationId: registration._id,
+        eventSlug: event.slug,
+        eventName: event.name,
+        status: registration.status,
       });
     } else {
       // body.type === "team"
@@ -373,7 +371,7 @@ const registerForEvent = catchAsync(
         return next(
           new BadRequest().handleResponse(res, {
             info: "Some team members are already registered for this event",
-            data: { conflictingMemberIds },
+            conflictingMemberIds,
           }),
         );
       }
@@ -389,15 +387,13 @@ const registerForEvent = catchAsync(
 
       new OkResponseStrategy().handleResponse(res, {
         info: "Team successfully registered for event",
-        data: {
-          registrationId: registration._id,
-          eventSlug: event.slug,
-          eventName: event.name,
-          teamId: team.teamId,
-          teamName: team.name,
-          memberCount: teamSize,
-          status: registration.status,
-        },
+        registrationId: registration._id,
+        eventSlug: event.slug,
+        eventName: event.name,
+        teamId: team.teamId,
+        teamName: team.name,
+        memberCount: teamSize,
+        status: registration.status,
       });
     }
   },

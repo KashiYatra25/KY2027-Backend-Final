@@ -10,7 +10,8 @@ model CaProfile {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  caApplication CaApplication @relation(fields: [caApplicationId], references: [id])
-  caApplicationId String      @unique
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caApplication   CaApplication @relation(fields: [caApplicationId], references: [id])
+  caApplicationId String        @unique
+  referredUsers   User[]        @relation("ReferredUsers") // Users who used this CA's referral code
 }

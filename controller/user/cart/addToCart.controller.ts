@@ -56,10 +56,8 @@ export const addToCart = catchAsync(
 
       new OkResponseStrategy().handleResponse(res, {
         info: "Item added to cart",
-        data: {
-          items: cart.items,
-          totalQuantity: quantity,
-        },
+        items: cart.items,
+        totalQuantity: quantity,
       });
 
       logger.info("Cart created with item", { userId, passId, quantity });
@@ -104,10 +102,8 @@ export const addToCart = catchAsync(
       info: existingItem
         ? "Cart item quantity updated"
         : "Item added to cart",
-      data: {
-        items: cart.items,
-        totalQuantity: newTotalQuantity,
-      },
+      items: cart.items,
+      totalQuantity: newTotalQuantity,
     });
 
     logger.info("Cart updated", {

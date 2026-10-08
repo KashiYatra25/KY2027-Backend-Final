@@ -63,10 +63,8 @@ const updateProfile = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Profile updated successfully",
-      data: {
-        ...(phoneNumber && { phoneNumber: updatedUser.phone }),
-        ...(college && { college: updatedUser.college }),
-      },
+      ...(phoneNumber && { phoneNumber: updatedUser.phone }),
+      ...(college && { college: updatedUser.college }),
     });
 
     logger.info("Profile updated", {

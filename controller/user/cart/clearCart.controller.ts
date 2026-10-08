@@ -21,10 +21,8 @@ export const clearCart = catchAsync(
     if (!cart || cart.items.length === 0) {
       new OkResponseStrategy().handleResponse(res, {
         info: "Cart is already empty",
-        data: {
-          items: [],
-          totalQuantity: 0,
-        },
+        items: [],
+        totalQuantity: 0,
       });
       return;
     }
@@ -35,10 +33,8 @@ export const clearCart = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Cart cleared successfully",
-      data: {
-        items: [],
-        totalQuantity: 0,
-      },
+      items: [],
+      totalQuantity: 0,
     });
 
     logger.info("Cart cleared", { userId });

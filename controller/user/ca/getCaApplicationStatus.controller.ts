@@ -28,7 +28,7 @@ const getCaApplicationStatus = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: application ? "Application found" : "No application found",
-      data: application
+      ...(application
         ? {
             hasApplied: true,
             applicationId: application.id,
@@ -38,7 +38,7 @@ const getCaApplicationStatus = catchAsync(
           }
         : {
             hasApplied: false,
-          },
+          }),
     });
   },
 );

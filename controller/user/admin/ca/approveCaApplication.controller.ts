@@ -95,6 +95,34 @@ export const approveCaApplication = catchAsync(
 
     // Use transaction to update application and create profile
     const result = await prisma.$transaction(async (tx) => {
+      // Check if this user was referred by someone - if so, remove that referral
+      const user = await tx.user.findUnique({
+        where: { id: application.userId },
+        select: { referredByCaId: true },
+      });
+
+      if (user?.referredByCaId) {
+        // Decrement the referrer's count
+        await tx.caProfile.update({
+          where: { id: user.referredByCaId },
+          data: { numberOfReferrals: { decrement: 1 } },
+        });
+
+        // Clear the user's referral info
+        await tx.user.update({
+          where: { id: application.userId },
+          data: {
+            referredByCaId: null,
+            referredAt: null,
+          },
+        });
+
+        logger.info("Cleared referral for new CA", {
+          userId: application.userId,
+          previousReferrerId: user.referredByCaId,
+        });
+      }
+
       // Update application status
       const updatedApplication = await tx.caApplication.update({
         where: { id: applicationId },

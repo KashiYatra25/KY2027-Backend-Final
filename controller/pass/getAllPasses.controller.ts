@@ -17,8 +17,10 @@ const getAllPasses = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Passes fetched successfully",
-      passes,
-      count: passes.length,
+      data: {
+        passes,
+        count: passes.length,
+      },
     });
   }
 );

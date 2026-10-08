@@ -36,10 +36,8 @@ const createCaApplication = catchAsync(
       return next(
         new BadRequest().handleResponse(res, {
           info: "You have already applied for Campus Ambassador",
-          data: {
-            status: existingApplication.status,
-            appliedAt: existingApplication.createdAt,
-          },
+          status: existingApplication.status,
+          appliedAt: existingApplication.createdAt,
         }),
       );
     }
@@ -64,11 +62,9 @@ const createCaApplication = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Campus Ambassador application submitted successfully",
-      data: {
-        applicationId: application.id,
-        status: application.status,
-        appliedAt: application.createdAt,
-      },
+      applicationId: application.id,
+      status: application.status,
+      appliedAt: application.createdAt,
     });
   },
 );

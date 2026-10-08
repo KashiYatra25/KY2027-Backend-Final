@@ -20,10 +20,8 @@ export const getCart = catchAsync(
     if (!cart || cart.items.length === 0) {
       new OkResponseStrategy().handleResponse(res, {
         info: "Cart retrieved successfully",
-        data: {
-          items: [],
-          totalQuantity: 0,
-        },
+        items: [],
+        totalQuantity: 0,
       });
       return;
     }
@@ -35,10 +33,8 @@ export const getCart = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Cart retrieved successfully",
-      data: {
-        items: cart.items,
-        totalQuantity,
-      },
+      items: cart.items,
+      totalQuantity,
     });
   },
 );

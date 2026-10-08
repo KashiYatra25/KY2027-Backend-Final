@@ -54,10 +54,8 @@ export const removeFromCart = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Item removed from cart",
-      data: {
-        items: cart.items,
-        totalQuantity,
-      },
+      items: cart.items,
+      totalQuantity,
     });
 
     logger.info("Item removed from cart", { userId, passId });

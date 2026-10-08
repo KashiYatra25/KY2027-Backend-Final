@@ -32,7 +32,7 @@ export {
   AccountSuspensionSchema,
   type AccountSuspensionDoc,
   type AccountSuspensionSchemaType,
-} from "./user/accountSuspension.model.js";
+} from './user/accountSuspension.model.js';
 
 export {
   EventRegistrationModel,

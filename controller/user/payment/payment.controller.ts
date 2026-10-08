@@ -26,8 +26,10 @@ export const getPaymentStatus = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: hasPaid ? "User has paid" : "User has not paid",
-      hasPaid,
-      isIITBhuUser: user?.isFromIITBhu ?? false,
+      data: {
+        hasPaid,
+        isIITBhuUser: user?.isFromIITBhu ?? false,
+      },
     });
   },
 );

@@ -50,11 +50,15 @@ const getUploadUrl = catchAsync(
       data: { aadhaarS3Key: s3Key },
     });
 
-    new OkResponseStrategy().handleResponse(res, {
-      info: "Upload URL generated successfully",
+    const data = {
       uploadUrl,
       s3Key,
       expiresAt: expiresAt.toISOString(),
+    };
+
+    new OkResponseStrategy().handleResponse(res, {
+      info: "Upload URL generated successfully",
+      ...data,
     });
   },
 );
