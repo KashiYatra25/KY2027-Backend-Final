@@ -7,6 +7,7 @@ import { TeamModel } from "@root/databaseManagers/mongoose/index.js";
 import { randomUUID } from "crypto";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
 import type { CreateTeamType } from "@schemas/team/team.schema.js";
+import { checkForProfileCompletion } from "@root/controller/helper/checkWhetherProfileIsCompleted.js";
 
 /**
  * POST /teams
@@ -49,40 +50,41 @@ const createTeam = catchAsync(
 
     // 3. Check all members exist
     const allMemberIds = [creatorId, ...memberIds];
-    const users = await prisma.user.findMany({
+    const foundUsers = await prisma.user.findMany({
       where: { id: { in: allMemberIds } },
       select: { id: true, firstName: true, email: true, isPaidUser: true },
     });
 
-    if (users.length !== allMemberIds.length) {
-      const foundIds = users.map((u) => u.id);
-      const missingIds = allMemberIds.filter((id) => !foundIds.includes(id));
+    if (foundUsers.length !== allMemberIds.length) {
       return next(
         new BadRequest().handleResponse(res, {
           info: "Some members not found",
-          missingIds,
+          invalidCount: allMemberIds.length - foundUsers.length,
         }),
       );
     }
 
-    // 4. Check all have completed profile (have firstName)
-    const incompleteProfiles = users.filter((u) => !u.firstName);
-    if (incompleteProfiles.length > 0) {
+    // 4. Check all have completed profile (using MongoDB AccountProgress)
+    const profileCheck = await checkForProfileCompletion(
+      allMemberIds.map((userId) => ({ userId }))
+    );
+    
+    if (!profileCheck.isComplete) {
       return next(
         new BadRequest().handleResponse(res, {
           info: "Some members have not completed their profile",
-          incomplete: incompleteProfiles.map((u) => u.email),
+          invalidCount: profileCheck.incompleteUsers.length,
         }),
       );
     }
 
     // 5. Check all members have paid (isPaidUser = true)
-    const unpaidUsers = users.filter((u) => !u.isPaidUser);
+    const unpaidUsers = foundUsers.filter((u) => !u.isPaidUser);
     if (unpaidUsers.length > 0) {
       return next(
         new BadRequest().handleResponse(res, {
           info: "Some members have not purchased a pass",
-          unpaid: unpaidUsers.map((u) => u.email),
+          invalidCount: unpaidUsers.length,
         }),
       );
     }
@@ -107,7 +109,7 @@ const createTeam = catchAsync(
       name: team.name,
       memberCount: team.members.length,
       members: team.members.map((m) => {
-        const user = users.find((u) => u.id === m.userId);
+        const user = foundUsers.find((u) => u.id === m.userId);
         return {
           userId: m.userId,
           name: user?.firstName,

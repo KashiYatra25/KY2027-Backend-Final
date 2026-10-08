@@ -40,7 +40,8 @@ export const authenticateUser = catchAsync(
           googleAvatarUrl: avatarUrl || null,
           role: { create: { level: "USER" } },
           isFromIITBhu,
-          isPaidUser: isFromIITBhu, // IIT BHU users are auto-paid
+          // isPaidUser stays false until profile is complete
+          // For IIT BHU users, it gets set to true after profile completion
         },
         include: {
           role: {

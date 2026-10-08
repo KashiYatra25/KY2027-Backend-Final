@@ -2,10 +2,10 @@
 // User Lookup Types
 // ============================================
 
-export type UserLookupParams = {
-  userId?: string;
-  email?: string;
-};
+// At least one of userId or email must be provided
+export type UserLookupParams = 
+  | { userId: string; email?: string }
+  | { userId?: string; email: string };
 
 // ============================================
 // User Exists Check Types

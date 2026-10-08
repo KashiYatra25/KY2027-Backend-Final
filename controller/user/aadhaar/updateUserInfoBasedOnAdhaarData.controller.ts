@@ -7,6 +7,7 @@ import { prisma } from "@root/prisma.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import { env } from "@lib/env/environment.js";
 import type { AadhaarExtractedRequest } from "./types.js";
+import { autoSetPaidForIITBhuUser } from "@root/controller/helper/checkWhetherProfileIsCompleted.js";
 
 /**
  * Step 2: Confirm Aadhaar - Save verified data and cleanup
@@ -46,6 +47,12 @@ const updateUserInfoBasedOnAdhaarData = catchAsync(
       progress.profileCompletionAndVerification!.hasAadhaarBeenVerified = true;
       await progress.save();
       logger.info("Aadhaar verified and profile updated", { userId, aadhaarLast4: aadhaarNumber.slice(-4), gender, dob });
+    }
+
+    // Auto-set isPaidUser for IIT BHU users if profile is now complete
+    const autoSetPaid = await autoSetPaidForIITBhuUser(userId);
+    if (autoSetPaid) {
+      logger.info("Auto-set isPaidUser for IIT BHU user after profile completion", { userId });
     }
 
     // Delete image from S3 (no need to store after verification)
