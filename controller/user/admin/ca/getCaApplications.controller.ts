@@ -52,7 +52,7 @@ export const getCaApplications = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "CA applications fetched successfully",
-      data: applications,
+      applications,
       count: applications.length,
     });
   },

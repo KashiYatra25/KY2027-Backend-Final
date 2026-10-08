@@ -69,7 +69,7 @@ export const getAdminUsers = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Admin users fetched successfully",
-      data: adminUsers,
+      adminUsers,
       count: adminUsers.length,
     });
   },

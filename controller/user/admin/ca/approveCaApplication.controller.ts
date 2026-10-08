@@ -85,7 +85,7 @@ export const approveCaApplication = catchAsync(
 
       new OkResponseStrategy().handleResponse(res, {
         info: "CA application rejected",
-        data: updatedApplication,
+        application: updatedApplication,
       });
       return;
     }
@@ -151,18 +151,16 @@ export const approveCaApplication = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "CA application approved successfully",
-      data: {
-        applicationId: result.updatedApplication.id,
-        status: result.updatedApplication.status,
-        caProfile: {
-          referralId: result.caProfile.referralId,
-          numberOfReferrals: result.caProfile.numberOfReferrals,
-        },
-        user: {
-          email: application.user.email,
-          firstName: application.user.firstName,
-          lastName: application.user.lastName,
-        },
+      applicationId: result.updatedApplication.id,
+      status: result.updatedApplication.status,
+      caProfile: {
+        referralId: result.caProfile.referralId,
+        numberOfReferrals: result.caProfile.numberOfReferrals,
+      },
+      user: {
+        email: application.user.email,
+        firstName: application.user.firstName,
+        lastName: application.user.lastName,
       },
     });
   },

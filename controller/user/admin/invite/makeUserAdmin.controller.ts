@@ -57,6 +57,9 @@ export const makeUserAdmin = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Admin invite sent successfully to existing user",
+      adminId: newAdmin.id,
+      userId: user.id,
+      role: targetRole,
     });
   },
 );

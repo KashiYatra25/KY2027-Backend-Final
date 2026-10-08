@@ -85,11 +85,9 @@ export const authenticateUser = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "User authenticated successfully",
-      data: {
-        role: user.role,
-        accountStatus: progress?.accountStatus,
-        isNewUser,
-      },
+      role: user.role,
+      accountStatus: progress?.accountStatus,
+      isNewUser,
     });
   },
 );

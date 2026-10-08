@@ -61,13 +61,11 @@ export const suspendAdmin = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: `Admin ${targetRole} has been suspended successfully`,
-      data: {
-        suspendedUserId: targetUserId,
-        previousRole: targetRole,
-        newRole: "USER",
-        suspendedBy,
-        suspendedOn: new Date().toISOString(),
-      },
+      suspendedUserId: targetUserId,
+      previousRole: targetRole,
+      newRole: "USER",
+      suspendedBy,
+      suspendedOn: new Date().toISOString(),
     });
 
     logger.info("Admin suspended", {

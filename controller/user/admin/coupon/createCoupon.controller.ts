@@ -88,7 +88,7 @@ const createCoupon = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Coupon created successfully",
-      data: coupon,
+      ...coupon,
     });
   },
 );

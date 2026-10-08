@@ -59,16 +59,12 @@ const updateUserInfoBasedOnAdhaarData = catchAsync(
     const s3Manager = new S3Manager(env.AWS_REGION, env.S3_BUCKET);
     await s3Manager.deleteObject(key);
 
-    const data = {
+    new OkResponseStrategy().handleResponse(res, {
+      info: "Aadhaar verified successfully.",
       aadhaarLast4: aadhaarNumber.slice(-4),
       name,
       gender,
       dateOfBirth,
-    };
-
-    new OkResponseStrategy().handleResponse(res, {
-      info: "Aadhaar verified successfully.",
-      ...data,
     });
   },
 );

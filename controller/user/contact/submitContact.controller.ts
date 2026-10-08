@@ -24,9 +24,7 @@ const submitContact = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Message sent successfully",
-      data: {
-        success: true,
-      },
+      success: true,
     });
   },
 );

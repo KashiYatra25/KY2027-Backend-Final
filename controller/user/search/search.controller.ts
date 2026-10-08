@@ -60,10 +60,8 @@ const searchUsers = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Users found",
-      data: {
-        users,
-        count: users.length,
-      },
+      users,
+      count: users.length,
     });
   },
 );

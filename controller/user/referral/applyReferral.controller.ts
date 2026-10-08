@@ -99,9 +99,7 @@ export const applyReferral = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Referral applied successfully",
-      data: {
-        referredBy: caProfile.user.firstName ?? "Campus Ambassador",
-      },
+      referredBy: caProfile.user.firstName ?? "Campus Ambassador",
     });
   },
 );
