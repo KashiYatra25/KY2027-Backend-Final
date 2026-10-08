@@ -1,20 +1,41 @@
-import type { Response } from "express";
+import type { Response, NextFunction } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/auth.types.helper.js";
+import type { RoleLevel } from "@lib/prisma/index.js";
 
 /**
  * GET /admin/users
- * Fetch all users with admin roles (MASTER_ADMIN, MANAGER, OPERATOR)
+ * Fetch admin users based on requester's role:
+ * - MASTER_ADMIN: Can see MANAGER and OPERATOR
+ * - MANAGER: Can see only OPERATOR
  */
 export const getAdminUsers = catchAsync(
-  async (req: AuthenticatedUserRequestWithVerifiedEmail, res: Response) => {
+  async (
+    req: AuthenticatedUserRequestWithVerifiedEmail,
+    res: Response,
+    _next: NextFunction,
+  ): Promise<void> => {
+    const requesterRole = req.user.role;
+
+    // Determine which roles the requester can see
+    let visibleRoles: RoleLevel[];
+
+    if (requesterRole === "MASTER_ADMIN") {
+      visibleRoles = ["MANAGER", "OPERATOR"];
+    } else if (requesterRole === "MANAGER") {
+      visibleRoles = ["OPERATOR"];
+    } else {
+      // Should not reach here due to roleChecker middleware, but safety fallback
+      visibleRoles = [];
+    }
+
     const adminUsers = await prisma.user.findMany({
       where: {
         role: {
           level: {
-            in: ["MASTER_ADMIN", "MANAGER", "OPERATOR"],
+            in: visibleRoles,
           },
         },
       },
@@ -37,7 +58,7 @@ export const getAdminUsers = catchAsync(
       orderBy: [
         {
           role: {
-            level: "asc", // MASTER_ADMIN first, then MANAGER, then OPERATOR
+            level: "asc", // MANAGER first, then OPERATOR
           },
         },
         {
