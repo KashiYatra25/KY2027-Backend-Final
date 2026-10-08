@@ -25,6 +25,9 @@ model User {
   aadhaarS3Key  String? // S3 key for uploaded Aadhaar image (temporary)
   isFromIITBhu  Boolean @default(false)
 
+  // Payment status
+  isPaidUser    Boolean @default(false)
+
   // Universal relations
   role          Role?
   admin         Admin?
