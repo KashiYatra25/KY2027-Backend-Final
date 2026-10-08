@@ -30,6 +30,9 @@ app.use(`${env.BASE_API_ENDPOINT}/user`, userRouter);
 app.use(`${env.BASE_API_ENDPOINT}/admin`, adminRouter);
 app.use(`${env.BASE_API_ENDPOINT}/aadhaar`, aadhaarRouter);
 app.use(`${env.BASE_API_ENDPOINT}/events`, eventRouter);
+app.use(`${env.BASE_API_ENDPOINT}/campus-ambassador`, caRouter);
+app.use(`${env.BASE_API_ENDPOINT}/pass`, passRouter);
+app.use(`${env.BASE_API_ENDPOINT}/coupons`, couponRouter);
 
 app.use(globalErrorHandler);
 
