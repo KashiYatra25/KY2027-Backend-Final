@@ -1,12 +1,12 @@
-import type { NextFunction, Request, Response } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { Response, NextFunction } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
 import type { SearchUsersQueryType } from "@schemas/user/search.schema.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
 
 /**
- * GET /user/search?q=<query>&limit=<limit>
+ * GET /user/search?searchQuery=<query>&limit=<limit>
  * 
  * Search for PAID users by name or email.
  * Only returns users who:
@@ -17,15 +17,12 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/au
  */
 const searchUsers = catchAsync(
   async (
-    req: Request & { validatedQuery?: SearchUsersQueryType },
+    req: VerifiedRequest<{ query: SearchUsersQueryType }, AuthenticatedUserRequestWithVerifiedEmail>,
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
-    const currentUserId = authReq.user.id;
-    
-    const { q, limit = 10 } = req.validatedQuery ?? { q: "" };
-    const searchQuery = q.trim().toLowerCase();
+    const { id: currentUserId } = req.user;
+    const { searchQuery, limit = 10 } = req.validatedQuery;
 
     // Search users who are paid and match query
     const users = await prisma.user.findMany({
@@ -63,7 +60,7 @@ const searchUsers = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Users found",
-      data: users,
+      users,
       count: users.length,
     });
   },

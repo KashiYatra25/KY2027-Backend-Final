@@ -1,7 +1,7 @@
-import type { NextFunction, Request, Response } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { Response, NextFunction } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import { BadRequest, NotFound } from "zodex-axon/errors";
+import { BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
 import { TeamModel } from "@root/databaseManagers/mongoose/index.js";
 import { randomUUID } from "crypto";
@@ -16,35 +16,38 @@ import type { CreateTeamType } from "@schemas/team/team.schema.js";
  * - Exist in database
  * - Have completed profile
  * - Have paid pass
+ * 
+ * Note: Profile and paid checks are done via middleware
  */
 const createTeam = catchAsync(
   async (
-    req: Request & { validatedData?: CreateTeamType },
+    req: VerifiedRequest<{ body: CreateTeamType }, AuthenticatedUserRequestWithVerifiedEmail>,
     res: Response,
-    _next: NextFunction,
+    next: NextFunction,
   ): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
-    const creatorId = authReq.user.id;
-    const { name, members: memberIds } = req.validatedData!;
+    const { id: creatorId } = req.user;
+    const { name, members: memberIds } = req.validatedData;
 
     // 1. Check team name is unique
     const existingTeam = await TeamModel.findOne({ name });
     if (existingTeam) {
-      new BadRequest().handleResponse(res, {
-        info: "Team name already taken",
-      });
-      return;
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Team name already taken",
+        }),
+      );
     }
 
     // 2. Creator cannot be in members list
     if (memberIds.includes(creatorId)) {
-      new BadRequest().handleResponse(res, {
-        info: "You cannot add yourself as a member - you are already the creator",
-      });
-      return;
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "You cannot add yourself as a member - you are already the creator",
+        }),
+      );
     }
 
-    // 3. Check all members exist, have completed profile, and have paid
+    // 3. Check all members exist
     const allMemberIds = [creatorId, ...memberIds];
     const users = await prisma.user.findMany({
       where: { id: { in: allMemberIds } },
@@ -54,38 +57,37 @@ const createTeam = catchAsync(
     if (users.length !== allMemberIds.length) {
       const foundIds = users.map((u) => u.id);
       const missingIds = allMemberIds.filter((id) => !foundIds.includes(id));
-      new BadRequest().handleResponse(res, {
-        info: "Some members not found",
-        data: { missingIds },
-      });
-      return;
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Some members not found",
+          missingIds,
+        }),
+      );
     }
 
-    // Check all have completed profile (have firstName)
+    // 4. Check all have completed profile (have firstName)
     const incompleteProfiles = users.filter((u) => !u.firstName);
     if (incompleteProfiles.length > 0) {
-      new BadRequest().handleResponse(res, {
-        info: "Some members have not completed their profile",
-        data: { 
-          incomplete: incompleteProfiles.map((u) => u.email) 
-        },
-      });
-      return;
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Some members have not completed their profile",
+          incomplete: incompleteProfiles.map((u) => u.email),
+        }),
+      );
     }
 
-    // 4. Check all members have paid (isPaidUser = true)
+    // 5. Check all members have paid (isPaidUser = true)
     const unpaidUsers = users.filter((u) => !u.isPaidUser);
     if (unpaidUsers.length > 0) {
-      new BadRequest().handleResponse(res, {
-        info: "Some members have not purchased a pass",
-        data: { 
-          unpaid: unpaidUsers.map((u) => u.email) 
-        },
-      });
-      return;
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Some members have not purchased a pass",
+          unpaid: unpaidUsers.map((u) => u.email),
+        }),
+      );
     }
 
-    // 5. Create team
+    // 6. Create team
     const teamId = `TEAM-${randomUUID().slice(0, 8).toUpperCase()}`;
     
     const team = await TeamModel.create({
@@ -101,19 +103,17 @@ const createTeam = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Team created successfully",
-      data: {
-        teamId: team.teamId,
-        name: team.name,
-        memberCount: team.members.length,
-        members: team.members.map((m) => {
-          const user = users.find((u) => u.id === m.userId);
-          return {
-            userId: m.userId,
-            name: user?.firstName,
-            email: user?.email,
-          };
-        }),
-      },
+      teamId: team.teamId,
+      name: team.name,
+      memberCount: team.members.length,
+      members: team.members.map((m) => {
+        const user = users.find((u) => u.id === m.userId);
+        return {
+          userId: m.userId,
+          name: user?.firstName,
+          email: user?.email,
+        };
+      }),
     });
   },
 );
@@ -124,12 +124,11 @@ const createTeam = catchAsync(
  */
 const getMyTeams = catchAsync(
   async (
-    req: Request,
+    req: VerifiedRequest<Record<string, never>, AuthenticatedUserRequestWithVerifiedEmail>,
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
-    const userId = authReq.user.id;
+    const { id: userId } = req.user;
 
     const teams = await TeamModel.find({
       "members.userId": userId,
@@ -166,7 +165,7 @@ const getMyTeams = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Teams fetched successfully",
-      data: teamsWithDetails,
+      teams: teamsWithDetails,
       count: teamsWithDetails.length,
     });
   },

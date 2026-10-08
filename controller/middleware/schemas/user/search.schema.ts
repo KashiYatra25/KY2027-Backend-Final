@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const searchUsersQuerySchema = z.object({
-  q: z
+  searchQuery: z
     .string()
     .min(2, { message: "Search query must be at least 2 characters" })
     .max(50, { message: "Search query too long" }),

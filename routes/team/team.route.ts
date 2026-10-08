@@ -1,6 +1,8 @@
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
+import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
+import { checkUserHasPaidMiddleware } from "@middleware/user/payment/index.js";
 import { createTeam, getMyTeams } from "@controller/user/team/index.js";
 import { createTeamSchema } from "@schemas/team/team.schema.js";
 
@@ -10,9 +12,12 @@ export const teamRouter: ExpressRouter = Router();
 teamRouter.use(restProtectMiddleware);
 
 // Create a new team
-// Profile check not needed - all members must be paid (which requires profile completion)
+// Middleware checks: auth -> profile complete -> user paid -> validate body -> controller
+// Note: Controller also validates all MEMBERS have profile + paid
 teamRouter.post(
   "/",
+  checkWhetherProfileIsCompleteMiddleware,
+  checkUserHasPaidMiddleware,
   RequestGuardMiddleware({ body: createTeamSchema }),
   createTeam,
 );

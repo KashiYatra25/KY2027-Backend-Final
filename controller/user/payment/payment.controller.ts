@@ -1,5 +1,5 @@
-import type { NextFunction, Request, Response } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { Response, NextFunction } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
@@ -11,12 +11,11 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/au
  */
 export const getPaymentStatus = catchAsync(
   async (
-    req: Request,
+    req: VerifiedRequest<Record<string, never>, AuthenticatedUserRequestWithVerifiedEmail>,
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
-    const userId = authReq.user.id;
+    const { id: userId } = req.user;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -27,10 +26,8 @@ export const getPaymentStatus = catchAsync(
 
     new OkResponseStrategy().handleResponse(res, {
       info: hasPaid ? "User has paid" : "User has not paid",
-      data: {
-        hasPaid,
-        isIITBhuUser: user?.isFromIITBhu ?? false,
-      },
+      hasPaid,
+      isIITBhuUser: user?.isFromIITBhu ?? false,
     });
   },
 );
