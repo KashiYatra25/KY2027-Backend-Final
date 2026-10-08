@@ -26,8 +26,9 @@ model User {
   isFromIITBhu  Boolean @default(false)
   isPaidUser    Boolean @default(false) // True for IIT BHU users (auto) or after payment
 
-  // Payment status
-  isPaidUser    Boolean @default(false)
+  // Referral tracking - set when user applies a CA's referral code
+  referredByCaId String?   // CaProfile.id of the CA who referred this user
+  referredAt     DateTime? // When the referral was applied
 
   // Universal relations
   role          Role?
@@ -35,4 +36,5 @@ model User {
   caApplication CaApplication?
   caProfile     CaProfile?
   couponUsages  CouponUsage[]
+  referredByCa  CaProfile?    @relation("ReferredUsers", fields: [referredByCaId], references: [id])
 }
