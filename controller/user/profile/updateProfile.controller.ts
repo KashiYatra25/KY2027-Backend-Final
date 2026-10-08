@@ -7,6 +7,7 @@ import { logger } from "@logger/index.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/auth.types.helper.js";
 import type { ProfileUpdationSchemaType } from "@schemas/user/profile.schema.js";
+import { autoSetPaidForIITBhuUser } from "@root/controller/helper/checkWhetherProfileIsCompleted.js";
 
 /**
  * PATCH /user/profile
@@ -52,6 +53,12 @@ const updateProfile = catchAsync(
         progress.profileCompletionAndVerification!.hasSelectedCollegeDetails = true;
       }
       await progress.save();
+    }
+
+    // Auto-set isPaidUser for IIT BHU users if profile is now complete
+    const autoSetPaid = await autoSetPaidForIITBhuUser(userId);
+    if (autoSetPaid) {
+      logger.info("Auto-set isPaidUser for IIT BHU user after profile completion", { userId });
     }
 
     new OkResponseStrategy().handleResponse(res, {

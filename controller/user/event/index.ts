@@ -1,1 +1,1 @@
-export { getEvents, getEventBySlug, registerForEvent } from "./event.controller.js";
+export { getEvents, getEventBySlug, registerForEvent, getMyRegistrations } from "./event.controller.js";

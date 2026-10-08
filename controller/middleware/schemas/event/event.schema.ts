@@ -27,11 +27,22 @@ export const eventSlugParamSchema = z.object({
   slug: z.string().min(1, { message: "Event slug is required" }),
 });
 
-// Body for individual registration
-export const registerForEventSchema = z.object({
-  // For individual, no body needed (user from auth)
-  // For team registration later, we'll add teamId here
+// Body for event registration - discriminated union
+// Individual: type="individual", no teamId needed
+// DUO/TEAM: type="team", requires teamId
+export const registerIndividualSchema = z.object({
+  type: z.literal("individual"),
 });
+
+export const registerTeamSchema = z.object({
+  type: z.literal("team"),
+  teamId: z.string().min(1, { message: "Team ID is required for team events" }),
+});
+
+export const registerForEventSchema = z.discriminatedUnion("type", [
+  registerIndividualSchema,
+  registerTeamSchema,
+]);
 
 export type GetEventsQueryType = z.infer<typeof getEventsQuerySchema>;
 export type EventSlugParamType = z.infer<typeof eventSlugParamSchema>;
