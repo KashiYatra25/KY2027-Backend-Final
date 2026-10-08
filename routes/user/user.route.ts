@@ -1,14 +1,24 @@
 import { authenticateUser } from "@controller/user/auth/index.js";
-import { updateProfile } from "@controller/user/profile/index.js";
 import { submitContact } from "@controller/user/contact/index.js";
 import { updateProfile } from "@controller/user/profile/index.js";
-import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
-import { checkProfileUpdationAlreadyDoneOrNot } from "@middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
-import { profileUpdationSchema } from "@schemas/user/profile.schema.js";
+import { restProtectMiddleware, roleChecker } from "@middleware/protect/protect.route.factory.middleware.js";
+import { blockIfProfileAlreadyCompleted } from "@middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
+import { addToCartSchema, removeFromCartSchema } from "@root/controller/middleware/schemas/user/cart.schema";
+import { searchUsersQuerySchema } from "@root/controller/middleware/schemas/user/search.schema";
+import { isNotFromIITBhuMiddleware } from "@root/controller/middleware/user/cart/isNotFromIITBhu.middleware";
+import { checkWhetherProfileIsCompleteMiddleware } from "@root/controller/middleware/user/profile/checkWhetherProfileIsComplete.middleware";
+import { addToCart } from "@root/controller/user/cart/addToCart.controller";
+import { clearCart } from "@root/controller/user/cart/clearCart.controller";
+import { getCart } from "@root/controller/user/cart/getCart.controller";
+import { removeFromCart } from "@root/controller/user/cart/removeFromCart.controller";
+import { getMyRegistrations } from "@root/controller/user/event";
+import { getPaymentStatus } from "@root/controller/user/payment";
+import { searchUsers } from "@root/controller/user/search";
 import { contactSchema } from "@schemas/user/contact.schema.js";
+import { profileUpdationSchema } from "@schemas/user/profile.schema.js";
+import { userAuthSchema } from "@schemas/user/user.auth.schema.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
-import { userAuthSchema } from "@schemas/user/user.auth.schema.js";
 
 export const userRouter: ExpressRouter = Router();
 
@@ -81,7 +91,7 @@ userRouter.patch(
 
 const cartMiddlewares = [
   checkWhetherProfileIsCompleteMiddleware,
-  isUserRoleMiddleware,
+  roleChecker("REST" , "USER"),
   isNotFromIITBhuMiddleware,
 ];
 
