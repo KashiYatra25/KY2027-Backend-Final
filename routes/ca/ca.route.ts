@@ -6,7 +6,7 @@ import { getCaLeaderboard } from "@controller/user/ca/getCaLeaderboard.controlle
 import { getCaRank } from "@controller/user/ca/getCaRank.controller.js";
 import { validateReferralId } from "@controller/user/ca/validateReferralId.controller.js";
 import { restProtectMiddleware, roleChecker } from "@middleware/protect/protect.route.factory.middleware.js";
-import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/checkWhetherProfileIsComplete.middleware.js";
+import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
 import { checkUserIsCa } from "@middleware/user/ca/checkUserIsCa.middleware.js";
 import { caApplicationSchema } from "@schemas/user/caApplication.schema.js";
 import { validateReferralParamsSchema } from "@schemas/user/referral.schema.js";

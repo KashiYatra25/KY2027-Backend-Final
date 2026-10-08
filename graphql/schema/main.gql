@@ -4,4 +4,5 @@
 
 type Query {
   myAccount: UserWithProgress
+  myCaInfo: MyCaInfo
 }

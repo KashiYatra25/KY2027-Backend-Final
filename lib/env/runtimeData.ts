@@ -83,6 +83,9 @@ function createRuntimeEnvironment(
         .string()
         .regex(/^\d+$/, "Payment gRPC port must be a number")
         .default("50051"),
+      PAYMENT_SERVICE_TOKEN: z
+        .string()
+        .min(32, "Payment service token must be at least 32 characters"),
     },
     clientPrefix: "CLIENT",
     client: {

@@ -40,6 +40,8 @@ export const authenticateUser = catchAsync(
           googleAvatarUrl: avatarUrl || null,
           role: { create: { level: "USER" } },
           isFromIITBhu,
+          // isPaidUser stays false until profile is complete
+          // For IIT BHU users, it gets set to true after profile completion
         },
         include: {
           role: {
@@ -72,6 +74,7 @@ export const authenticateUser = catchAsync(
         userId: user.id,
         email: user.email,
         role: user.role?.level,
+        isPaidUser: user.isPaidUser,
       });
     } else {
       logger.debug("Returning user authenticated", {

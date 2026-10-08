@@ -24,6 +24,7 @@ model User {
   aadhaarNumber String? // Full Aadhaar number (stored securely, never sent to frontend)
   aadhaarS3Key  String? // S3 key for uploaded Aadhaar image (temporary)
   isFromIITBhu  Boolean @default(false)
+  isPaidUser    Boolean @default(false) // True for IIT BHU users (auto) or after payment
 
   // Referral tracking - set when user applies a CA's referral code
   referredByCaId String?   // CaProfile.id of the CA who referred this user

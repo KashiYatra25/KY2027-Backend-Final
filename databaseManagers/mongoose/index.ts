@@ -1,58 +1,72 @@
 // Re-export all models and types
-export { 
-  VerificationTokenModel, 
+export {
+  VerificationTokenModel,
   VerificationTokenSchema,
   type VerificationTokenDoc,
   type VerificationTokenSchemaType,
-} from './security/verificationToken.model.js';
+} from "./security/verificationToken.model.js";
 
-export { 
-  IpSecurityModel, 
+export {
+  IpSecurityModel,
   IpSecuritySchema,
   type IpSecurityDoc,
   type IpSecuritySchemaType,
-} from './security/ip.security.model.js';
+} from "./security/ip.security.model.js";
 
-export { 
-  AdminSecurityStepperModel, 
+export {
+  AdminSecurityStepperModel,
   AdminSecurityStepperSchema,
   type AdminSecurityStepperDoc,
   type AdminSecurityStepperSchemaType,
-} from './security/adminAccountSecurity.model.js';
+} from "./security/adminAccountSecurity.model.js";
 
-export { 
-  AccountProgressModel, 
+export {
+  AccountProgressModel,
   AccountProgressSchema,
   type AccountProgressDoc,
   type AccountProgressSchemaType,
-} from './user/accountProgress.model.js';
+} from "./user/accountProgress.model.js";
 
-export { 
-  AccountSuspensionModel, 
+export {
+  AccountSuspensionModel,
   AccountSuspensionSchema,
   type AccountSuspensionDoc,
   type AccountSuspensionSchemaType,
 } from './user/accountSuspension.model.js';
 
-export { 
-  PassModel, 
+export {
+  EventRegistrationModel,
+  EventRegistrationSchema,
+  type EventRegistrationDoc,
+  type EventRegistrationSchemaType,
+} from "./event/eventRegistration.model.js";
+
+export {
+  TeamModel,
+  TeamSchema,
+  type TeamDoc,
+  type TeamSchemaType,
+} from "./team/team.model.js";
+
+export {
+  PassModel,
   PassSchema,
   type PassDoc,
   type PassSchemaType,
-} from './passes/pass.model.js';
+} from "./passes/pass.model.js";
 
-export { 
-  CartModel, 
-  CartSchema,
-  type CartDoc,
-  type CartSchemaType,
-} from './cart/cart.model.js';
-
-export { 
-  PurchaseModel, 
+export {
+  PurchaseModel,
   PurchaseSchema,
   type PurchaseDoc,
   type PurchaseSchemaType,
-} from './purchase/purchase.model.js';
+} from "./purchase/purchase.model.js";
 
-export { connInstance, MongoDbConnection } from './connection.js';
+export {
+  CartModel,
+  CartSchema,
+  type CartDoc,
+  type CartSchemaType,
+} from "./cart/cart.model.js";
+
+export { connInstance, MongoDbConnection } from "./connection.js";

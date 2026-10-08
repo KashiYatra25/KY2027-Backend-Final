@@ -1,0 +1,9 @@
+allowBuilds:
+  '@apollo/protobufjs': true
+  '@bufbuild/buf': true
+  '@prisma/engines': true
+  bcrypt: true
+  msgpackr-extract: true
+  prisma: true
+  protobufjs: true
+  unrs-resolver: true

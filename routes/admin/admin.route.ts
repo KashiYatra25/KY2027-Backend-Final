@@ -41,20 +41,20 @@ adminRouter.get(
 // CA Application management - MASTER_ADMIN only
 adminRouter.get(
   "/campus-ambessador/get-applications",
-  roleChecker("REST", "MASTER_ADMIN"),
+  roleChecker("REST", "MASTER_ADMIN" , "MANAGER"),
   getCaApplications,
 );
 
 adminRouter.post(
   "/campus-ambessador/approve-request",
-  roleChecker("REST", "MASTER_ADMIN"),
+  roleChecker("REST", "MASTER_ADMIN" , "MANAGER"),
   RequestGuardMiddleware({ body: caApprovalSchema }),
   approveCaApplication,
 );
 
 adminRouter.post(
   "/convert-to-admin",
-  roleChecker("REST", "MASTER_ADMIN"),
+  roleChecker("REST", "MASTER_ADMIN", "MANAGER"),
   RequestGuardMiddleware({ body: adminInviteSchema }),
   validateTargetUserForInvite,
   checkAdminDoesNotExist,

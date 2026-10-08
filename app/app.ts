@@ -4,6 +4,8 @@ import { caRouter } from "@api/ca/ca.route.js";
 import { couponRouter } from "@api/coupon/coupon.route.js";
 import { passRouter } from "@api/pass/pass.route.js";
 import { userRouter } from "@api/user/user.route.js";
+import { eventRouter } from "@api/event/event.route.js";
+import { teamRouter } from "@api/team/team.route.js";
 import { corsOptions } from "@constants/cors.options.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/index.js";
@@ -25,14 +27,14 @@ app.use(cookieParser());
 app.use(helmet());
 app.use(cors(corsOptions));
 
-
-
 app.use(`${env.BASE_API_ENDPOINT}/user`, userRouter);
 app.use(`${env.BASE_API_ENDPOINT}/admin`, adminRouter);
 app.use(`${env.BASE_API_ENDPOINT}/aadhaar`, aadhaarRouter);
+app.use(`${env.BASE_API_ENDPOINT}/events`, eventRouter);
+app.use(`${env.BASE_API_ENDPOINT}/teams`, teamRouter);
+app.use(`${env.BASE_API_ENDPOINT}/campus-ambassador`, caRouter);
 app.use(`${env.BASE_API_ENDPOINT}/pass`, passRouter);
-app.use(`${env.BASE_API_ENDPOINT}/ca`, caRouter);
-app.use(`${env.BASE_API_ENDPOINT}/coupon`, couponRouter);
+app.use(`${env.BASE_API_ENDPOINT}/coupons`, couponRouter);
 
 app.use(globalErrorHandler);
 
