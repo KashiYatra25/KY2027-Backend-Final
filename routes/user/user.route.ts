@@ -1,10 +1,12 @@
 import { authenticateUser } from "@controller/user/auth/index.js";
 import { submitContact } from "@controller/user/contact/index.js";
 import { updateProfile } from "@controller/user/profile/index.js";
+import { applyReferral } from "@controller/user/referral/applyReferral.controller.js";
 import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
 import { checkProfileUpdationAlreadyDoneOrNot } from "@middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
 import { profileUpdationSchema } from "@schemas/user/profile.schema.js";
 import { contactSchema } from "@schemas/user/contact.schema.js";
+import { applyReferralSchema } from "@schemas/user/referral.schema.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { userAuthSchema } from "@schemas/user/user.auth.schema.js";
@@ -25,6 +27,13 @@ userRouter.post(
 );
 
 userRouter.use(restProtectMiddleware);
+
+// Apply a CA's referral code (one-time only)
+userRouter.post(
+  "/apply-referral",
+  RequestGuardMiddleware({ body: applyReferralSchema }),
+  applyReferral,
+);
 
 userRouter.patch(
   "/profile",
