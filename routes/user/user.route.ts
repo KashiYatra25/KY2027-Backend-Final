@@ -8,6 +8,7 @@ import { getCart } from "@controller/user/cart/getCart.controller.js";
 import { addToCart } from "@controller/user/cart/addToCart.controller.js";
 import { removeFromCart } from "@controller/user/cart/removeFromCart.controller.js";
 import { clearCart } from "@controller/user/cart/clearCart.controller.js";
+import { updateCartQuantity } from "@controller/user/cart/updateCartQuantity.controller.js";
 import { restProtectMiddleware, roleChecker } from "@middleware/protect/protect.route.factory.middleware.js";
 import { blockIfProfileAlreadyCompleted } from "@middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
 import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
@@ -15,7 +16,7 @@ import { profileUpdationSchema } from "@schemas/user/profile.schema.js";
 import { contactSchema } from "@schemas/user/contact.schema.js";
 import { searchUsersQuerySchema } from "@schemas/user/search.schema.js";
 import { applyReferralSchema } from "@schemas/user/referral.schema.js";
-import { addToCartSchema, removeFromCartSchema } from "@schemas/user/cart.schema.js";
+import { addToCartSchema, removeFromCartSchema, updateCartQuantitySchema } from "@schemas/user/cart.schema.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { userAuthSchema } from "@root/controller/middleware/schemas/user/user.auth.schema";
@@ -77,6 +78,13 @@ userRouter.post(
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: addToCartSchema }),
   addToCart,
+);
+
+userRouter.patch(
+  "/cart/update-quantity",
+  checkWhetherProfileIsCompleteMiddleware,
+  RequestGuardMiddleware({ body: updateCartQuantitySchema }),
+  updateCartQuantity,
 );
 
 userRouter.delete(
