@@ -5,6 +5,7 @@ import { couponRouter } from "@api/coupon/coupon.route.js";
 import { passRouter } from "@api/pass/pass.route.js";
 import { userRouter } from "@api/user/user.route.js";
 import { eventRouter } from "@api/event/event.route.js";
+import { teamRouter } from "@api/team/team.route.js";
 import { corsOptions } from "@constants/cors.options.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/index.js";

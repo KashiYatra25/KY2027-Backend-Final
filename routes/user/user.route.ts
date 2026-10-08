@@ -1,18 +1,11 @@
 import { authenticateUser } from "@controller/user/auth/index.js";
+import { updateProfile } from "@controller/user/profile/index.js";
 import { submitContact } from "@controller/user/contact/index.js";
 import { updateProfile } from "@controller/user/profile/index.js";
-import { addToCart } from "@controller/user/cart/addToCart.controller.js";
-import { removeFromCart } from "@controller/user/cart/removeFromCart.controller.js";
-import { clearCart } from "@controller/user/cart/clearCart.controller.js";
-import { getCart } from "@controller/user/cart/getCart.controller.js";
 import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
 import { checkProfileUpdationAlreadyDoneOrNot } from "@middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
-import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/checkWhetherProfileIsComplete.middleware.js";
-import { isNotFromIITBhuMiddleware } from "@middleware/user/cart/isNotFromIITBhu.middleware.js";
-import { isUserRoleMiddleware } from "@middleware/user/cart/isUserRole.middleware.js";
 import { profileUpdationSchema } from "@schemas/user/profile.schema.js";
 import { contactSchema } from "@schemas/user/contact.schema.js";
-import { addToCartSchema, removeFromCartSchema } from "@schemas/user/cart.schema.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { userAuthSchema } from "@schemas/user/user.auth.schema.js";
@@ -34,10 +27,23 @@ userRouter.post(
 
 userRouter.use(restProtectMiddleware);
 
+// Search users (for team creation)
+userRouter.get(
+  "/search",
+  RequestGuardMiddleware({ query: searchUsersQuerySchema }),
+  searchUsers,
+);
+
+// Get user's event registrations
+userRouter.get("/registrations", getMyRegistrations);
+
+// Get user's payment status
+userRouter.get("/payment-status", getPaymentStatus);
+
 userRouter.patch(
   "/profile",
   RequestGuardMiddleware({ body: profileUpdationSchema }),
-  checkProfileUpdationAlreadyDoneOrNot,
+  blockIfProfileAlreadyCompleted,
   updateProfile,
 );
 

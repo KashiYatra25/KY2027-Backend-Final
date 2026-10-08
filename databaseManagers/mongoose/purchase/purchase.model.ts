@@ -47,7 +47,7 @@ export const PurchaseSchema = new Schema(
     paymentMethod: {
       type: String,
       required: true,
-      enum: ["EXTERNAL", "WEB_APP"],
+      enum: ["EXTERNAL", "WEB_APP", "IIT_BHU_FREE"],
     },
     purchasedAt: {
       type: Date,
