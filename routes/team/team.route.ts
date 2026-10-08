@@ -3,6 +3,7 @@ import { RequestGuardMiddleware } from "zodex-axon/core";
 import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
 import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
 import { checkUserHasPaidMiddleware } from "@middleware/user/payment/index.js";
+import { teamRateLimiter } from "@middleware/limiters/index.js";
 import { createTeam, getMyTeams } from "@controller/user/team/index.js";
 import { createTeamSchema } from "@schemas/team/team.schema.js";
 
@@ -16,6 +17,7 @@ teamRouter.use(restProtectMiddleware);
 // Note: Controller also validates all MEMBERS have profile + paid
 teamRouter.post(
   "/",
+  teamRateLimiter,
   checkWhetherProfileIsCompleteMiddleware,
   checkUserHasPaidMiddleware,
   RequestGuardMiddleware({ body: createTeamSchema }),

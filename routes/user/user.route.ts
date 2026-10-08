@@ -12,6 +12,14 @@ import { updateCartQuantity } from "@controller/user/cart/updateCartQuantity.con
 import { restProtectMiddleware, roleChecker } from "@middleware/protect/protect.route.factory.middleware.js";
 import { blockIfProfileAlreadyCompleted } from "@middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
 import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
+import {
+  authRateLimiter,
+  contactRateLimiter,
+  searchRateLimiter,
+  referralRateLimiter,
+  profileRateLimiter,
+  cartRateLimiter,
+} from "@middleware/limiters/index.js";
 import { profileUpdationSchema } from "@schemas/user/profile.schema.js";
 import { contactSchema } from "@schemas/user/contact.schema.js";
 import { searchUsersQuerySchema } from "@schemas/user/search.schema.js";
@@ -26,6 +34,7 @@ export const userRouter: ExpressRouter = Router();
 
 userRouter.post(
   "/auth",
+  authRateLimiter,
   RequestGuardMiddleware({ body: userAuthSchema}),
   authenticateUser,
 );
@@ -33,6 +42,7 @@ userRouter.post(
 // Public endpoint - no auth required
 userRouter.post(
   "/contact",
+  contactRateLimiter,
   RequestGuardMiddleware({ body: contactSchema }),
   submitContact,
 );
@@ -42,6 +52,7 @@ userRouter.use(restProtectMiddleware);
 // Search users (for team creation)
 userRouter.get(
   "/search",
+  searchRateLimiter,
   RequestGuardMiddleware({ query: searchUsersQuerySchema }),
   searchUsers,
 );
@@ -55,12 +66,14 @@ userRouter.get("/payment-status", getPaymentStatus);
 // Apply a CA's referral code (one-time only)
 userRouter.post(
   "/apply-referral",
+  referralRateLimiter,
   RequestGuardMiddleware({ body: applyReferralSchema }),
   applyReferral,
 );
 
 userRouter.patch(
   "/profile",
+  profileRateLimiter,
   RequestGuardMiddleware({ body: profileUpdationSchema }),
   blockIfProfileAlreadyCompleted,
   updateProfile,
@@ -75,6 +88,7 @@ userRouter.get("/cart", checkWhetherProfileIsCompleteMiddleware, getCart);
 
 userRouter.post(
   "/cart/add",
+  cartRateLimiter,
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: addToCartSchema }),
   addToCart,
@@ -82,6 +96,7 @@ userRouter.post(
 
 userRouter.patch(
   "/cart/update-quantity",
+  cartRateLimiter,
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: updateCartQuantitySchema }),
   updateCartQuantity,
@@ -89,9 +104,10 @@ userRouter.patch(
 
 userRouter.delete(
   "/cart/remove",
+  cartRateLimiter,
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: removeFromCartSchema }),
   removeFromCart,
 );
 
-userRouter.delete("/cart/clear", checkWhetherProfileIsCompleteMiddleware, clearCart);
+userRouter.delete("/cart/clear", cartRateLimiter, checkWhetherProfileIsCompleteMiddleware, clearCart);

@@ -8,6 +8,10 @@ import { validateReferralId } from "@controller/user/ca/validateReferralId.contr
 import { restProtectMiddleware, roleChecker } from "@middleware/protect/protect.route.factory.middleware.js";
 import { checkWhetherProfileIsCompleteMiddleware } from "@middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
 import { checkUserIsCa } from "@middleware/user/ca/checkUserIsCa.middleware.js";
+import {
+  caPublicRateLimiter,
+  caApplicationRateLimiter,
+} from "@middleware/limiters/index.js";
 import { caApplicationSchema } from "@schemas/user/caApplication.schema.js";
 import { validateReferralParamsSchema } from "@schemas/user/referral.schema.js";
 import { Router, type Router as ExpressRouter } from "express";
@@ -20,11 +24,12 @@ export const caRouter: ExpressRouter = Router();
 // ═══════════════════════════════════════════════════════════════════
 
 // Get top 10 CAs by referral count
-caRouter.get("/leaderboard", getCaLeaderboard);
+caRouter.get("/leaderboard", caPublicRateLimiter, getCaLeaderboard);
 
 // Validate a referral ID (for frontend validation)
 caRouter.get(
   "/validate/:referralId",
+  caPublicRateLimiter,
   RequestGuardMiddleware({ params: validateReferralParamsSchema }),
   validateReferralId,
 );
@@ -38,6 +43,7 @@ caRouter.use(restProtectMiddleware);
 // Apply for CA - requires USER role and completed profile
 caRouter.post(
   "/apply",
+  caApplicationRateLimiter,
   roleChecker("REST", "USER"),
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: caApplicationSchema }),

@@ -6,6 +6,7 @@ import {
   getAdhaarUploadConfirmation,
 } from "@root/controller/user/aadhaar/index.js";
 import { restProtectMiddleware } from "@root/controller/middleware/protect/protect.route.factory.middleware.js";
+import { aadhaarRateLimiter } from "@middleware/limiters/index.js";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import {
   adhaarUploadUrlSchema,
@@ -20,14 +21,18 @@ const router = Router();
  * Body: { fileType: "image/jpeg" | "image/png" }
  */
 router.use(restProtectMiddleware);
+
+// All Aadhaar operations are rate limited - expensive AWS calls
 router.post(
   "/upload-url",
+  aadhaarRateLimiter,
   RequestGuardMiddleware({ body: adhaarUploadUrlSchema }),
   getUploadUrl,
 );
 
 router.patch(
   "/confirm-upload",
+  aadhaarRateLimiter,
   RequestGuardMiddleware({ body: confirmAdhaarUploadSchema }),
   getAdhaarUploadConfirmation,
 );
@@ -43,6 +48,7 @@ router.patch(
  */
 router.post(
   "/extract-details-and-update-profile",
+  aadhaarRateLimiter,
   extractAadhaarData,
   updateUserInfoBasedOnAdhaarData,
 );

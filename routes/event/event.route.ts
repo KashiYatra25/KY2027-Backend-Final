@@ -1,6 +1,7 @@
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { restProtectMiddleware } from "@middleware/protect/protect.route.factory.middleware.js";
+import { publicReadRateLimiter, eventRegistrationRateLimiter } from "@middleware/limiters/index.js";
 import {
   getEvents,
   getEventBySlug,
@@ -17,12 +18,14 @@ export const eventRouter: ExpressRouter = Router();
 // Public routes - no auth required
 eventRouter.get(
   "/",
+  publicReadRateLimiter,
   RequestGuardMiddleware({ query: getEventsQuerySchema }),
   getEvents,
 );
 
 eventRouter.get(
   "/:slug",
+  publicReadRateLimiter,
   RequestGuardMiddleware({ params: eventSlugParamSchema }),
   getEventBySlug,
 );
@@ -34,6 +37,7 @@ eventRouter.use(restProtectMiddleware);
 // Profile check not needed - payment requires profile completion first
 eventRouter.post(
   "/:slug/register",
+  eventRegistrationRateLimiter,
   RequestGuardMiddleware({ params: eventSlugParamSchema, body: registerForEventSchema }),
   registerForEvent,
 );

@@ -14,6 +14,7 @@ import {
   checkAdminDoesNotExist,
 } from "@middleware/admin/invite/index.js";
 import { validateUserIsAdmin } from "@middleware/admin/auth/auth.middleware.js";
+import { adminRateLimiter } from "@middleware/limiters/index.js";
 import {
   adminCredVerificationSchema,
   adminInviteSchema,
@@ -29,7 +30,7 @@ import { checkUserAccountStatus } from "@middleware/protect/check.user.status.mi
 
 export const adminRouter: ExpressRouter = Router();
 
-adminRouter.use(restProtectMiddleware, checkUserAccountStatus);
+adminRouter.use(restProtectMiddleware, checkUserAccountStatus, adminRateLimiter);
 
 // Fetch all admin users (MASTER_ADMIN, MANAGER, OPERATOR)
 adminRouter.get(
