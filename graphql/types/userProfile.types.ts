@@ -23,6 +23,7 @@ export type UserProfileData = {
   joinedAt: string;
   aadhaarNumber: string | null;
   isFromIITBhu: boolean;
+  isPaidUser: boolean;
   role: Pick<Role, 'id' | 'level'> | null;
 };
 

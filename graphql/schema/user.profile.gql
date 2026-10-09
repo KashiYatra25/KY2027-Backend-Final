@@ -47,6 +47,7 @@ type UserProfile {
   joinedAt: String!
   aadhaarNumber: String
   isFromIITBhu: Boolean!
+  isPaidUser: Boolean!
   role: Role
 }
 

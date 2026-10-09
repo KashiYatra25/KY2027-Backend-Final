@@ -40,6 +40,7 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
           createdAt: true,
           aadhaarNumber: true,
           isFromIITBhu: true,
+          isPaidUser: true,
           role: {
             select: {
               id: true,
