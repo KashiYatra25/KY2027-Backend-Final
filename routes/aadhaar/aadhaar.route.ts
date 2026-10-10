@@ -3,15 +3,15 @@ import {
   getUploadUrl,
   extractAadhaarData,
   updateUserInfoBasedOnAdhaarData,
-  getAdhaarUploadConfirmation,
+  getAadhaarUploadConfirmation,
 } from "@root/controller/user/aadhaar/index.js";
 import { restProtectMiddleware } from "@root/controller/middleware/protect/protect.route.factory.middleware.js";
 import { aadhaarRateLimiter } from "@middleware/limiters/index.js";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import {
-  adhaarUploadUrlSchema,
-  confirmAdhaarUploadSchema,
-} from "@root/controller/middleware/schemas/adhaar/adhaar.pipeline.schema.js";
+  aadhaarUploadUrlSchema,
+  confirmAadhaarUploadSchema,
+} from "@root/controller/middleware/schemas/aadhaar/aadhaar.pipeline.schema.js";
 
 const router = Router();
 
@@ -26,15 +26,15 @@ router.use(restProtectMiddleware);
 router.post(
   "/upload-url",
   aadhaarRateLimiter,
-  RequestGuardMiddleware({ body: adhaarUploadUrlSchema }),
+  RequestGuardMiddleware({ body: aadhaarUploadUrlSchema }),
   getUploadUrl,
 );
 
 router.patch(
   "/confirm-upload",
   aadhaarRateLimiter,
-  RequestGuardMiddleware({ body: confirmAdhaarUploadSchema }),
-  getAdhaarUploadConfirmation,
+  RequestGuardMiddleware({ body: confirmAadhaarUploadSchema }),
+  getAadhaarUploadConfirmation,
 );
 
 /**

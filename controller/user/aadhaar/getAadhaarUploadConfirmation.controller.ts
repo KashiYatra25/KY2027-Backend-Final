@@ -7,7 +7,7 @@ import { prisma } from "@root/prisma.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
 
-const getAdhaarUploadConfirmation = catchAsync(
+const getAadhaarUploadConfirmation = catchAsync(
   async (
     req: VerifiedRequest<
       { body: { s3Key: string } },
@@ -47,4 +47,4 @@ const getAdhaarUploadConfirmation = catchAsync(
   },
 );
 
-export { getAdhaarUploadConfirmation };
+export { getAadhaarUploadConfirmation };
