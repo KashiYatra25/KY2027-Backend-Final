@@ -14,13 +14,6 @@ export {
 } from "./security/ip.security.model.js";
 
 export {
-  AdminSecurityStepperModel,
-  AdminSecurityStepperSchema,
-  type AdminSecurityStepperDoc,
-  type AdminSecurityStepperSchemaType,
-} from "./security/adminAccountSecurity.model.js";
-
-export {
   AccountProgressModel,
   AccountProgressSchema,
   type AccountProgressDoc,

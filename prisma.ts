@@ -1,6 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { env } from '@lib/env/environment.js';
-import { logger } from '@logger/index.js';
+import { logger } from '@logger/logger.js';
 import { PrismaClient, Prisma } from '@prisma/client';
 
 const adapter = new PrismaPg({

@@ -95,7 +95,7 @@ export const PassSchema = new Schema(
   }
 );
 
-PassSchema.index({ slug: 1 });
+// slug already has unique: true which creates an index
 PassSchema.index({ active: 1, sortOrder: 1 });
 
 export type PassSchemaType = InferSchemaType<typeof PassSchema> & {

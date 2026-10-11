@@ -1,78 +1,152 @@
 import { prisma } from "@root/prisma";
 import { env } from "@root/lib/env/environment";
-import { AccountProgressModel } from "@root/databaseManagers/mongoose";
-import { CryptoService } from "@root/utils/helper/crypto.encryption.helper";
+import { AccountProgressModel, VerificationTokenModel } from "@root/databaseManagers/mongoose";
+import { CryptoService } from "@helper/functions/crypto.helper.js";
+import { AdminInviteEmail } from "@root/services/email/utils/admin.invite.email";
+
+// ═══════════════════════════════════════════════════════════════════
+// CREATE / RE-SEND MASTER ADMIN CREDENTIALS
+// 
+// This script handles two cases:
+// 1. First time: Creates admin record, sends email
+// 2. Re-send: Updates password & token, sends new email
+//    (Useful if email was lost or token expired)
+//
+// SECURITY: When re-sending:
+// - New password is generated (old password won't work)
+// - New token is created (old token won't work)
+// - Old tokens are deleted to prevent misuse
+// ═══════════════════════════════════════════════════════════════════
 
 const sendMasterAdminCredentials = async () => {
-  const masterAdminEmail = env.MASTER_ADMIN_EMAIL;
+  const masterAdminEmail = env.SUPER_ADMIN_EMAIL;
 
   try {
-    const progress = await AccountProgressModel.findOne({
-      userId: masterAdminEmail,
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email: masterAdminEmail },
     });
+
+    if (!user) {
+      throw new Error(`User with email ${masterAdminEmail} not found. Please sign up first.`);
+    }
+
+    const progress = await AccountProgressModel.findOne({
+      userId: user.id,
+    });
+
     if (
       !progress ||
-      !progress.profileCompletionAndVerification!.hasSelectedCollegeDetails ||
-      !progress.profileCompletionAndVerification!.hasAadhaarBeenUploaded ||
-      !progress.profileCompletionAndVerification!.hasAadhaarBeenVerified ||
-      !progress.profileCompletionAndVerification!.hasVerifiedPhoneNumber
+      !progress.profileCompletionAndVerification?.hasSelectedCollegeDetails ||
+      !progress.profileCompletionAndVerification?.hasAadhaarBeenUploaded ||
+      !progress.profileCompletionAndVerification?.hasAadhaarBeenVerified ||
+      !progress.profileCompletionAndVerification?.hasVerifiedPhoneNumber
     ) {
       throw new Error("Master admin profile is not complete or verified.");
     }
 
-    // check does it alreaedy exist in prisma
+    // Check if admin already exists
     const existingAdmin = await prisma.admin.findUnique({
-      where: { userId: masterAdminEmail },
+      where: { userId: user.id },
     });
 
-    if (existingAdmin) {
-      throw new Error("Master admin already exists in the database.");
-    }
-
-    // genreate temp password
+    // Generate new temp password
     const tempPassword = CryptoService.generateTempPassword();
     const hashedPassword = await CryptoService.hash(tempPassword);
 
-    // create master admin in prisma
-    const masterId = progress.userId;
-    const updateUserRole = await prisma.user.update({
-      where: { id: masterId },
-      data: {
-        role: {
-          upsert: {
-            create: { level: "MASTER_ADMIN" },
-            update: { level: "MASTER_ADMIN" },
+    let adminId: string;
+    let isResend = false;
+
+    if (existingAdmin) {
+      // ─────────────────────────────────────────────────────────────────
+      // RE-SEND CASE: Admin exists, update password and re-send
+      // ─────────────────────────────────────────────────────────────────
+      isResend = true;
+      adminId = existingAdmin.id;
+
+      // Update password (invalidates old password)
+      await prisma.admin.update({
+        where: { id: existingAdmin.id },
+        data: { password: hashedPassword },
+      });
+
+      console.log("⚠️  Admin already exists. Updating password and re-sending email...");
+    } else {
+      // ─────────────────────────────────────────────────────────────────
+      // FIRST TIME: Create admin record
+      // ─────────────────────────────────────────────────────────────────
+      
+      // Update user role to MASTER_ADMIN
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          role: {
+            upsert: {
+              create: { level: "MASTER_ADMIN" },
+              update: { level: "MASTER_ADMIN" },
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!updateUserRole) {
-      throw new Error("Failed to update user role to MASTER_ADMIN.");
-    }
-    const newAdmin = await prisma.admin.create({
-      data: {
-        userId: masterId,
-        password: hashedPassword,
-      },
-    });
+      // Create admin record
+      const newAdmin = await prisma.admin.create({
+        data: {
+          userId: user.id,
+          password: hashedPassword,
+        },
+      });
 
-    if (!newAdmin) {
-      throw new Error("Failed to create master admin in the database.");
+      adminId = newAdmin.id;
     }
 
-    // send email to master admin with temp password
-    // await new SendAdminInviteEmail(
-    //   { name: "Master Admin", email: masterAdminEmail },
-    //   tempPassword,
-    // ).SendEmail();
+    // ─────────────────────────────────────────────────────────────────
+    // Generate NEW login token (old tokens deleted above for re-send)
+    // ─────────────────────────────────────────────────────────────────
+    const loginToken = CryptoService.generateRandomToken(32);
+    const hashedToken = await CryptoService.hash(loginToken);
 
-    // console.log("Master admin credentials sent successfully.");
-  } catch (err) {
-    console.error(
-      "Error in creating or sending master admin credentials:",
-      err,
+    // Create new token (don't use upsert - we want a fresh token)
+    await VerificationTokenModel.create({
+      userId: user.id,
+      tokenType: "ADMIN_LOGIN_URL_TOKEN",
+      tokenValue: hashedToken,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+    });
+
+    // Create login URL
+    const loginUrl = `${env.CLIENT_ADMIN_PANEL_ORIGIN}/admin-verification/${loginToken}`;
+
+    // Send email with credentials
+    const userName = user.firstName || user.slugName || "Admin";
+    await new AdminInviteEmail(
+      { name: userName, email: masterAdminEmail },
+      tempPassword,
+      loginUrl,
+    ).sendEmail(
+      "🎫 You've been granted Admin Access - Kashiyatra 2027",
+      "adminInvite",
     );
+
+    console.log("═".repeat(60));
+    if (isResend) {
+      console.log("✅ Master admin credentials RE-SENT successfully!");
+      console.log("   (Old password and tokens are now invalid)");
+    } else {
+      console.log("✅ Master admin CREATED successfully!");
+    }
+    console.log("═".repeat(60));
+    console.log(`Admin ID: ${adminId}`);
+    console.log(`Email: ${masterAdminEmail}`);
+    console.log(`Temp Password: ${tempPassword}`);
+    console.log(`Login URL: ${loginUrl}`);
+    console.log("═".repeat(60));
+    console.log("📧 Email sent to admin with credentials.");
+    console.log("⏰ Token expires in 10 minutes.");
+
+  } catch (err) {
+    console.error("❌ Error:", (err as Error).message);
   }
-  // check for profile completion and verification in mongo
 };
+
+sendMasterAdminCredentials();

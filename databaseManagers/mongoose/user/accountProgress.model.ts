@@ -37,7 +37,7 @@ export const AccountProgressSchema = new Schema(
   }
 );
 
-AccountProgressSchema.index({ userId: 1 });
+// userId already has unique: true which creates an index
 
 export type AccountProgressSchemaType = InferSchemaType<
   typeof AccountProgressSchema

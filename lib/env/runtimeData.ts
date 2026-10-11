@@ -63,16 +63,45 @@ function createRuntimeEnvironment(
         .min(5, "AWS Region is required")
         .default("ap-south-1"),
 
-      // Email Configuration
+      // Email Configuration (Brevo SMTP)
       EMAIL_FROM: z.email("Invalid email address").min(5, "Email is required"),
-      SES_AWS_REGION: z.string().min(5, "SES AWS Region is required"),
+      BREVO_SMTP_HOST: z
+        .string()
+        .min(1, "Brevo SMTP host is required")
+        .default("smtp-relay.brevo.com"),
+      BREVO_SMTP_PORT: z
+        .string()
+        .regex(/^\d+$/, "Brevo SMTP port must be a number")
+        .default("587")
+        .transform(Number),
+      BREVO_SMTP_USER: z
+        .string()
+        .min(1, "Brevo SMTP user is required"),
+      BREVO_API_KEY: z
+        .string()
+        .min(10, "Brevo API Key is required"),
 
       // S3 Configuration
       S3_BUCKET: z.string().min(3, "S3 Bucket is required"),
 
-      MASTER_ADMIN_EMAIL: z
-        .email("Invalid email address")
-        .min(5, "Master Admin Email is required"),
+      // Google OAuth Configuration (for server-side token verification)
+      GOOGLE_CLIENT_ID: z
+        .string()
+        .min(20, "Google Client ID is required for OAuth verification"),
+
+      // Admin JWT Configuration
+      ADMIN_JWT_ACCESS_SECRET: z
+        .string()
+        .min(32, "Admin JWT Access Secret must be at least 32 characters"),
+      ADMIN_JWT_REFRESH_SECRET: z
+        .string()
+        .min(32, "Admin JWT Refresh Secret must be at least 32 characters"),
+      ADMIN_JWT_ACCESS_EXPIRY: z
+        .string()
+        .default("2h"),
+      ADMIN_JWT_REFRESH_EXPIRY: z
+        .string()
+        .default("7d"),
 
       // gRPC Payment Service Configuration
       PAYMENT_GRPC_HOST: z

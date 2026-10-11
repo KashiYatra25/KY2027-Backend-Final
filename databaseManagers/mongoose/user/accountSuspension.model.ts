@@ -27,10 +27,9 @@ export const AccountSuspensionSchema = new Schema(
   }
 );
 
+// Indexes for common queries
 AccountSuspensionSchema.index({ userId: 1 });
 AccountSuspensionSchema.index({ suspendedBy: 1 });
-AccountSuspensionSchema.index({ isActive: 1 });
-AccountSuspensionSchema.index({ userId: 1, isActive: 1 });
 
 export type AccountSuspensionSchemaType = InferSchemaType<typeof AccountSuspensionSchema>;
 export type AccountSuspensionDoc = HydratedDocument<AccountSuspensionSchemaType>;

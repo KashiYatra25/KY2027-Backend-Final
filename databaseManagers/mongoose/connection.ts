@@ -1,5 +1,5 @@
 import { env } from "@lib/env/environment.js";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 import mongoose, { type ConnectOptions, Document, Model, Schema } from "mongoose";
 
 export class MongoDbConnection {

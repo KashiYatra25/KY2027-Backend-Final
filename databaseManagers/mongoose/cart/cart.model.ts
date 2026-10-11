@@ -39,7 +39,7 @@ export const CartSchema = new Schema(
   }
 );
 
-CartSchema.index({ userId: 1 });
+// userId already has unique: true which creates an index
 
 export type CartSchemaType = InferSchemaType<typeof CartSchema> & {
   createdAt: Date;

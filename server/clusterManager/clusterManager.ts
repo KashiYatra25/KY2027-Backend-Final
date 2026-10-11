@@ -1,7 +1,7 @@
 import cluster from "cluster";
 import { availableParallelism } from "os";
-import { logger } from "@logger/index.js";
-import { startServer } from "../server";
+import { logger } from "@logger/logger.js";
+import { startServer } from "@server/server";
 
 const totalCPUs = availableParallelism();
 

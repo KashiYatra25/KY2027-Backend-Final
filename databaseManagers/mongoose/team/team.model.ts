@@ -58,8 +58,7 @@ export const TeamSchema = new Schema(
 );
 
 // Indexes
-TeamSchema.index({ teamId: 1 }, { unique: true });
-TeamSchema.index({ name: 1 }, { unique: true });
+// teamId and name already have unique: true in schema which creates indexes
 TeamSchema.index({ createdBy: 1 });
 TeamSchema.index({ "members.userId": 1 });  // find teams by member
 

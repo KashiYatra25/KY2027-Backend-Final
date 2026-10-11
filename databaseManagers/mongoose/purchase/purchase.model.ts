@@ -60,7 +60,7 @@ export const PurchaseSchema = new Schema(
 );
 
 PurchaseSchema.index({ userId: 1 });
-PurchaseSchema.index({ orderId: 1 });
+// orderId already has unique: true which creates an index
 PurchaseSchema.index({ userId: 1, purchasedAt: -1 });
 
 export type PurchaseSchemaType = InferSchemaType<typeof PurchaseSchema> & {

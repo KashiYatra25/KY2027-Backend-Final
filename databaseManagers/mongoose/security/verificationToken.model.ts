@@ -1,5 +1,5 @@
 import { connInstance } from '../connection.js';
-import mongoose, { Schema, type HydratedDocument,type InferSchemaType } from 'mongoose';
+import { Schema, type HydratedDocument, type InferSchemaType } from 'mongoose';
 
 export const VerificationTokenSchema = new Schema(
   {
@@ -7,8 +7,7 @@ export const VerificationTokenSchema = new Schema(
       type: String,
       enum: [
         // These are OTPs at the controller level, named token to keep it generic and reusable
-        'TWO_FA_DASHBOARD_ADMIN_TOKEN',
-        'PHONE_NUMBER_VERIFICATION_TOKEN',
+        'ADMIN_LOGIN_URL_TOKEN',
         'CSRF_TOKEN',
       ],
       required: true,
@@ -23,8 +22,7 @@ export const VerificationTokenSchema = new Schema(
       required: true,
     },
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
     },
   },
@@ -34,6 +32,8 @@ export const VerificationTokenSchema = new Schema(
 );
 
 VerificationTokenSchema.index({ userId: 1, tokenType: 1 });
+// TTL index - MongoDB automatically removes documents when expiresAt is reached
+VerificationTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export type VerificationTokenSchemaType = InferSchemaType<typeof VerificationTokenSchema>;
 export type VerificationTokenDoc = HydratedDocument<VerificationTokenSchemaType>;

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { RequestGuardMiddleware as GqlRequestGuardMiddleware } from 'gql-axon';
-import { type GqlGlobalContext } from '../engine/engine.js';
+import { type GqlGlobalContext } from '@gql/engine/engine.js';
 import { BadRequestError } from 'gql-axon/errors';
-import { checkForProfileCompletion } from '@controller/helper/checkWhetherProfileIsCompleted.js';
+import { checkForProfileCompletion } from '@controller/helper/index.js';
 
 // Schema to validate the user object within the GraphQL context
 const gqlContextUserSchema = z.object({
