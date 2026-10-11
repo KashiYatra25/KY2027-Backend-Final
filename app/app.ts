@@ -1,15 +1,15 @@
-import { aadhaarRouter } from "@api/aadhaar/aadhaar.route.js";
-import { adminRouter } from "@api/admin/admin.route.js";
-import { caRouter } from "@api/ca/ca.route.js";
-import { couponRouter } from "@api/coupon/coupon.route.js";
-import { passRouter } from "@api/pass/pass.route.js";
-import { userRouter } from "@api/user/user.route.js";
-import { eventRouter } from "@api/event/event.route.js";
-import { teamRouter } from "@api/team/team.route.js";
+import { aadhaarRouter } from "@api/aadhaar/aadhaar.routes.js";
+import { adminRouter } from "@api/admin/admin.routes.js";
+import { caRouter } from "@api/ca/ca.routes.js";
+import { couponRouter } from "@api/coupon/coupon.routes.js";
+import { passRouter } from "@api/pass/pass.routes.js";
+import { userRouter } from "@api/user/user.routes.js";
+import { eventRouter } from "@api/event/event.routes.js";
+import { teamRouter } from "@api/team/team.routes.js";
 import { corsOptions } from "@constants/cors.options.js";
 import { env } from "@lib/env/environment.js";
-import { logger } from "@logger/index.js";
-import { globalRateLimiter } from "@middleware/limiters/index.js";
+import { logger } from "@logger/logger.js";
+import { globalRateLimiter } from "@root/middleware/limiters/index.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
@@ -20,6 +20,12 @@ import morgan from "morgan";
 import { globalErrorHandler } from "zodex-axon/errors";
 
 const app: Application = express();
+
+// Trust proxy configuration for NLB → Nginx → Express setup
+// With NLB preserving source IP and Nginx setting X-Forwarded-For: $remote_addr,
+// we only need to trust the loopback connection from Nginx.
+// This ensures req.ip returns the real client IP from X-Forwarded-For header.
+app.set("trust proxy", "loopback");
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
