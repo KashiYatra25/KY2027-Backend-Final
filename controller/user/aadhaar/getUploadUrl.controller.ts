@@ -3,10 +3,10 @@ import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { BadRequest } from "zodex-axon/errors";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { S3Manager } from "@services/s3/index.js";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { env } from "@lib/env/environment.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 
 /**
  * Step 1: Get pre-signed URL for Aadhaar image upload

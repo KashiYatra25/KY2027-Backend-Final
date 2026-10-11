@@ -2,7 +2,7 @@ import type { Response, NextFunction } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 
 /**
  * GET /ca/rank

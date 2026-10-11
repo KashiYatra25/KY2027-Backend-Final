@@ -1,1 +1,1 @@
-export { searchUsers } from "./search.controller.js";
+export { searchUsers } from "./searchUsers.controller.js";

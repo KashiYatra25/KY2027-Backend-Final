@@ -2,7 +2,7 @@ import type { Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { CartModel } from "@lib/mongo/index.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/auth.types.helper.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 
 /**
  * GET /user/cart

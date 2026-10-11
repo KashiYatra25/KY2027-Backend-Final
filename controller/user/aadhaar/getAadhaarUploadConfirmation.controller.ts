@@ -2,10 +2,10 @@ import type { NextFunction, Response } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { BadRequest } from "zodex-axon/errors";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 
 const getAadhaarUploadConfirmation = catchAsync(
   async (

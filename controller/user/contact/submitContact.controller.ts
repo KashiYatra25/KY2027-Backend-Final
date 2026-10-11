@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import type { ContactSchemaType } from "@root/controller/middleware/schemas/user/contact.schema.js";
+import type { ContactUsRequestSchemaType } from "@schemas/user/contact.schema.js";
 
 /**
  * POST /contact
@@ -9,7 +9,7 @@ import type { ContactSchemaType } from "@root/controller/middleware/schemas/user
  */
 const submitContact = catchAsync(
   async (
-    req: VerifiedRequest<{ body: ContactSchemaType }, Request>,
+    req: VerifiedRequest<{ body: ContactUsRequestSchemaType }, Request>,
     res: Response,
     _next: NextFunction,
   ) => {

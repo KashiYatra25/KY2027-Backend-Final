@@ -3,7 +3,7 @@ import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
-import type { ValidateReferralParamsSchemaType } from "@schemas/user/referral.schema.js";
+import type { AddReferralIdRequestSchemaType } from "@schemas/user/referral.schema.js";
 
 /**
  * GET /ca/validate/:referralId
@@ -12,7 +12,7 @@ import type { ValidateReferralParamsSchemaType } from "@schemas/user/referral.sc
  */
 export const validateReferralId = catchAsync(
   async (
-    req: VerifiedRequest<{ params: ValidateReferralParamsSchemaType }>,
+    req: VerifiedRequest<{ params: AddReferralIdRequestSchemaType }>,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {

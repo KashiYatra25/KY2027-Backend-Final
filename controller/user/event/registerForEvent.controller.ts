@@ -3,172 +3,24 @@ import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound, BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
-import { EventRegistrationModel, TeamModel } from "@root/databaseManagers/mongoose/index.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
-import type {
-  GetEventsQueryType,
-  RegisterForEventType,
-} from "@root/controller/middleware/schemas/event/event.schema.js";
+import {
+  EventRegistrationModel,
+  TeamModel,
+} from "@root/databaseManagers/mongoose/index.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { RegisterForEventRequestSchemaType } from "@schemas/event/event.schema.js";
 
 /**
- * GET /user/registrations
- * Get all event registrations for the current user
+ * Get all team IDs that any of the given users belong to
  */
-const getMyRegistrations = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
-    const userId = authReq.user.id;
-
-    // Get user's teams
-    const userTeams = await TeamModel.find({
-      "members.userId": userId,
-    }).select("teamId").lean();
-    const userTeamIds = userTeams.map((t) => t.teamId);
-
-    // Find all registrations (individual or via teams)
-    const registrations = await EventRegistrationModel.find({
-      $or: [
-        { userId },
-        { teamId: { $in: userTeamIds } },
-      ],
-    }).lean();
-
-    // Get event details for all registrations
-    const eventSlugs = [...new Set(registrations.map((r) => r.eventSlug))];
-    const events = await prisma.event.findMany({
-      where: { slug: { in: eventSlugs } },
-      select: {
-        slug: true,
-        name: true,
-        tagline: true,
-        category: true,
-        participationType: true,
-        imageUrl: true,
-        startsAt: true,
-        venue: true,
-      },
-    });
-    const eventMap = new Map(events.map((e) => [e.slug, e]));
-
-    // Get team details for team registrations
-    const teamIds = registrations.filter((r) => r.teamId).map((r) => r.teamId as string);
-    const teams = await TeamModel.find({ teamId: { $in: teamIds } }).lean();
-    const teamMap = new Map(teams.map((t) => [t.teamId, t]));
-
-    const registrationsWithDetails = registrations.map((reg) => {
-      const event = eventMap.get(reg.eventSlug);
-      const team = reg.teamId ? teamMap.get(reg.teamId) : null;
-
-      return {
-        registrationId: reg._id,
-        eventSlug: reg.eventSlug,
-        event: event ?? null,
-        participationType: reg.participationType,
-        status: reg.status,
-        team: team ? {
-          teamId: team.teamId,
-          name: team.name,
-          memberCount: team.members.length,
-        } : null,
-        registeredAt: reg.createdAt,
-      };
-    });
-
-    new OkResponseStrategy().handleResponse(res, {
-      info: "Registrations fetched successfully",
-      registrations: registrationsWithDetails,
-      count: registrationsWithDetails.length,
-    });
-  },
-);
-
-/**
- * GET /events
- * List all events with optional filters
- */
-const getEvents = catchAsync(
-  async (
-    req: Request & { validatedQuery?: GetEventsQueryType },
-    res: Response,
-    _next: NextFunction,
-  ): Promise<void> => {
-    const { category, participationType, registrationOpen } = req.validatedQuery ?? {};
-
-    const where: Record<string, unknown> = {};
-    
-    if (category) {
-      where.category = category;
-    }
-    if (participationType) {
-      where.participationType = participationType;
-    }
-    if (registrationOpen !== undefined) {
-      where.registrationOpen = registrationOpen;
-    }
-
-    const events = await prisma.event.findMany({
-      where,
-      orderBy: [
-        { category: "asc" },
-        { name: "asc" },
-      ],
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        tagline: true,
-        description: true,
-        category: true,
-        participationType: true,
-        minTeamSize: true,
-        maxTeamSize: true,
-        registrationOpen: true,
-        imageUrl: true,
-        prizePool: true,
-      },
-    });
-
-    new OkResponseStrategy().handleResponse(res, {
-      info: "Events fetched successfully",
-      events,
-    });
-  },
-);
-
-/**
- * GET /events/:slug
- * Get single event details by slug
- */
-const getEventBySlug = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-    const slug = req.params.slug as string;
-
-    const event = await prisma.event.findUnique({
-      where: { slug },
-    });
-
-    if (!event) {
-      return next(
-        new NotFound().handleResponse(res, {
-          info: "Event not found",
-        }),
-      );
-    }
-
-    new OkResponseStrategy().handleResponse(res, {
-      info: "Event fetched successfully",
-      event,
-    });
-  },
-);
+async function getTeamIdsForUsers(userIds: string[]): Promise<string[]> {
+  const teams = await TeamModel.find({
+    "members.userId": { $in: userIds },
+  })
+    .select("teamId")
+    .lean();
+  return teams.map((t) => t.teamId);
+}
 
 /**
  * POST /events/:slug/register
@@ -178,7 +30,7 @@ const getEventBySlug = catchAsync(
  */
 const registerForEvent = catchAsync(
   async (
-    req: Request & { validatedData?: RegisterForEventType },
+    req: Request & { validatedData?: RegisterForEventRequestSchemaType },
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
@@ -335,10 +187,10 @@ const registerForEvent = catchAsync(
 
       // 5. Check no team member is already registered (individually or via another team)
       const memberIds = team.members.map((m) => m.userId);
-      
+
       // Get all team IDs that these members belong to
       const memberTeamIds = await getTeamIdsForUsers(memberIds);
-      
+
       const existingMemberRegs = await EventRegistrationModel.find({
         eventSlug: slug,
         $or: [
@@ -352,21 +204,22 @@ const registerForEvent = catchAsync(
         const regUserIds = existingMemberRegs
           .filter((r) => r.userId)
           .map((r) => r.userId as string);
-        
+
         const regTeamIds = existingMemberRegs
           .filter((r) => r.teamId)
           .map((r) => r.teamId as string);
 
         // Get members who are in those teams
-        const conflictingTeams = await TeamModel.find({ 
-          teamId: { $in: regTeamIds } 
+        const conflictingTeams = await TeamModel.find({
+          teamId: { $in: regTeamIds },
         }).lean();
-        const teamMemberIds = conflictingTeams.flatMap((t) => 
-          t.members.map((m) => m.userId)
+        const teamMemberIds = conflictingTeams.flatMap((t) =>
+          t.members.map((m) => m.userId),
         );
 
-        const conflictingMemberIds = [...new Set([...regUserIds, ...teamMemberIds])]
-          .filter((id) => memberIds.includes(id));
+        const conflictingMemberIds = [
+          ...new Set([...regUserIds, ...teamMemberIds]),
+        ].filter((id) => memberIds.includes(id));
 
         return next(
           new BadRequest().handleResponse(res, {
@@ -377,7 +230,8 @@ const registerForEvent = catchAsync(
       }
 
       // 6. Create registration
-      const participationType = event.participationType === "DUO" ? "duo" : "team";
+      const participationType =
+        event.participationType === "DUO" ? "duo" : "team";
       const registration = await EventRegistrationModel.create({
         eventSlug: slug,
         participationType,
@@ -399,14 +253,4 @@ const registerForEvent = catchAsync(
   },
 );
 
-/**
- * Get all team IDs that any of the given users belong to
- */
-async function getTeamIdsForUsers(userIds: string[]): Promise<string[]> {
-  const teams = await TeamModel.find({
-    "members.userId": { $in: userIds },
-  }).select("teamId").lean();
-  return teams.map((t) => t.teamId);
-}
-
-export { getEvents, getEventBySlug, registerForEvent, getMyRegistrations };
+export { registerForEvent };

@@ -1,13 +1,12 @@
-import type { Response, NextFunction } from "express";
+import type { Response } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import { BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/auth.types.helper.js";
-import type { ProfileUpdationSchemaType } from "@schemas/user/profile.schema.js";
-import { autoSetPaidForIITBhuUser } from "@root/controller/helper/checkWhetherProfileIsCompleted.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { ProfileUpdationRequestSchemaType } from "@schemas/user/profile.schema.js";
+import { autoSetPaidForIITBhuUser } from "@root/controller/helper/index.js";
 
 /**
  * PATCH /user/profile
@@ -16,16 +15,13 @@ import { autoSetPaidForIITBhuUser } from "@root/controller/helper/checkWhetherPr
 const updateProfile = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: ProfileUpdationSchemaType },
+      { body: ProfileUpdationRequestSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,
-    next: NextFunction,
   ) => {
     const { id: userId } = req.user;
     const { phoneNumber, college } = req.validatedData;
-
-
 
     // Build update data for Prisma
     const updateData: { phone?: string; college?: string } = {};
@@ -58,7 +54,10 @@ const updateProfile = catchAsync(
     // Auto-set isPaidUser for IIT BHU users if profile is now complete
     const autoSetPaid = await autoSetPaidForIITBhuUser(userId);
     if (autoSetPaid) {
-      logger.info("Auto-set isPaidUser for IIT BHU user after profile completion", { userId });
+      logger.info(
+        "Auto-set isPaidUser for IIT BHU user after profile completion",
+        { userId },
+      );
     }
 
     new OkResponseStrategy().handleResponse(res, {
@@ -69,7 +68,10 @@ const updateProfile = catchAsync(
 
     logger.info("Profile updated", {
       userId,
-      updatedFields: [...(phoneNumber ? ["phone"] : []), ...(college ? ["college"] : [])],
+      updatedFields: [
+        ...(phoneNumber ? ["phone"] : []),
+        ...(college ? ["college"] : []),
+      ],
     });
   },
 );

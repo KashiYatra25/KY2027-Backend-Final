@@ -2,13 +2,11 @@ import type { Response, NextFunction } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest, NotFound } from "zodex-axon/errors";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 import { CartModel } from "@lib/mongo/index.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/auth.types.helper.js";
-import type { UpdateCartQuantitySchemaType } from "@schemas/user/cart.schema.js";
-
-// Max total passes allowed per user cart
-const MAX_CART_TOTAL_QUANTITY = 50;
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { UpdateCartQuantityRequestSchemaType } from "@schemas/user/cart.schema.js";
+import { MAX_CART_TOTAL_QUANTITY } from "@controller/user/constants/cart.constants.js";
 
 /**
  * PATCH /user/cart/update-quantity
@@ -19,7 +17,7 @@ const MAX_CART_TOTAL_QUANTITY = 50;
 export const updateCartQuantity = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: UpdateCartQuantitySchemaType },
+      { body: UpdateCartQuantityRequestSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,
@@ -80,7 +78,7 @@ export const updateCartQuantity = catchAsync(
         }),
       );
     }
-    
+
     const currentItemQuantity = currentItem.quantity;
     const otherItemsQuantity = cart.items.reduce(
       (sum, item, idx) => (idx === itemIndex ? sum : sum + item.quantity),

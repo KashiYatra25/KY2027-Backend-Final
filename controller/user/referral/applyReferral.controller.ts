@@ -3,14 +3,14 @@ import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
-import { logger } from "@logger/index.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
-import type { ApplyReferralSchemaType } from "@schemas/user/referral.schema.js";
+import { logger } from "@logger/logger.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { AddReferralIdRequestSchemaType } from "@schemas/user/referral.schema.js";
 
 /**
  * POST /user/apply-referral
  * Apply a CA's referral code to the current user
- * 
+ *
  * Rules:
  * - User can only apply referral once (cannot change after)
  * - Referral ID must exist (valid CA)
@@ -20,7 +20,7 @@ import type { ApplyReferralSchemaType } from "@schemas/user/referral.schema.js";
 export const applyReferral = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: ApplyReferralSchemaType },
+      { body: AddReferralIdRequestSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,

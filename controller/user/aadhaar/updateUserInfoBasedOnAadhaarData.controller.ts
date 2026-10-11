@@ -1,22 +1,22 @@
-import type { NextFunction, Response } from "express";
+import type { Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { S3Manager } from "@services/s3/index.js";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import { env } from "@lib/env/environment.js";
-import type { AadhaarExtractedRequest } from "./types.js";
-import { autoSetPaidForIITBhuUser } from "@root/controller/helper/checkWhetherProfileIsCompleted.js";
+import type { AadhaarExtractedRequest } from "./helper/types/aadhaar.types.js";
+import { autoSetPaidForIITBhuUser } from "@root/controller/helper/index.js";
 
 /**
  * Step 2: Confirm Aadhaar - Save verified data and cleanup
  * POST /aadhaar/verify
- * Called after extractAadhaarData middleware
+ * Called after extractAadhaarDataMiddleware middleware
  * Receives extracted data from middleware, saves to DB, deletes S3 image
  */
-const updateUserInfoBasedOnAdhaarData = catchAsync(
-  async (req: AadhaarExtractedRequest, res: Response, next: NextFunction) => {
+const updateUserInfoBasedOnAadhaarData = catchAsync(
+  async (req: AadhaarExtractedRequest, res: Response) => {
     const { id: userId } = req.user;
     const { name, aadhaarNumber, gender, dateOfBirth, key } = req.aadhaarData;
 
@@ -69,4 +69,4 @@ const updateUserInfoBasedOnAdhaarData = catchAsync(
   },
 );
 
-export { updateUserInfoBasedOnAdhaarData };
+export { updateUserInfoBasedOnAadhaarData };

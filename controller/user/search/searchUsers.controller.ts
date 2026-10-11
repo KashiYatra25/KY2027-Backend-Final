@@ -2,22 +2,25 @@ import type { Response, NextFunction } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
-import type { SearchUsersQueryType } from "@schemas/user/search.schema.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@utils/helper/auth.types.helper.js";
+import type { SearchUsersRequestSchemaType } from "@schemas/user/search.schema.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 
 /**
  * GET /user/search?searchQuery=<query>&limit=<limit>
- * 
+ *
  * Search for PAID users by name or email.
  * Only returns users who:
  * - Have completed profile (have firstName)
  * - Have isPaidUser = true (paid pass or IIT BHU)
- * 
+ *
  * Frontend should debounce this (300ms recommended)
  */
 const searchUsers = catchAsync(
   async (
-    req: VerifiedRequest<{ query: SearchUsersQueryType }, AuthenticatedUserRequestWithVerifiedEmail>,
+    req: VerifiedRequest<
+      { query: SearchUsersRequestSchemaType },
+      AuthenticatedUserRequestWithVerifiedEmail
+    >,
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
@@ -28,9 +31,9 @@ const searchUsers = catchAsync(
     const users = await prisma.user.findMany({
       where: {
         AND: [
-          { id: { not: currentUserId } },        // Exclude current user
-          { isPaidUser: true },                  // Only paid users
-          { firstName: { not: null } },          // Only completed profiles
+          { id: { not: currentUserId } }, // Exclude current user
+          { isPaidUser: true }, // Only paid users
+          { firstName: { not: null } }, // Only completed profiles
           {
             OR: [
               { firstName: { contains: searchQuery, mode: "insensitive" } },
@@ -52,10 +55,7 @@ const searchUsers = catchAsync(
         candidatePhotoUrl: true,
         college: true,
       },
-      orderBy: [
-        { firstName: "asc" },
-        { lastName: "asc" },
-      ],
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     });
 
     new OkResponseStrategy().handleResponse(res, {

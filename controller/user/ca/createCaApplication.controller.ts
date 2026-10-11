@@ -3,9 +3,9 @@ import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
-import { logger } from "@logger/index.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/auth.types.helper.js";
-import type { CaApplicationSchemaType } from "@schemas/user/caApplication.schema.js";
+import { logger } from "@logger/logger.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { BecomeCaRequestSchemaType } from "@schemas/user/caApplication.schema.js";
 
 /**
  * POST /user/ca/apply
@@ -19,7 +19,7 @@ import type { CaApplicationSchemaType } from "@schemas/user/caApplication.schema
 const createCaApplication = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: CaApplicationSchemaType },
+      { body: BecomeCaRequestSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,

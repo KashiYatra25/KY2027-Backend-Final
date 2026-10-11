@@ -1,1 +1,1 @@
-export { getPaymentStatus } from "./payment.controller.js";
+export { getPaymentStatus } from "./getPaymentStatus.controller.js";

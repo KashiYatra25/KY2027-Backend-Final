@@ -2,10 +2,10 @@ import type { Response, NextFunction } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound } from "zodex-axon/errors";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 import { CartModel } from "@lib/mongo/index.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/auth.types.helper.js";
-import type { RemoveFromCartSchemaType } from "@schemas/user/cart.schema.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { RemoveFromCartRequestSchemaType } from "@schemas/user/cart.schema.js";
 
 /**
  * DELETE /user/cart/remove
@@ -14,7 +14,7 @@ import type { RemoveFromCartSchemaType } from "@schemas/user/cart.schema.js";
 export const removeFromCart = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: RemoveFromCartSchemaType },
+      { body: RemoveFromCartRequestSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,

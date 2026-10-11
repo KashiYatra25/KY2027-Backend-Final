@@ -2,13 +2,11 @@ import type { Response, NextFunction } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest, NotFound } from "zodex-axon/errors";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 import { CartModel, PassModel } from "@lib/mongo/index.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/auth.types.helper.js";
-import type { AddToCartSchemaType } from "@schemas/user/cart.schema.js";
-
-// Max total passes allowed per user cart
-const MAX_CART_TOTAL_QUANTITY = 50;
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { AddToCartRequestSchemaType } from "@schemas/user/cart.schema.js";
+import { MAX_CART_TOTAL_QUANTITY } from "@controller/user/constants/cart.constants.js";
 
 /**
  * POST /user/cart/add
@@ -17,7 +15,7 @@ const MAX_CART_TOTAL_QUANTITY = 50;
 export const addToCart = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: AddToCartSchemaType },
+      { body: AddToCartRequestSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,
@@ -99,9 +97,7 @@ export const addToCart = catchAsync(
     );
 
     new OkResponseStrategy().handleResponse(res, {
-      info: existingItem
-        ? "Cart item quantity updated"
-        : "Item added to cart",
+      info: existingItem ? "Cart item quantity updated" : "Item added to cart",
       items: cart.items,
       totalQuantity: newTotalQuantity,
     });

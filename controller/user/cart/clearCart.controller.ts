@@ -1,9 +1,9 @@
 import type { Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 import { CartModel } from "@lib/mongo/index.js";
-import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/auth.types.helper.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 
 /**
  * DELETE /user/cart/clear
