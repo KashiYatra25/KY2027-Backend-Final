@@ -1,6 +1,6 @@
-import type { AadhaarData } from "../types.js";
-import { logger } from "@logger/index.js";
-import { AADHAAR_REGEX, DOB_PATTERNS, GENDER_PATTERNS, NAME_EXCLUSIONS } from "./constants.js";
+import type { AadhaarData } from "@services/textract/helper/types/textract.types.js";
+import { logger } from "@logger/logger.js";
+import { AADHAAR_REGEX, DOB_PATTERNS, GENDER_PATTERNS, NAME_EXCLUSIONS } from "@services/textract/helper/constants/aadhaar.constants.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // VERHOEFF CHECKSUM ALGORITHM FOR AADHAAR VALIDATION

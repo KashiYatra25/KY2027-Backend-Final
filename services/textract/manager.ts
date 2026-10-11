@@ -4,7 +4,7 @@ import {
   type DetectDocumentTextCommandInput,
   type Block,
 } from "@aws-sdk/client-textract";
-import type { ImageInput } from "./types.js";
+import type { ImageInput } from "./helper/types/textract.types.js";
 
 export class TextractManager {
   private client: TextractClient;

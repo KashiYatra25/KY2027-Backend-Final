@@ -1,7 +1,7 @@
 import { TextractManager } from "./manager.js";
-import { parseAadhaarData } from "./helpers/parser.js";
+import { parseAadhaarData } from "./helper/functions/parser.helper.js";
 import { env } from "@lib/env/environment.js";
-import type { ImageInput, TextractResult, AadhaarData } from "./types.js";
+import type { ImageInput, TextractResult, AadhaarData } from "./helper/types/textract.types.js";
 
 /**
  * Check if all required fields are present for success
@@ -94,4 +94,4 @@ export async function extractAadhaarFromImage(
   }
 }
 
-export { parseAadhaarData } from "./helpers/parser.js";
+export { parseAadhaarData } from "./helper/functions/parser.helper.js";

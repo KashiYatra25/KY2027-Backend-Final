@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Pass Invoice - Kashiyatra 2027</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0a0a15; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #0a0a15;">
+        <tr>
+            <td style="padding: 20px 0;">
+                <!-- Main Container -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #1A1A2E; border-radius: 12px; overflow: hidden; border: 1px solid #D4A85333;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #8B1538 0%, #D4A853 100%); padding: 40px 20px; text-align: center;">
+                            <h1 style="margin: 0; color: #FDF6E3; font-size: 28px; font-weight: 800; letter-spacing: 2px;">KASHIYATRA 2027</h1>
+                            <p style="margin: 8px 0 0 0; color: #FDF6E3; font-size: 14px; font-weight: 600; opacity: 0.9;">Payment Confirmation</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <h2 style="margin: 0 0 20px 0; color: #FDF6E3; font-size: 22px; font-weight: 600; line-height: 1.3;">Thank you, {{userName}}! 🎉</h2>
+                            
+                            <p style="margin: 0 0 16px 0; color: #D4B896; font-size: 16px; line-height: 1.6;">Your payment has been confirmed. Here are your purchase details:</p>
+                            
+                            <!-- Invoice Box -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
+                                <tr>
+                                    <td style="padding: 24px; background-color: #0a0a15; border-radius: 8px; border: 1px solid #D4A85330;">
+                                        <!-- Invoice Header -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #D4A85320;">
+                                            <tr>
+                                                <td>
+                                                    <p style="margin: 0; color: #D4A853; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Invoice</p>
+                                                    <p style="margin: 4px 0 0 0; color: #FDF6E3; font-size: 14px; font-family: monospace;">#{{invoiceId}}</p>
+                                                </td>
+                                                <td style="text-align: right;">
+                                                    <p style="margin: 0; color: #8B8B8B; font-size: 12px;">Date</p>
+                                                    <p style="margin: 4px 0 0 0; color: #FDF6E3; font-size: 14px;">{{date}}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <!-- Pass Details -->
+                                        <p style="margin: 0 0 12px 0; color: #D4A853; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Pass Details</p>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="padding: 8px 0; color: #8B8B8B; font-size: 14px;">Pass Type</td>
+                                                <td style="padding: 8px 0; color: #FDF6E3; font-size: 14px; text-align: right;">{{passName}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; color: #8B8B8B; font-size: 14px;">Quantity</td>
+                                                <td style="padding: 8px 0; color: #FDF6E3; font-size: 14px; text-align: right;">{{quantity}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; color: #8B8B8B; font-size: 14px;">Price per Pass</td>
+                                                <td style="padding: 8px 0; color: #FDF6E3; font-size: 14px; text-align: right;">₹{{pricePerPass}}</td>
+                                            </tr>
+                                            {{#if discount}}
+                                            <tr>
+                                                <td style="padding: 8px 0; color: #8B8B8B; font-size: 14px;">Discount</td>
+                                                <td style="padding: 8px 0; color: #4ade80; font-size: 14px; text-align: right;">-₹{{discount}}</td>
+                                            </tr>
+                                            {{/if}}
+                                        </table>
+                                        
+                                        <!-- Total -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #D4A85330;">
+                                            <tr>
+                                                <td style="color: #FDF6E3; font-size: 16px; font-weight: 700;">Total Paid</td>
+                                                <td style="color: #FFD700; font-size: 20px; font-weight: 700; text-align: right;">₹{{totalAmount}}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Payment Info -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 16px; background-color: #1a2520; border-radius: 8px; border-left: 4px solid #4ade80;">
+                                        <p style="margin: 0 0 8px 0; color: #4ade80; font-size: 13px; font-weight: 700;">✓ Payment Successful</p>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="padding: 4px 0; color: #8B8B8B; font-size: 13px;">Transaction ID</td>
+                                                <td style="padding: 4px 0; color: #D4B896; font-size: 13px; font-family: monospace; text-align: right;">{{transactionId}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 4px 0; color: #8B8B8B; font-size: 13px;">Payment Method</td>
+                                                <td style="padding: 4px 0; color: #D4B896; font-size: 13px; text-align: right;">{{paymentMethod}}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td style="text-align: center; padding: 10px 0 20px 0;">
+                                        <a href="{{viewPassUrl}}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #D4A853 0%, #FFD700 100%); color: #0a0a15; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 14px; letter-spacing: 0.5px;">View My Passes</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin: 0; color: #6B6B6B; font-size: 14px; line-height: 1.6; text-align: center;">
+                                See you at Kashiyatra 2027! 🎊
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 24px 20px; background-color: #0f0f1a; text-align: center; border-top: 1px solid #D4A85320;">
+                            <p style="margin: 0 0 8px 0; color: #D4A853; font-size: 12px; line-height: 1.5;">Kashiyatra 2027 • IIT (BHU) Varanasi</p>
+                            <p style="margin: 0; color: #4a4a4a; font-size: 11px; line-height: 1.5;">
+                                This is an automated email. For queries, contact kashiyatra@itbhu.ac.in
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -85,6 +85,31 @@ const getContactRateLimitKey = (ip: string) => `rl:contact:ip:${ip}`;
  */
 const getAdminRateLimitKey = (userId: string) => `rl:admin:user:${userId}`;
 
+// ═══════════════════════════════════════════════════════════════════
+// ADMIN JWT TOKEN KEYS
+// For refresh token storage and blacklisting
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Admin refresh token key - stores the valid refresh token JTI for a user
+ * Only one refresh token is valid per admin at a time
+ */
+const getAdminRefreshTokenKey = (userId: string) =>
+  `admin:refresh:${userId}`;
+
+/**
+ * Admin token blacklist key - stores blacklisted token JTIs
+ * Used to invalidate tokens on logout or password change
+ */
+const getAdminTokenBlacklistKey = (jti: string) =>
+  `admin:blacklist:${jti}`;
+
+/**
+ * Admin active sessions key - tracks active admin sessions
+ */
+const getAdminActiveSessionKey = (userId: string) =>
+  `admin:session:${userId}`;
+
 export {
   getOtpRateLimitKey,
   getOtpThrottleKey,
@@ -103,4 +128,8 @@ export {
   getCartRateLimitKey,
   getContactRateLimitKey,
   getAdminRateLimitKey,
+  // Admin JWT keys
+  getAdminRefreshTokenKey,
+  getAdminTokenBlacklistKey,
+  getAdminActiveSessionKey,
 };

@@ -1,7 +1,7 @@
 import { RedisSingleConnectionHandler } from "redis-axon/connection/connection.js";
 import Redlock from "redlock";
 import { env } from "@lib/env/environment.js";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 
 // Create Redis connection
 const redisService = new RedisSingleConnectionHandler({

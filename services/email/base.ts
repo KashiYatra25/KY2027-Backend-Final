@@ -3,8 +3,6 @@ import nodemailer from "nodemailer";
 import type { EmailBrand, IUser } from "@email/types/email.types.js";
 import path from "path";
 import { fileURLToPath } from "url";
-import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
-import { type NextFunction } from "express";
 import type hbs from "nodemailer-express-handlebars";
 import { create } from "express-handlebars";
 
@@ -22,10 +20,10 @@ export abstract class Email {
     viewEngine: create({
       extname: ".handlebars",
       defaultLayout: false,
-      partialsDir: path.join(__dirname, "../views/partials"),
+      partialsDir: path.join(__dirname, "./views/partials"),
     }) as unknown as hbs.NodemailerExpressHandlebarsOptions["viewEngine"],
     extName: ".handlebars",
-    viewPath: path.join(__dirname, "../views"),
+    viewPath: path.join(__dirname, "./views"),
   };
 
   protected constructor(user: IUser) {
@@ -35,26 +33,23 @@ export abstract class Email {
   }
 
   protected static transporter() {
-    const sesClient = new SESv2Client({
-      region: env.SES_AWS_REGION,
-    });
-
     return nodemailer.createTransport({
-      SES: { sesClient, SendEmailCommand },
+      host: env.BREVO_SMTP_HOST,
+      port: env.BREVO_SMTP_PORT,
+      secure: false,
+      auth: {
+        user: env.BREVO_SMTP_USER,
+        pass: env.BREVO_API_KEY,
+      },
     });
   }
 
-  abstract sendEmail(
-    subject: string,
-    template: string,
-    next?: NextFunction,
-  ): Promise<void>;
+  abstract sendEmail(subject: string, template: string): Promise<void>;
 
   protected async sendWithTemplate(
     subject: string,
     template: string,
-    context: Record<string, any>,
-    next?: NextFunction,
+    context: Record<string, unknown>,
   ): Promise<void> {
     const transporter = Email.transporter();
     const hbs = (await import("nodemailer-express-handlebars")).default;

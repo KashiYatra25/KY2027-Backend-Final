@@ -76,6 +76,29 @@ const PUBLIC_RATE_LIMIT_MAX = 60;
 const SEARCH_RATE_LIMIT_WINDOW = 60; // 1 minute
 const SEARCH_RATE_LIMIT_MAX = 30;
 
+// ═══════════════════════════════════════════════════════════════════
+// ADMIN JWT TOKEN TTLs
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Admin refresh token TTL in Redis
+ * Should match JWT refresh token expiry (7 days)
+ */
+const ADMIN_REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days
+
+/**
+ * Admin token blacklist TTL
+ * Should be at least as long as refresh token expiry
+ * to prevent reuse of revoked tokens
+ */
+const ADMIN_TOKEN_BLACKLIST_TTL = 7 * 24 * 60 * 60; // 7 days
+
+/**
+ * Admin session TTL
+ * Tracks active admin sessions for security monitoring
+ */
+const ADMIN_SESSION_TTL = 7 * 24 * 60 * 60; // 7 days
+
 export {
   ACCOUNT_PROGRESS_TTL,
   PROFILE_COMPLETION_TTL,
@@ -100,4 +123,8 @@ export {
   PUBLIC_RATE_LIMIT_MAX,
   SEARCH_RATE_LIMIT_WINDOW,
   SEARCH_RATE_LIMIT_MAX,
+  // Admin JWT TTLs
+  ADMIN_REFRESH_TOKEN_TTL,
+  ADMIN_TOKEN_BLACKLIST_TTL,
+  ADMIN_SESSION_TTL,
 };

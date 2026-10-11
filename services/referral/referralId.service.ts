@@ -15,7 +15,7 @@
 import { redisService } from "@redis/index.js";
 import { CA_REFERRAL_RANGE_CURSOR_KEY } from "@redis/keys/redis.keys.js";
 import { encodeBase62Padded } from "./utils/base62.js";
-import { logger } from "@logger/index.js";
+import { logger } from "@logger/logger.js";
 
 const REFERRAL_PREFIX = "KY27";
 const RANGE_SIZE = 10_000; // Each server gets 10,000 IDs at a time
