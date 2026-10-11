@@ -6,6 +6,7 @@ export const promoteUserOrAdminRoleRequestSchema = z.object({
 });
 
 export const adminOnboardingRequestSchema = z.object({
+  email: z.email("Invalid email address"),
   adminPassword: z.string().min(8, "Password must be at least 8 characters long"),
   loginToken: z.string().min(32, "Invalid login token"),
 });

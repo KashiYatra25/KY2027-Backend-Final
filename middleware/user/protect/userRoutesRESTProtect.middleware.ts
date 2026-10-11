@@ -3,7 +3,7 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
 import { catchAsync } from "zodex-axon/core";
 import { BadRequest } from "zodex-axon/errors";
 import { logger } from "@root/lib/logger/logger";
-import { decodeAndFindUser, extractSessionToken } from "./helper/functions/session.helper";
+import { decodeAndFindUser, extractSessionToken } from "./helper/functions/session.helper.js";
 
 /**
  * REST API authentication middleware

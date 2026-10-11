@@ -17,7 +17,7 @@ export const getAdminUsers = catchAsync(
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
-    const requesterRole = req.user.role;
+    const requesterRole = req.admin.role;
 
     // Determine which roles the requester can see
     let visibleRoles: RoleLevel[];

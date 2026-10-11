@@ -7,11 +7,10 @@ import {
 } from "@controller/admin/auth/index.js";
 import { approveCaApplication } from "@controller/admin/ca/approveCaApplication.controller.js";
 import { getCaApplications } from "@controller/admin/ca/getCaApplications.controller.js";
-import {
-  adminRoutesRESTProtectMiddleware,
-  adminRoleCheckerMiddleware,
-} from "@middleware/admin/protect/index.js";
 import { adminRateLimiter } from "@middleware/limiters/index.js";
+import { adminRoutesRESTProtectMiddleware } from "@middleware/admin/protect/adminRoutesRESTProtect.middleware.js";
+import { checkAdminAccountStatusMiddleware } from "@middleware/admin/protect/checkAdminAccountStatus.middleware.js";
+import { roleCheckerMiddleware } from "@middleware/user/protect/index.js";
 import {
   adminOnboardingRequestSchema,
   adminLoginRequestSchema,
@@ -37,9 +36,6 @@ adminRouter.get("/get-session", getAdminSession);
  * POST /login
  * Admin login with email + password
  * Issues JWT tokens (access + refresh)
- * 
- * NOTE: No role checker here - this is standalone login.
- * The controller itself validates the user has admin role.
  */
 adminRouter.post(
   "/login",
@@ -51,7 +47,6 @@ adminRouter.post(
 /**
  * POST /logout
  * Logout - clears refresh token cookie
- * No auth required - just clears cookie if it exists
  */
 adminRouter.post("/logout", adminLogout);
 
@@ -59,8 +54,6 @@ adminRouter.post("/logout", adminLogout);
  * POST /refresh-token
  * Refresh access token using HttpOnly refresh token cookie
  * Returns: { accessToken, accessTokenExpiry }
- * 
- * Uses refresh token rotation for security.
  */
 adminRouter.post("/refresh-token", refreshAdminToken);
 
@@ -68,9 +61,6 @@ adminRouter.post("/refresh-token", refreshAdminToken);
  * POST /confirm-onboarding
  * First-time admin onboarding - set password after receiving invite
  * Requires valid onboarding token (from email link)
- * 
- * NOTE: No role checker here - this is standalone.
- * The controller validates the user via the token.
  */
 adminRouter.post(
   "/confirm-onboarding",
@@ -80,11 +70,14 @@ adminRouter.post(
 );
 
 // ═══════════════════════════════════════════════════════════════════
-// PROTECTED ROUTES (admin JWT required)
+// PROTECTED ROUTES (admin JWT required + not suspended)
 // ═══════════════════════════════════════════════════════════════════
 
-// All routes below require valid admin JWT
-adminRouter.use(adminRateLimiter, adminRoutesRESTProtectMiddleware);
+adminRouter.use(
+  adminRateLimiter,
+  adminRoutesRESTProtectMiddleware,
+  checkAdminAccountStatusMiddleware,
+);
 
 /**
  * GET /campus-ambassador/get-applications
@@ -93,7 +86,7 @@ adminRouter.use(adminRateLimiter, adminRoutesRESTProtectMiddleware);
  */
 adminRouter.get(
   "/campus-ambassador/get-applications",
-  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  roleCheckerMiddleware("REST", "MASTER_ADMIN", "MANAGER"),
   getCaApplications,
 );
 
@@ -104,7 +97,7 @@ adminRouter.get(
  */
 adminRouter.post(
   "/campus-ambassador/approve-request",
-  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  roleCheckerMiddleware("REST", "MASTER_ADMIN", "MANAGER"),
   RequestGuardMiddleware({ body: caApplicationApprovalRequestSchema }),
   approveCaApplication,
 );

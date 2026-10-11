@@ -2,49 +2,104 @@ import type { AdminOnboardingRequestSchemaType } from "@schemas/admin/admin.sche
 import { CryptoService } from "@helper/functions/crypto.helper.js";
 import type { Response, NextFunction } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
-import { BadRequest } from "zodex-axon/errors";
+import { BadRequest, NotFound } from "zodex-axon/errors";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { logger } from "@logger/logger.js";
 import { generateAdminTokens } from "@controller/admin/helper/functions/index.js";
 import { VerificationTokenModel } from "@root/databaseManagers/mongoose/index.js";
+import { prisma } from "@root/prisma.js";
 import {
   ADMIN_REFRESH_TOKEN_COOKIE_NAME,
   ADMIN_COOKIE_OPTIONS,
 } from "@controller/admin/constants/cookie.constants.js";
 
 // ═══════════════════════════════════════════════════════════════════
-// VERIFY ADMIN CREDENTIALS & ISSUE JWT (Onboarding)
+// CONFIRM ADMIN ONBOARDING
 //
-// Prerequisites (checked by middleware):
-// 1. User is authenticated (NextAuth session)
-// 2. User has valid admin role (MASTER_ADMIN, MANAGER, OPERATOR)
-// 3. Admin record exists in database (validateUserIsAdmin middleware)
+// Public endpoint - no auth required.
+// User provides email + password + token (from email link).
 //
-// This controller:
-// 1. Verifies login token (from email link) - uses NEWEST non-expired token
-// 2. Verifies password
-// 3. Generates and issues JWT tokens
-// 4. Deletes the used token (one-time use)
+// Flow:
+// 1. Find user by email
+// 2. Verify user has admin role
+// 3. Verify login token (from email link)
+// 4. Verify password matches stored hash
+// 5. Generate and issue JWT tokens
+// 6. Delete the used token (one-time use)
 //
-// Response includes accessToken in body for frontend storage in memory.
+// Response includes accessToken in body for frontend storage.
 // Refresh token is set as HttpOnly cookie.
 // ═══════════════════════════════════════════════════════════════════
 
 export const confirmAdminOnboarding = catchAsync(
   async (
-    req: VerifiedRequest<
-      { body: AdminOnboardingRequestSchemaType },
-    >,
+    req: VerifiedRequest<{ body: AdminOnboardingRequestSchemaType }>,
     res: Response,
     next: NextFunction,
-  ) => {
-    const { adminPassword, loginToken } = req.validatedData;
-    const { hashedPassword, adminId } = req.adminData;
-    const { id: userId, email, role } = req.user;
+  ): Promise<void> => {
+    const { email, adminPassword, loginToken } = req.validatedData;
 
     // ─────────────────────────────────────────────────────────────────
-    // Find the NEWEST non-expired token for this user
-    // Sorted by createdAt descending - newest first
+    // Step 1: Find user by email
+    // ─────────────────────────────────────────────────────────────────
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        role: {
+          select: {
+            level: true,
+          },
+        },
+        admin: {
+          select: {
+            id: true,
+            hashedPassword: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      logger.warn("Admin onboarding - user not found", { email });
+      return next(
+        new NotFound().handleResponse(res, {
+          info: "User not found",
+          code: "USER_NOT_FOUND",
+        }),
+      );
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Step 2: Verify user has admin role
+    // ─────────────────────────────────────────────────────────────────
+    const role = user.role?.level;
+    if (!role || role === "USER") {
+      logger.warn("Admin onboarding - user is not an admin", { email, role });
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "You do not have admin access",
+          code: "NOT_ADMIN",
+        }),
+      );
+    }
+
+    if (!user.admin) {
+      logger.warn("Admin onboarding - admin record not found", { email });
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Admin profile not found",
+          code: "ADMIN_NOT_FOUND",
+        }),
+      );
+    }
+
+    const { id: userId } = user;
+    const { id: adminId, hashedPassword } = user.admin;
+
+    // ─────────────────────────────────────────────────────────────────
+    // Step 3: Find the NEWEST non-expired token for this user
     // ─────────────────────────────────────────────────────────────────
     const tokenRecord = await VerificationTokenModel.findOne({
       userId,
@@ -65,7 +120,7 @@ export const confirmAdminOnboarding = catchAsync(
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Verify token hash matches the newest token
+    // Step 4: Verify token hash matches
     // ─────────────────────────────────────────────────────────────────
     const isTokenValid = await CryptoService.verify(
       loginToken,
@@ -83,7 +138,7 @@ export const confirmAdminOnboarding = catchAsync(
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Verify password
+    // Step 5: Verify password
     // ─────────────────────────────────────────────────────────────────
     const isPasswordValid = await CryptoService.verify(
       adminPassword,
@@ -101,13 +156,13 @@ export const confirmAdminOnboarding = catchAsync(
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Delete the used token (one-time use)
+    // Step 6: Delete the used token (one-time use)
     // ─────────────────────────────────────────────────────────────────
     await VerificationTokenModel.deleteOne({ _id: tokenRecord._id });
     logger.debug("Deleted used login token", { userId, tokenId: tokenRecord._id });
 
     // ─────────────────────────────────────────────────────────────────
-    // Generate JWT tokens
+    // Step 7: Generate JWT tokens
     // ─────────────────────────────────────────────────────────────────
     const tokens = generateAdminTokens({
       adminId,
@@ -116,7 +171,7 @@ export const confirmAdminOnboarding = catchAsync(
     });
 
     // ─────────────────────────────────────────────────────────────────
-    // Set refresh token as HttpOnly cookie
+    // Step 8: Set refresh token as HttpOnly cookie
     // ─────────────────────────────────────────────────────────────────
     res.cookie(
       ADMIN_REFRESH_TOKEN_COOKIE_NAME,

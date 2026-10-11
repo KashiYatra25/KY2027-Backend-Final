@@ -23,7 +23,7 @@ export const approveCaApplication = catchAsync(
     next: NextFunction,
   ): Promise<void> => {
     const { applicationId, action } = req.validatedData;
-    const adminUserId = req.user.id;
+    const adminUserId = req.admin.id;
 
     // Find the application
     const application = await prisma.caApplication.findUnique({
