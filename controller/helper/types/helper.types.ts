@@ -8,33 +8,8 @@ export type UserLookupParams =
   | { userId?: string; email: string };
 
 // ============================================
-// User Exists Check Types
-// ============================================
-
-export type UserExistsResult =
-  | {
-      exists: false;
-      user: null;
-    }
-  | {
-      exists: true;
-      user: {
-        id: string;
-        email: string;
-        firstName: string | null;
-        lastName: string | null;
-      };
-    };
-
-// ============================================
 // Profile Completion Types
 // ============================================
-
-export type ProfileCompletionResult = {
-  isComplete: boolean;
-  missingSteps: ProfileCompletionStep[];
-  userId ?: string
-};
 
 export type ProfileCompletionStep =
   | "accountProgress"
@@ -43,10 +18,18 @@ export type ProfileCompletionStep =
   | "aadhaarUpload"
   | "aadhaarVerification";
 
-// ============================================
-// Suspension Check Types
-// ============================================
+// Single user profile check result
+export interface SingleProfileResult {
+  isComplete: boolean;
+  missingSteps: ProfileCompletionStep[];
+  userId?: string;
+}
 
-export type SuspensionCheckResult = {
-  isSuspended: boolean;
-};
+// Multiple users profile check result
+export interface MultipleProfileResult {
+  isComplete: boolean;
+  incompleteUsers: string[];
+}
+
+// Legacy type alias for backward compatibility
+export type ProfileCompletionResult = SingleProfileResult;

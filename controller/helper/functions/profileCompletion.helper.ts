@@ -5,7 +5,7 @@ import type {
   UserLookupParams,
   SingleProfileResult,
   MultipleProfileResult,
-} from "../types/helper.types.js";
+} from "@controller/helper/types/helper.types.js";
 
 /**
  * Extract missing steps from profile verification data
