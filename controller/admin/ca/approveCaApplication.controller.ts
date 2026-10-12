@@ -7,6 +7,8 @@ import { logger } from "@logger/logger.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 import type { CaApplicationApprovalRequestSchemaType } from "@schemas/admin/caApproval.schema.js";
 import { referralIdService } from "@root/services/referral/index.js";
+import { queueCaApplicationStatusEmail } from "@root/services/queue/index.js";
+import { env } from "@lib/env/environment.js";
 
 /**
  * POST /admin/ca/approve
@@ -22,8 +24,8 @@ export const approveCaApplication = catchAsync(
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    const { applicationId, action } = req.validatedData;
-    const adminUserId = req.admin.id;
+    const { applicationId, action, rejectionReason } = req.validatedData;
+    const adminId = req.admin.adminId;
 
     // Find the application
     const application = await prisma.caApplication.findUnique({
@@ -62,10 +64,14 @@ export const approveCaApplication = catchAsync(
     if (action === "REJECTED") {
       const updatedApplication = await prisma.caApplication.update({
         where: { id: applicationId },
-        data: { status: "REJECTED" },
+        data: { 
+          status: "REJECTED",
+          rejectionReason: rejectionReason,
+        },
         select: {
           id: true,
           status: true,
+          rejectionReason: true,
           updatedAt: true,
           user: {
             select: {
@@ -77,10 +83,24 @@ export const approveCaApplication = catchAsync(
         },
       });
 
+      // Queue rejection email notification
+      const userName = updatedApplication.user.firstName 
+        ? `${updatedApplication.user.firstName} ${updatedApplication.user.lastName || ""}`.trim()
+        : "Applicant";
+
+      await queueCaApplicationStatusEmail({
+        userName,
+        email: updatedApplication.user.email,
+        status: "REJECTED",
+        rejectionReason: rejectionReason || "No reason provided",
+        dashboardUrl: `${env.CLIENT_ORIGIN}/ca`,
+        websiteUrl: env.CLIENT_ORIGIN,
+      });
+
       logger.info("CA application rejected", {
         applicationId,
         userId: application.userId,
-        adminUserId,
+        adminId,
       });
 
       new OkResponseStrategy().handleResponse(res, {
@@ -146,7 +166,21 @@ export const approveCaApplication = catchAsync(
       applicationId,
       userId: application.userId,
       referralId: result.caProfile.referralId,
-      adminUserId,
+      adminId,
+    });
+
+    // Queue approval email notification
+    const userName = application.user.firstName 
+      ? `${application.user.firstName} ${application.user.lastName || ""}`.trim()
+      : "Applicant";
+
+    await queueCaApplicationStatusEmail({
+      userName,
+      email: application.user.email,
+      status: "ACCEPTED",
+      referralId: result.caProfile.referralId,
+      dashboardUrl: `${env.CLIENT_ORIGIN}/ca/dashboard`,
+      websiteUrl: env.CLIENT_ORIGIN,
     });
 
     new OkResponseStrategy().handleResponse(res, {

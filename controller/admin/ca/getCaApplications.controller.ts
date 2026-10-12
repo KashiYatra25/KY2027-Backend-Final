@@ -1,7 +1,7 @@
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 import { prisma } from "@root/prisma.js";
 import type { NextFunction, Response } from "express";
-import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
+import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 
 /**
@@ -10,14 +10,11 @@ import { OkResponseStrategy } from "zodex-axon/responses";
  */
 export const getCaApplications = catchAsync(
   async (
-    req: VerifiedRequest<
-      { query: { status: "PENDING" | "ACCEPTED" | "REJECTED" } },
-      AdminRequestWithVerifiedCreds
-    >,
+    req: AdminRequestWithVerifiedCreds,
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
-    const status = req.validatedQuery.status;
+    const status = req.query.status as "PENDING" | "ACCEPTED" | "REJECTED" | undefined;
 
     const whereClause = status
       ? { status: status as "PENDING" | "ACCEPTED" | "REJECTED" }
