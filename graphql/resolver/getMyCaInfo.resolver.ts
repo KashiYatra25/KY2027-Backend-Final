@@ -2,16 +2,15 @@ import { prisma } from "@root/prisma.js";
 import { MiddlewareChainPipeline } from "gql-axon";
 import { catchGqlAsync } from "gql-axon/errors";
 import { type GqlGlobalContext } from "@gql/engine/engine.js";
-import { type MyCaInfoResponse } from "@gql/types/ca.types.js";
+import { type MyCaInfoResponse, type UserValidatedContextType } from "@gql/helper/types/index.js";
 import {
   myProfileGuard,
   isAuthenticatedGuard,
   isProfileCompleteGuard,
-  type GqlValidatedContextType,
-} from "@gql/middleware/user.profile.middleware.js";
+} from "@gql/middleware/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
-// MY CA INFO RESOLVER
+// GET MY CA INFO RESOLVER
 // Returns CA application + profile data
 // Requires: Authentication + Profile Completion
 // Frontend queries only the fields it needs
@@ -21,7 +20,7 @@ export const getMyCaInfoResolver = new MiddlewareChainPipeline()
   .pipe(myProfileGuard)
   .pipe(isAuthenticatedGuard)
   .pipe(isProfileCompleteGuard)
-  .execute<GqlValidatedContextType, GqlGlobalContext, MyCaInfoResponse>(
+  .execute<UserValidatedContextType, GqlGlobalContext, MyCaInfoResponse>(
     catchGqlAsync(async (_parent, _args: unknown, context, _info) => {
       const userId = context.validatedContext.user!.id;
 
@@ -72,5 +71,5 @@ export const getMyCaInfoResolver = new MiddlewareChainPipeline()
             }
           : null,
       };
-    }),
+    })
   );

@@ -1,4 +1,4 @@
-import type { Role, Gender } from '@lib/prisma/index.js';
+import type { Role, Gender } from "@lib/prisma/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // USER PROFILE TYPES - For GraphQL Resolver
@@ -24,7 +24,8 @@ export type UserProfileData = {
   aadhaarNumber: string | null;
   isFromIITBhu: boolean;
   isPaidUser: boolean;
-  role: Pick<Role, 'id' | 'level'> | null;
+  kyId: string | null;
+  role: Pick<Role, "id" | "level"> | null;
 };
 
 /**
@@ -42,11 +43,12 @@ export type VerificationSteps = {
  */
 export type AccountProgressData = {
   steps: VerificationSteps;
+  currentStep: number;
   completedSteps: number;
   totalSteps: number;
   completionPercentage: number;
   isProfileComplete: boolean;
-  accountStatus: 'ACTIVE' | 'SUSPENDED';
+  accountStatus: "ACTIVE" | "SUSPENDED";
 };
 
 /**

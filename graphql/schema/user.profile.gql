@@ -20,8 +20,9 @@ enum Gender {
 Role levels
 """
 enum RoleLevel {
-  SUPER_ADMIN
-  ADMIN
+  MASTER_ADMIN
+  MANAGER
+  OPERATOR
   USER
 }
 
@@ -48,6 +49,7 @@ type UserProfile {
   aadhaarNumber: String
   isFromIITBhu: Boolean!
   isPaidUser: Boolean!
+  kyId: String
   role: Role
 }
 

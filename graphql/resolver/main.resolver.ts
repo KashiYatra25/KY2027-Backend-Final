@@ -1,5 +1,5 @@
-import { getMyAccountResolver } from "@gql/resolver/user.resolver.js";
-import { getMyCaInfoResolver } from "@gql/resolver/ca.resolver.js";
+import { getMyAccountResolver } from "./getMyAccount.resolver.js";
+import { getMyCaInfoResolver } from "./getMyCaInfo.resolver.js";
 
 export const resolvers = {
   Query: {

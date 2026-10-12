@@ -2,23 +2,19 @@ import { prisma } from "@root/prisma.js";
 import { MiddlewareChainPipeline } from "gql-axon";
 import { catchGqlAsync } from "gql-axon/errors";
 import { type GqlGlobalContext } from "@gql/engine/engine.js";
-import { type MyAccountResponse } from "@gql/types/userProfile.types.js";
-import {
-  myProfileGuard,
-  isAuthenticatedGuard,
-  type GqlValidatedContextType,
-} from "@gql/middleware/user.profile.middleware.js";
+import { type MyAccountResponse, type UserValidatedContextType } from "@gql/helper/types/index.js";
+import { myProfileGuard, isAuthenticatedGuard } from "@gql/middleware/index.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 
 // ═══════════════════════════════════════════════════════════════════
-// MY ACCOUNT RESOLVER
+// GET MY ACCOUNT RESOLVER
 // Returns combined user profile (Prisma) + account progress (MongoDB)
 // ═══════════════════════════════════════════════════════════════════
 
 export const getMyAccountResolver = new MiddlewareChainPipeline()
   .pipe(myProfileGuard)
   .pipe(isAuthenticatedGuard)
-  .execute<GqlValidatedContextType, GqlGlobalContext, MyAccountResponse>(
+  .execute<UserValidatedContextType, GqlGlobalContext, MyAccountResponse>(
     catchGqlAsync(async (_parent, _args: unknown, context, _info) => {
       const userId = context.validatedContext.user!.id;
 
@@ -41,6 +37,7 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
           aadhaarNumber: true,
           isFromIITBhu: true,
           isPaidUser: true,
+          kyId: true,
           role: {
             select: {
               id: true,
@@ -70,11 +67,11 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
           accountProgress?.profileCompletionAndVerification
             ?.hasVerifiedPhoneNumber ?? false,
       };
-      const currentStep = Object.values(steps).filter(Boolean).length + 1; // Next step to complete
-      const totalSteps = 4;
       const completedSteps = Object.values(steps).filter(Boolean).length;
+      const totalSteps = 4;
+      const currentStep = completedSteps + 1; // Next step to complete
       const completionPercentage = Math.round(
-        (completedSteps / totalSteps) * 100,
+        (completedSteps / totalSteps) * 100
       );
       const isProfileComplete = completedSteps === totalSteps;
 
@@ -82,7 +79,7 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
         profile: {
           ...user,
           dob: user.dob?.toISOString() ?? null,
-          joinedAt: user.createdAt.toISOString(), // Map Prisma createdAt to GraphQL joinedAt
+          joinedAt: user.createdAt.toISOString(),
         },
         progress: {
           steps,
@@ -96,5 +93,5 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
             "ACTIVE",
         },
       };
-    }),
+    })
   );
