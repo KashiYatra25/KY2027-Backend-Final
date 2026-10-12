@@ -1,7 +1,7 @@
 import type { Response, NextFunction } from "express";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import { BadRequest } from "zodex-axon/errors";
+import { BadRequest, ForbiddenErrorResponse } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
@@ -12,8 +12,9 @@ import type { BecomeCaRequestSchemaType } from "@schemas/user/caApplication.sche
  * Create a new CA application for the authenticated user
  * Requirements:
  * - User must be authenticated
- * - User must have USER role
- * - User must have completed profile
+ * - User must have USER role (enforced by roleCheckerMiddleware in routes)
+ * - User must NOT be from IIT BHU (isFromIITBhu: false)
+ * - User must have completed profile (enforced by checkWhetherProfileIsCompleteMiddleware)
  * - User must not have an existing application
  */
 const createCaApplication = catchAsync(
@@ -26,6 +27,22 @@ const createCaApplication = catchAsync(
     next: NextFunction,
   ) => {
     const { id: userId } = req.user;
+
+    // Check if user is from IIT BHU - they cannot apply for CA
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isFromIITBhu: true },
+    });
+
+    if (user?.isFromIITBhu) {
+      return next(
+        new ForbiddenErrorResponse().handleResponse(res, {
+          info: "IIT BHU students cannot apply for Campus Ambassador",
+          reason:
+            "The Campus Ambassador program is designed to help spread awareness about Kashi Yatra at other colleges. As an IIT BHU student, you're already part of the organizing team!",
+        }),
+      );
+    }
 
     // Check if user already has a CA application
     const existingApplication = await prisma.caApplication.findUnique({

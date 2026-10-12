@@ -2,8 +2,8 @@
  * KyId Generator Service
  *
  * Generates unique Kashiyatra IDs for users on profile completion.
- * Format: ky-{8 random base62 chars}
- * Example: ky-8xK2mNpQ
+ * Format: KY-2027-{8 random base62 chars}
+ * Example: KY-2027-8xK2mNpQ
  *
  * With 62^8 = 218 trillion combinations, collision is virtually impossible
  * for 15k users, but we still check uniqueness just in case.
@@ -12,7 +12,7 @@
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
 
-const KY_ID_PREFIX = "ky-";
+const KY_ID_PREFIX = "KY-2027-";
 const KY_ID_LENGTH = 8; // Random part length
 const MAX_RETRIES = 5;
 
@@ -33,7 +33,7 @@ function generateRandomBase62(length: number): string {
 
 /**
  * Generate a unique Kashiyatra ID
- * Format: ky-{8 random chars}
+ * Format: KY-2027-{8 random chars}
  *
  * Checks database for uniqueness and retries if collision occurs.
  *

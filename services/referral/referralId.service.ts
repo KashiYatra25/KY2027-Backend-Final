@@ -21,10 +21,10 @@ import { CA_REFERRAL_RANGE_CURSOR_KEY } from "@redis/keys/redis.keys.js";
 import { encodeBase62Padded } from "./utils/base62.js";
 import { logger } from "@logger/logger.js";
 
-const REFERRAL_PREFIX = "KY27";
+const REFERRAL_PREFIX = "KY-2027-CA";
 const RANGE_SIZE = 10_000; // Each server gets 10,000 IDs at a time
 const MIN_ID_LENGTH = 4; // Minimum base62 length (pad with zeros)
-const INITIAL_CURSOR = 10_000; // Start from 10000 for nicer looking IDs
+const INITIAL_CURSOR = 1; // Start from 1
 
 class ReferralIdService {
   private rangeStart: number = 0;
@@ -79,7 +79,7 @@ class ReferralIdService {
 
   /**
    * Get the next unique referral ID
-   * Format: KY27-XXXX (where XXXX is base62 encoded)
+   * Format: KY-2027-CA-XXXX (where XXXX is base62 encoded)
    *
    * Uses mutex to ensure thread-safe counter increment.
    *

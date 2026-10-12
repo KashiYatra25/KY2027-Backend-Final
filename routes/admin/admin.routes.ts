@@ -11,6 +11,13 @@ import {
 import { approveCaApplication } from "@controller/admin/ca/approveCaApplication.controller.js";
 import { getCaApplications } from "@controller/admin/ca/getCaApplications.controller.js";
 import { updateCaApplicationStatus } from "@controller/admin/ca/updateCaApplicationStatus.controller.js";
+import {
+  createCoupon,
+  getCoupons,
+  updateCoupon,
+  changeCouponStatus,
+  deleteCoupon,
+} from "@controller/admin/coupon/index.js";
 import { getAdminUsers } from "@controller/admin/users/getAdminUsers.controller.js";
 import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
 import {
@@ -48,6 +55,12 @@ import {
 import { changePasswordRequestSchema } from "@schemas/admin/changePassword.schema.js";
 import { caApplicationApprovalRequestSchema } from "@schemas/admin/caApproval.schema.js";
 import { caApplicationStatusUpdateSchema } from "@schemas/admin/caStatusUpdate.schema.js";
+import {
+  createCouponRequestSchema,
+  updateCouponRequestSchema,
+  changeCouponStatusRequestSchema,
+  couponIdParamRequestSchema,
+} from "@schemas/admin/coupon.schema.js";
 import {
   createVenueSchema,
   updateVenueSchema,
@@ -358,4 +371,69 @@ adminRouter.delete(
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
   RequestGuardMiddleware({ params: scheduleEntryIdParamSchema }),
   deleteScheduleEntry,
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// COUPON MANAGEMENT ROUTES
+// Requires: MASTER_ADMIN role
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * GET /admin/coupons
+ * List all coupons (optional ?status=ACTIVE|EXPIRED|DISABLED filter)
+ */
+adminRouter.get(
+  "/coupons",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  getCoupons,
+);
+
+/**
+ * POST /admin/coupons
+ * Create a new coupon
+ */
+adminRouter.post(
+  "/coupons",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  RequestGuardMiddleware({ body: createCouponRequestSchema }),
+  createCoupon,
+);
+
+/**
+ * PATCH /admin/coupons/:couponId
+ * Update a coupon's mutable fields
+ */
+adminRouter.patch(
+  "/coupons/:couponId",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  RequestGuardMiddleware({
+    params: couponIdParamRequestSchema,
+    body: updateCouponRequestSchema,
+  }),
+  updateCoupon,
+);
+
+/**
+ * PATCH /admin/coupons/:couponId/status
+ * Disable or reactivate a coupon (ACTIVE ↔ DISABLED)
+ */
+adminRouter.patch(
+  "/coupons/:couponId/status",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  RequestGuardMiddleware({
+    params: couponIdParamRequestSchema,
+    body: changeCouponStatusRequestSchema,
+  }),
+  changeCouponStatus,
+);
+
+/**
+ * DELETE /admin/coupons/:couponId
+ * Permanently delete a coupon (only if it has no usage records)
+ */
+adminRouter.delete(
+  "/coupons/:couponId",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  RequestGuardMiddleware({ params: couponIdParamRequestSchema }),
+  deleteCoupon,
 );
