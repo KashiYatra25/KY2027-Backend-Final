@@ -10,6 +10,7 @@ export {
 // CA management
 export { getCaApplications } from "./ca/getCaApplications.controller.js";
 export { approveCaApplication } from "./ca/approveCaApplication.controller.js";
+export { updateCaApplicationStatus } from "./ca/updateCaApplicationStatus.controller.js";
 
 // Coupon management
 export { createCoupon } from "./coupon/createCoupon.controller.js";

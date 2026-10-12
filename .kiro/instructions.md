@@ -252,9 +252,81 @@ export { getUsers } from "./getUsers.controller.js";  // Just import directly!
 
 ---
 
-## Code Style
+## TypeScript Strictness
 
-### Naming Convention
+### No `any` Type
+**NEVER** use `any` type. Always provide proper typings.
+
+```typescript
+// ❌ WRONG - Using any
+function processData(data: any): any {
+  return data.value;
+}
+
+const result: any = await someAsyncFunction();
+
+// ✅ CORRECT - Proper typings
+interface DataInput {
+  value: string;
+  count: number;
+}
+
+interface DataOutput {
+  processed: boolean;
+  result: string;
+}
+
+function processData(data: DataInput): DataOutput {
+  return { processed: true, result: data.value };
+}
+
+const result: MyResponseType = await someAsyncFunction();
+```
+
+### When Types Are Unknown
+If you genuinely don't know the type:
+1. Use `unknown` instead of `any` (forces type narrowing)
+2. Create a proper interface based on the expected shape
+3. Use generics for flexible but type-safe functions
+
+```typescript
+// ❌ WRONG
+function parseResponse(response: any) {
+  return response.data;
+}
+
+// ✅ CORRECT - Use unknown and narrow
+function parseResponse(response: unknown): ParsedData {
+  if (!isValidResponse(response)) {
+    throw new Error("Invalid response");
+  }
+  return response.data;
+}
+
+// ✅ CORRECT - Use generics
+function parseResponse<T>(response: ApiResponse<T>): T {
+  return response.data;
+}
+```
+
+### Type Imports
+Always import types explicitly:
+```typescript
+import type { Request, Response } from "express";
+import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
+```
+
+### Refactoring Discipline
+When writing new code or modifying existing code:
+1. **Follow existing patterns** in the codebase
+2. **Update types** when changing function signatures
+3. **Remove unused types** when refactoring
+4. **Add types** for all function parameters and return values
+5. **Use interfaces** for object shapes, `type` for unions/intersections
+
+---
+
+## Error Handling
 All names (variables, functions, classes, files) must be:
 - **Exhaustive**: Fully describe what it does
 - **Immediately eye-catching**: Easy to understand at a glance
@@ -392,3 +464,251 @@ User routes require NextAuth session:
 ### Indexes
 - Don't create explicit indexes for `unique: true` fields
 - Add TTL indexes for expiring documents
+
+---
+
+## GraphQL Guidelines
+
+### Root Folder Structure
+
+All GraphQL code MUST be under the `graphql/` folder. Unlike REST (which has nested domain folders), GraphQL has a **flat structure at the first level**, but middleware and resolvers CAN be submodularized by feature/domain:
+
+```
+graphql/
+├── engine/                         # GraphQL engine setup (Apollo, context)
+│   └── engine.ts
+├── schema/                         # GraphQL schema definitions (.gql files)
+│   ├── main.gql
+│   ├── user.profile.gql
+│   └── ca.gql
+├── resolver/                       # Resolver implementations
+│   ├── user/                       # Feature subfolder (optional)
+│   │   ├── getMyAccount.resolver.ts
+│   │   └── index.ts
+│   ├── ca/                         # Feature subfolder (optional)
+│   │   ├── getMyCaInfo.resolver.ts
+│   │   └── index.ts
+│   └── main.resolver.ts            # Barrel export
+├── middleware/                     # GQL middleware/guards
+│   ├── admin/                      # Feature subfolder (optional)
+│   │   ├── adminContextGuard.middleware.ts
+│   │   ├── adminJwtGuard.middleware.ts
+│   │   └── index.ts
+│   ├── user/                       # Feature subfolder (optional)
+│   │   ├── myProfileGuard.middleware.ts
+│   │   ├── isAuthenticatedGuard.middleware.ts
+│   │   ├── isProfileCompleteGuard.middleware.ts
+│   │   └── index.ts
+│   └── index.ts                    # Barrel export
+└── helper/                         # Shared GQL helpers (REQUIRED)
+    ├── types/
+    │   ├── context.types.ts
+    │   ├── userProfile.types.ts
+    │   └── ca.types.ts
+    └── functions/                  # If needed
+```
+
+### Submodularization Rules
+
+Middleware and resolvers CAN be organized into subfolders when:
+- There are many files related to a single feature/domain
+- Grouping improves discoverability
+
+**Flat structure (for small projects):**
+```
+graphql/middleware/
+├── adminContextGuard.middleware.ts
+├── adminJwtGuard.middleware.ts
+├── myProfileGuard.middleware.ts
+├── isAuthenticatedGuard.middleware.ts
+└── index.ts
+```
+
+**Submodularized structure (for larger projects):**
+```
+graphql/middleware/
+├── admin/
+│   ├── adminContextGuard.middleware.ts
+│   ├── adminJwtGuard.middleware.ts
+│   └── index.ts
+├── user/
+│   ├── myProfileGuard.middleware.ts
+│   ├── isAuthenticatedGuard.middleware.ts
+│   └── index.ts
+└── index.ts                        # Re-exports from subfolders
+```
+
+**Same applies to resolvers:**
+```
+graphql/resolver/
+├── user/
+│   ├── getMyAccount.resolver.ts
+│   └── index.ts
+├── ca/
+│   ├── getMyCaInfo.resolver.ts
+│   └── index.ts
+└── main.resolver.ts
+```
+
+### Key Rules (Always Apply)
+
+1. **ONE resolver per file** - Always
+2. **ONE middleware per file** - Always
+3. **Types in helper/types/** - Never inside middleware/resolver files
+4. **Zod schemas in helper/types/ or helper/functions/** - With related types
+5. **Use roleCheckerMiddleware for role-based access** - Don't create custom role guards
+
+### Key Differences from REST
+
+| Aspect | REST | GraphQL |
+|--------|------|---------|
+| Helper location | Per-domain (`controller/admin/helper/`) | **Single** `graphql/helper/` |
+| Subfolders | Required by domain | **Optional** by feature |
+| Role checking | `adminRoleCheckerMiddleware` | `roleCheckerMiddleware("GraphQL", ...)` |
+
+### File Organization Rules
+
+**ONE resolver per file:**
+```typescript
+// ✅ CORRECT
+// graphql/resolver/user/getMyAccount.resolver.ts
+export const getMyAccountResolver = new MiddlewareChainPipeline()...
+
+// graphql/resolver/ca/getMyCaInfo.resolver.ts
+export const getMyCaInfoResolver = new MiddlewareChainPipeline()...
+```
+
+**ONE middleware per file:**
+```typescript
+// ✅ CORRECT
+// graphql/middleware/admin/adminJwtGuard.middleware.ts
+export const adminJwtGuard = async (...) => {...}
+
+// graphql/middleware/user/isAuthenticatedGuard.middleware.ts
+export const isAuthenticatedGuard = async (...) => {...}
+
+// ❌ WRONG - Multiple guards in one file
+// graphql/middleware/admin.middleware.ts
+export const adminJwtGuard = ...
+export const isMasterAdminGuard = ...
+```
+
+**Types in helper/types/:**
+```typescript
+// ✅ CORRECT
+// graphql/helper/types/context.types.ts
+export type AdminValidatedContextType = ...
+export interface AdminGqlContext extends GqlGlobalContext {...}
+
+// ❌ WRONG - Types inside middleware files
+// graphql/middleware/admin/adminJwtGuard.middleware.ts
+export type AdminValidatedContextType = ...  // Should be in helper/types/
+```
+
+### Naming Conventions
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Resolver File | `{queryName}.resolver.ts` | `getMyAccount.resolver.ts` |
+| Resolver Export | `{queryName}Resolver` | `getMyAccountResolver` |
+| Middleware File | `{guardName}.middleware.ts` | `adminJwtGuard.middleware.ts` |
+| Middleware Export | `{guardName}` | `adminJwtGuard` |
+| Schema File | `{domain}.gql` | `user.profile.gql` |
+| Type File | `{feature}.types.ts` | `context.types.ts`, `userProfile.types.ts` |
+
+### Middleware vs REST
+
+- **GraphQL middleware** lives in `graphql/middleware/` (NOT in root `middleware/`)
+- **REST middleware** lives in root `middleware/`
+- **Do NOT mix** GQL and REST middleware
+- Guards like `userRoutesGQLProtectMiddleware` in root `middleware/` are for Express-level protection, NOT resolver-level guards
+- **Use `roleCheckerMiddleware("GraphQL", ...)`** for role-based access control in resolvers
+
+---
+
+## Git Safety
+
+**IMPORTANT:** Never commit or push to any repository without explicit user permission. Always ask before:
+- `git add`
+- `git commit`
+- `git push`
+- Any destructive git operations (`reset`, `force push`, etc.)
+
+---
+
+## Git Commit Guidelines
+
+### Commit Message Format
+Use semantic commit messages with the following format:
+```
+<type>(<scope>): <short description>
+
+[optional body with more details]
+```
+
+### Commit Types
+| Type | Description |
+|------|-------------|
+| `feat` | New feature or functionality |
+| `fix` | Bug fix |
+| `refactor` | Code refactoring (no new features or fixes) |
+| `style` | Code style changes (formatting, whitespace) |
+| `docs` | Documentation changes |
+| `chore` | Build, config, or maintenance tasks |
+| `perf` | Performance improvements |
+| `test` | Adding or updating tests |
+
+### Scope Examples
+- `auth` - Authentication related
+- `admin` - Admin functionality
+- `user` - User functionality
+- `ca` - Campus Ambassador
+- `schedule` - Schedule management
+- `email` - Email services
+- `db` - Database changes
+
+### Grouping Commits
+**Group related changes into a single commit.** Changes for the same feature/fix should be in one commit:
+
+```bash
+# ✅ CORRECT - Related changes grouped together
+git commit -m "feat(schedule): add schedule management system
+
+- Add Venue, FestDay, ScheduleEntry mongoose models
+- Add public routes for schedule, venues, days
+- Add admin CRUD controllers for schedule management
+- Add Zod schemas for schedule validation
+- Add seed script for schedule data"
+
+# ❌ WRONG - Splitting related changes
+git commit -m "feat(schedule): add venue model"
+git commit -m "feat(schedule): add festday model"  
+git commit -m "feat(schedule): add schedule routes"
+git commit -m "feat(schedule): add admin controllers"
+```
+
+### Rules
+1. **One feature = One commit** - Don't split a feature across multiple commits
+2. **Keep commits atomic** - Each commit should be self-contained and buildable
+3. **Use present tense** - "add feature" not "added feature"
+4. **Be concise but descriptive** - Short description under 72 chars
+5. **Add body for complex changes** - List major changes in bullet points
+
+### Examples
+```bash
+# Feature with multiple files
+feat(ca): add CA leaderboard with pagination and sorting
+
+# Bug fix
+fix(email): copy handlebars templates to JS directory during build
+
+# Refactoring
+refactor(admin): extract token validation to helper function
+
+# Multiple related fixes
+fix(auth): resolve forgot password flow issues
+
+- Add forgotPassword.handlebars template
+- Update build script to copy email templates
+- Fix token validation in reset password controller
+```

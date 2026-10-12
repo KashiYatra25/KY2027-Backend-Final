@@ -201,23 +201,29 @@ export const updateScheduleEntry = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 // DELETE SCHEDULE ENTRY
 // ═══════════════════════════════════════════════════════════════════
+// DELETE SCHEDULE ENTRY (Soft Delete - sets active to false)
+// ═══════════════════════════════════════════════════════════════════
 
 export const deleteScheduleEntry = catchAsync(
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { scheduleEntryId } = req.params;
 
-    const entry = await ScheduleEntryModel.findByIdAndDelete(scheduleEntryId);
+    const entry = await ScheduleEntryModel.findByIdAndUpdate(
+      scheduleEntryId,
+      { active: false },
+      { new: true }
+    );
 
     if (!entry) {
       new NotFound().handleResponse(res, { info: "Schedule entry not found" });
       return;
     }
 
-    logger.info("Schedule entry deleted", { entryId: entry._id, eventSlug: entry.eventSlug });
+    logger.info("Schedule entry deactivated", { entryId: entry._id, eventSlug: entry.eventSlug });
 
     new OkResponseStrategy().handleResponse(res, {
-      info: "Schedule entry deleted successfully",
-      deletedEntryId: scheduleEntryId,
+      info: "Schedule entry deactivated successfully",
+      entry,
     });
   },
 );

@@ -55,7 +55,7 @@ export const confirmAdminOnboarding = catchAsync(
         admin: {
           select: {
             id: true,
-            hashedPassword: true,
+            password: true,
           },
         },
       },
@@ -96,7 +96,7 @@ export const confirmAdminOnboarding = catchAsync(
     }
 
     const { id: userId } = user;
-    const { id: adminId, hashedPassword } = user.admin;
+    const { id: adminId, password: hashedPassword } = user.admin;
 
     // ─────────────────────────────────────────────────────────────────
     // Step 3: Find the NEWEST non-expired token for this user
@@ -165,6 +165,7 @@ export const confirmAdminOnboarding = catchAsync(
     // Step 7: Generate JWT tokens
     // ─────────────────────────────────────────────────────────────────
     const tokens = generateAdminTokens({
+      userId,
       adminId,
       email,
       role,

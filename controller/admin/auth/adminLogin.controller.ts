@@ -98,6 +98,7 @@ export const adminLogin = catchAsync(
     // Generate JWT tokens
     // ─────────────────────────────────────────────────────────────────
     const tokens = generateAdminTokens({
+      userId: user.id,
       adminId: admin.id,
       email: user.email,
       role: userRole,

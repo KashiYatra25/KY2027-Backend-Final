@@ -12,6 +12,7 @@ import { approveCaApplication } from "@controller/admin/ca/approveCaApplication.
 import { getCaApplications } from "@controller/admin/ca/getCaApplications.controller.js";
 import { updateCaApplicationStatus } from "@controller/admin/ca/updateCaApplicationStatus.controller.js";
 import { getAdminUsers } from "@controller/admin/users/getAdminUsers.controller.js";
+import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
 import {
   getVenuesAdmin,
   getVenueByIdAdmin,
@@ -168,6 +169,18 @@ adminRouter.get(
   "/get-admin-users",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
   getAdminUsers,
+);
+
+/**
+ * GET /get-all-users
+ * Get paginated list of all regular users (role: USER)
+ * Query params: page, limit (max 50), search
+ * Requires: MASTER_ADMIN or MANAGER role
+ */
+adminRouter.get(
+  "/get-all-users",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  getAllUsers,
 );
 
 /**

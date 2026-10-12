@@ -6,7 +6,8 @@ import type { RoleLevel } from "@lib/prisma/index.js";
  */
 export interface AdminRequestWithVerifiedCreds extends Request {
   admin: {
-    id: string;
+    userId: string;
+    adminId: string;
     email: string;
     role: Exclude<RoleLevel, "USER">;
   };

@@ -10,6 +10,7 @@ import type { Request } from "express";
  * Payload for generating admin tokens
  */
 export interface AccessTokenPayload {
+  userId: string;
   adminId: string;
   email: string;
   role: RoleLevel;
@@ -65,7 +66,8 @@ export interface AdminTokenPair {
  */
 export interface AdminRequestWithVerifiedCreds extends Request {
   admin: {
-    id: string;
+    userId: string;
+    adminId: string;
     email: string;
     role: Exclude<RoleLevel, "USER">;
   };

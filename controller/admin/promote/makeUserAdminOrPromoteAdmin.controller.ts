@@ -10,7 +10,7 @@ import { logger } from "@logger/logger.js";
 // middleware is created and this import can be restored.
 // import type { AdminInviteRequestWithTargetUser } from "@root/controller/middleware/admin/invite";
 import type { RoleLevel } from "@lib/prisma/index.js";
-import { queueAdminInviteEmail } from "@services/queue/index.js";
+import { queueAdminOnboardCredsEmail } from "@services/queue/index.js";
 import { env } from "@lib/env/environment.js";
 import { VerificationTokenModel } from "@lib/mongo/index.js";
 
@@ -95,7 +95,7 @@ export const makeUserAdminOrPromoteAdmin = catchAsync(
     // Queue email via BullMQ (async - doesn't block response)
     const userName = targetName || user.firstName || user.slugName || "Admin";
     
-    const jobId = await queueAdminInviteEmail({
+    const jobId = await queueAdminOnboardCredsEmail({
       userName,
       email: targetEmail,
       tempPassword,

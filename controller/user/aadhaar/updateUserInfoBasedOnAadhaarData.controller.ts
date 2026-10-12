@@ -7,13 +7,16 @@ import { prisma } from "@root/prisma.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import { env } from "@lib/env/environment.js";
 import type { AadhaarExtractedRequest } from "./helper/types/aadhaar.types.js";
-import { autoSetPaidForIITBhuUser } from "@root/controller/helper/index.js";
 
 /**
  * Step 2: Confirm Aadhaar - Save verified data and cleanup
  * POST /aadhaar/verify
  * Called after extractAadhaarDataMiddleware middleware
  * Receives extracted data from middleware, saves to DB, deletes S3 image
+ *
+ * Note: Post-save hooks on AccountProgress handle:
+ * - Auto-setting isPaidUser for IIT BHU users
+ * - Generating kyId on profile completion
  */
 const updateUserInfoBasedOnAadhaarData = catchAsync(
   async (req: AadhaarExtractedRequest, res: Response) => {
@@ -41,18 +44,12 @@ const updateUserInfoBasedOnAadhaarData = catchAsync(
       },
     });
 
-    // Update MongoDB - mark Aadhaar as verified
+    // Update MongoDB - mark Aadhaar as verified (post-save hooks will handle the rest)
     const progress = await AccountProgressModel.findOne({ userId });
     if (progress) {
       progress.profileCompletionAndVerification!.hasAadhaarBeenVerified = true;
       await progress.save();
       logger.info("Aadhaar verified and profile updated", { userId, aadhaarLast4: aadhaarNumber.slice(-4), gender, dob });
-    }
-
-    // Auto-set isPaidUser for IIT BHU users if profile is now complete
-    const autoSetPaid = await autoSetPaidForIITBhuUser(userId);
-    if (autoSetPaid) {
-      logger.info("Auto-set isPaidUser for IIT BHU user after profile completion", { userId });
     }
 
     // Delete image from S3 (no need to store after verification)

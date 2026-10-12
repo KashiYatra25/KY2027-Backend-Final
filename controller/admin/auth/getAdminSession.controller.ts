@@ -119,6 +119,8 @@ export const getAdminSession = catchAsync(
       session: {
         email,
         role: userRole,
+        firstName: admin.user?.firstName ?? null,
+        googleAvatarUrl: admin.user?.googleAvatarUrl ?? null,
       },
       userExists: true,
     });

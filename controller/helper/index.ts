@@ -8,4 +8,4 @@ export type {
 } from "./types/helper.types.js";
 
 // Helper Functions
-export { checkForProfileCompletion, autoSetPaidForIITBhuUser } from "./functions/profileCompletion.helper.js";
+export { checkForProfileCompletion } from "./functions/profileCompletion.helper.js";

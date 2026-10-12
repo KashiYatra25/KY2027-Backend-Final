@@ -23,7 +23,7 @@ const createCoupon = catchAsync(
     res: Response,
     next: NextFunction,
   ) => {
-    const { id: adminId } = req.admin;
+    const { adminId } = req.admin;
     const {
       code,
       description,

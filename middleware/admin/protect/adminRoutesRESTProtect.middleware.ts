@@ -106,7 +106,8 @@ export const adminRoutesRESTProtectMiddleware = catchAsync(
 
     // Attach decoded token to request for downstream use
     (req as AdminRequestWithVerifiedCreds).admin = {
-      id: decoded.userId,
+      userId: decoded.userId,
+      adminId: decoded.adminId,
       email: decoded.email,
       role: decoded.role as Exclude<typeof decoded.role, "USER">,
     };

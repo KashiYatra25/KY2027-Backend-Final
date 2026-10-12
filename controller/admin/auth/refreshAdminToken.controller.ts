@@ -65,12 +65,13 @@ export const refreshAdminToken = catchAsync(
       );
     }
 
-    const { adminId, email, role, exp } = decoded;
+    const { userId, adminId, email, role, exp } = decoded;
 
     // ─────────────────────────────────────────────────────────────────
     // Step 3: Generate new tokens (both access and refresh)
     // ─────────────────────────────────────────────────────────────────
     const tokens = generateAdminTokens({
+      userId,
       adminId,
       email,
       role,

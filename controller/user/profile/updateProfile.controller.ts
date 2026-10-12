@@ -6,11 +6,14 @@ import { logger } from "@logger/logger.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 import type { ProfileUpdationRequestSchemaType } from "@schemas/user/profile.schema.js";
-import { autoSetPaidForIITBhuUser } from "@root/controller/helper/index.js";
 
 /**
  * PATCH /user/profile
  * Update user's profile (phoneNumber and/or college)
+ *
+ * Note: Post-save hooks on AccountProgress handle:
+ * - Auto-setting isPaidUser for IIT BHU users
+ * - Generating kyId on profile completion
  */
 const updateProfile = catchAsync(
   async (
@@ -39,7 +42,7 @@ const updateProfile = catchAsync(
       },
     });
 
-    // Update MongoDB progress flags
+    // Update MongoDB progress flags (post-save hooks will handle the rest)
     const progress = await AccountProgressModel.findOne({ userId });
     if (progress) {
       if (phoneNumber) {
@@ -49,15 +52,6 @@ const updateProfile = catchAsync(
         progress.profileCompletionAndVerification!.hasSelectedCollegeDetails = true;
       }
       await progress.save();
-    }
-
-    // Auto-set isPaidUser for IIT BHU users if profile is now complete
-    const autoSetPaid = await autoSetPaidForIITBhuUser(userId);
-    if (autoSetPaid) {
-      logger.info(
-        "Auto-set isPaidUser for IIT BHU user after profile completion",
-        { userId },
-      );
     }
 
     new OkResponseStrategy().handleResponse(res, {

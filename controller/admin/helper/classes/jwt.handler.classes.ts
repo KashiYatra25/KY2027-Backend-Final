@@ -120,7 +120,7 @@ export class AdminJwtHandler {
 
     const accessToken = this.createAccessToken(payload, jti);
     const refreshToken = this.createRefreshToken(
-      { adminId: payload.adminId, email: payload.email, role: payload.role },
+      { userId: payload.userId, adminId: payload.adminId, email: payload.email, role: payload.role },
       jti
     );
 

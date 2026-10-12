@@ -167,34 +167,3 @@ export async function checkForProfileCompletion(
     incompleteUsers,
   };
 }
-
-
-/**
- * Check if IIT BHU user just completed profile and auto-set isPaidUser
- * Call this after any profile step completion
- */
-export const autoSetPaidForIITBhuUser = async (userId: string): Promise<boolean> => {
-  // Check if user is from IIT BHU and profile is complete
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isFromIITBhu: true, isPaidUser: true },
-  });
-
-  if (!user || !user.isFromIITBhu || user.isPaidUser) {
-    return false; // Not IIT BHU, or already paid
-  }
-
-  // Check if profile is complete
-  const profileCheck = await checkForProfileCompletion({ userId });
-  if (!profileCheck.isComplete) {
-    return false; // Profile not complete yet
-  }
-
-  // Profile complete + IIT BHU user = auto-set isPaidUser
-  await prisma.user.update({
-    where: { id: userId },
-    data: { isPaidUser: true },
-  });
-
-  return true;
-};

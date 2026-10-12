@@ -23,7 +23,7 @@ export const getAdminUsers = catchAsync(
     let visibleRoles: RoleLevel[];
 
     if (requesterRole === "MASTER_ADMIN") {
-      visibleRoles = ["MANAGER", "OPERATOR"];
+      visibleRoles = ["MASTER_ADMIN", "MANAGER", "OPERATOR"];
     } else if (requesterRole === "MANAGER") {
       visibleRoles = ["OPERATOR"];
     } else {
