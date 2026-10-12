@@ -2,7 +2,10 @@ import { Worker, type Job } from "bullmq";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
 import { AdminInviteEmail } from "@email/utils/admin.invite.email.js";
-import type { EmailJobData, AdminInviteEmailJobData, PassesInvoiceEmailJobData } from "./emailQueue.service.js";
+import { ForgotPasswordEmail } from "@email/utils/forgot.password.email.js";
+import { AccountStatusChangeEmail } from "@email/utils/account.status.change.email.js";
+import { CaApplicationStatusEmail } from "@email/utils/ca.application.status.email.js";
+import type { EmailJobData, AdminOnboardCredsEmailJobData, AdminForgotPasswordEmailJobData, AccountStatusChangeEmailJobData, PassesInvoiceEmailJobData, CaApplicationStatusEmailJobData } from "./emailQueue.service.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // EMAIL WORKER
@@ -18,9 +21,9 @@ const QUEUE_NAME = "email-queue";
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Process admin invite email
+ * Process admin onboard credentials email
  */
-async function processAdminInviteEmail(data: AdminInviteEmailJobData["payload"]): Promise<void> {
+async function processAdminOnboardCredsEmail(data: AdminOnboardCredsEmailJobData["payload"]): Promise<void> {
   const { userName, email, tempPassword, loginUrl } = data;
 
   const emailService = new AdminInviteEmail(
@@ -34,7 +37,49 @@ async function processAdminInviteEmail(data: AdminInviteEmailJobData["payload"])
     "adminInvite"
   );
 
-  logger.info("Admin invite email sent", { email });
+  logger.info("Admin onboard creds email sent", { email });
+}
+
+/**
+ * Process forgot password email
+ */
+async function processForgotPasswordEmail(data: AdminForgotPasswordEmailJobData["payload"]): Promise<void> {
+  const { userName, email, resetUrl } = data;
+
+  const emailService = new ForgotPasswordEmail(
+    { name: userName, email },
+    resetUrl
+  );
+
+  await emailService.sendEmail(
+    "Reset Your Password - Kashiyatra 2027",
+    "forgotPassword"
+  );
+
+  logger.info("Forgot password email sent", { email });
+}
+
+/**
+ * Process account status change email
+ */
+async function processAccountStatusChangeEmail(data: AccountStatusChangeEmailJobData["payload"]): Promise<void> {
+  const { userName, email, action, reason, suspendedByName, suspendedByRole } = data;
+
+  const emailService = new AccountStatusChangeEmail(
+    { name: userName, email },
+    action,
+    reason,
+    suspendedByName,
+    suspendedByRole
+  );
+
+  const subject = action === "SUSPENDED" 
+    ? "Account Suspended - Kashiyatra 2027"
+    : "Account Reactivated - Kashiyatra 2027";
+
+  await emailService.sendEmail(subject, "accountStatusChange");
+
+  logger.info("Account status change email sent", { email, action });
 }
 
 /**
@@ -43,6 +88,32 @@ async function processAdminInviteEmail(data: AdminInviteEmailJobData["payload"])
 async function processPassesInvoiceEmail(data: PassesInvoiceEmailJobData["payload"]): Promise<void> {
   // TODO: Implement passes invoice email
   logger.info("Passes invoice email sent", { email: data.email });
+}
+
+/**
+ * Process CA application status email
+ */
+async function processCaApplicationStatusEmail(data: CaApplicationStatusEmailJobData["payload"]): Promise<void> {
+  const { userName, email, status, referralId, rejectionReason, dashboardUrl, websiteUrl } = data;
+
+  const emailService = new CaApplicationStatusEmail(
+    { name: userName, email },
+    {
+      status,
+      referralId,
+      rejectionReason,
+      dashboardUrl,
+      websiteUrl,
+    }
+  );
+
+  const subject = status === "ACCEPTED"
+    ? "🎉 Congratulations! You're now a Campus Ambassador - Kashiyatra 2027"
+    : "CA Application Update - Kashiyatra 2027";
+
+  await emailService.sendEmail(subject, "caApplicationStatus");
+
+  logger.info("CA application status email sent", { email, status });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -59,12 +130,24 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
   });
 
   switch (type) {
-    case "admin-invite":
-      await processAdminInviteEmail(payload as AdminInviteEmailJobData["payload"]);
+    case "admin-onboard-creds":
+      await processAdminOnboardCredsEmail(payload as AdminOnboardCredsEmailJobData["payload"]);
+      break;
+
+    case "admin-forgot-password":
+      await processForgotPasswordEmail(payload as AdminForgotPasswordEmailJobData["payload"]);
+      break;
+
+    case "account-status-change":
+      await processAccountStatusChangeEmail(payload as AccountStatusChangeEmailJobData["payload"]);
       break;
 
     case "passes-invoice":
       await processPassesInvoiceEmail(payload as PassesInvoiceEmailJobData["payload"]);
+      break;
+
+    case "ca-application-status":
+      await processCaApplicationStatusEmail(payload as CaApplicationStatusEmailJobData["payload"]);
       break;
 
     default:

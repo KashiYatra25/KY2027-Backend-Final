@@ -19,15 +19,36 @@ import { logger } from "@logger/logger.js";
 // JOB TYPES
 // ═══════════════════════════════════════════════════════════════════
 
-export type EmailJobType = "admin-invite" | "passes-invoice" | "otp" | "welcome";
+export type EmailJobType = "admin-onboard-creds" | "admin-forgot-password" | "account-status-change" | "passes-invoice" | "ca-application-status" | "otp" | "welcome";
 
-export interface AdminInviteEmailJobData {
-  type: "admin-invite";
+export interface AdminOnboardCredsEmailJobData {
+  type: "admin-onboard-creds";
   payload: {
     userName: string;
     email: string;
     tempPassword: string;
     loginUrl: string;
+  };
+}
+
+export interface AdminForgotPasswordEmailJobData {
+  type: "admin-forgot-password";
+  payload: {
+    userName: string;
+    email: string;
+    resetUrl: string;
+  };
+}
+
+export interface AccountStatusChangeEmailJobData {
+  type: "account-status-change";
+  payload: {
+    userName: string;
+    email: string;
+    action: "SUSPENDED" | "REACTIVATED";
+    reason?: string;
+    suspendedByName?: string;
+    suspendedByRole?: string;
   };
 }
 
@@ -41,8 +62,21 @@ export interface PassesInvoiceEmailJobData {
   };
 }
 
+export interface CaApplicationStatusEmailJobData {
+  type: "ca-application-status";
+  payload: {
+    userName: string;
+    email: string;
+    status: "ACCEPTED" | "REJECTED";
+    referralId?: string; // Only for approved
+    rejectionReason?: string; // Only for rejected
+    dashboardUrl: string;
+    websiteUrl: string;
+  };
+}
+
 // Union type for all email jobs
-export type EmailJobData = AdminInviteEmailJobData | PassesInvoiceEmailJobData;
+export type EmailJobData = AdminOnboardCredsEmailJobData | AdminForgotPasswordEmailJobData | AccountStatusChangeEmailJobData | PassesInvoiceEmailJobData | CaApplicationStatusEmailJobData;
 
 // ═══════════════════════════════════════════════════════════════════
 // QUEUE CONFIGURATION
@@ -92,13 +126,13 @@ logger.info("Email queue initialized", { queueName: QUEUE_NAME });
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Add an admin invite email job to the queue
+ * Add an admin onboard credentials email job to the queue
  */
-export async function queueAdminInviteEmail(data: AdminInviteEmailJobData["payload"]): Promise<string> {
+export async function queueAdminOnboardCredsEmail(data: AdminOnboardCredsEmailJobData["payload"]): Promise<string> {
   const job = await emailQueue.add(
-    "admin-invite",
+    "admin-onboard-creds",
     {
-      type: "admin-invite",
+      type: "admin-onboard-creds",
       payload: data,
     },
     {
@@ -106,9 +140,56 @@ export async function queueAdminInviteEmail(data: AdminInviteEmailJobData["paylo
     }
   );
 
-  logger.debug("Admin invite email job queued", {
+  logger.debug("Admin onboard creds email job queued", {
     jobId: job.id,
     email: data.email,
+  });
+
+  return job.id!;
+}
+
+/**
+ * Add a forgot password email job to the queue
+ */
+export async function queueForgotPasswordEmail(data: AdminForgotPasswordEmailJobData["payload"]): Promise<string> {
+  const job = await emailQueue.add(
+    "admin-forgot-password",
+    {
+      type: "admin-forgot-password",
+      payload: data,
+    },
+    {
+      priority: 1, // High priority for password reset
+    }
+  );
+
+  logger.debug("Forgot password email job queued", {
+    jobId: job.id,
+    email: data.email,
+  });
+
+  return job.id!;
+}
+
+/**
+ * Add an account status change email job to the queue
+ */
+export async function queueAccountStatusChangeEmail(data: AccountStatusChangeEmailJobData["payload"]): Promise<string> {
+  const job = await emailQueue.add(
+    "account-status-change",
+    {
+      type: "account-status-change",
+      payload: data,
+    },
+    {
+      priority: 1, // High priority for account status changes
+    }
+  );
+
+  logger.debug("Account status change email job queued", {
+    jobId: job.id,
+    email: data.email,
+    action: data.action,
   });
 
   return job.id!;
@@ -132,6 +213,30 @@ export async function queuePassesInvoiceEmail(data: PassesInvoiceEmailJobData["p
   logger.debug("Passes invoice email job queued", {
     jobId: job.id,
     email: data.email,
+  });
+
+  return job.id!;
+}
+
+/**
+ * Add a CA application status email job to the queue
+ */
+export async function queueCaApplicationStatusEmail(data: CaApplicationStatusEmailJobData["payload"]): Promise<string> {
+  const job = await emailQueue.add(
+    "ca-application-status",
+    {
+      type: "ca-application-status",
+      payload: data,
+    },
+    {
+      priority: 1, // High priority for application status updates
+    }
+  );
+
+  logger.debug("CA application status email job queued", {
+    jobId: job.id,
+    email: data.email,
+    status: data.status,
   });
 
   return job.id!;

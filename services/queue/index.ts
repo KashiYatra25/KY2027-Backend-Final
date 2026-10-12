@@ -1,13 +1,19 @@
 // Queue Service Exports
 export {
   emailQueue,
-  queueAdminInviteEmail,
+  queueAdminOnboardCredsEmail,
+  queueForgotPasswordEmail,
+  queueAccountStatusChangeEmail,
   queuePassesInvoiceEmail,
+  queueCaApplicationStatusEmail,
   getEmailQueueStats,
   closeEmailQueue,
   type EmailJobData,
-  type AdminInviteEmailJobData,
+  type AdminOnboardCredsEmailJobData,
+  type AdminForgotPasswordEmailJobData,
+  type AccountStatusChangeEmailJobData,
   type PassesInvoiceEmailJobData,
+  type CaApplicationStatusEmailJobData,
 } from "./emailQueue.service.js";
 
 export {

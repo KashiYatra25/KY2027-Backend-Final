@@ -8,6 +8,7 @@ export const VerificationTokenSchema = new Schema(
       enum: [
         // These are OTPs at the controller level, named token to keep it generic and reusable
         'ADMIN_LOGIN_URL_TOKEN',
+        'ADMIN_FORGOT_PASSWORD',
         'CSRF_TOKEN',
       ],
       required: true,
