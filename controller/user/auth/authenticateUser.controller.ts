@@ -31,28 +31,23 @@ export const authenticateUser = catchAsync(
 
     const slugName: string = email.split("@")[0] as string;
     
-    // Check for both .itbhu.ac.in and .iitbhu.ac.in domains
-    const isFromIITBhu: boolean = email.endsWith(".itbhu.ac.in") || email.endsWith(".iitbhu.ac.in");
+    // Check for both @itbhu.ac.in and @iitbhu.ac.in domains
+    const isFromIITBhu: boolean = email.endsWith("@itbhu.ac.in") || email.endsWith("@iitbhu.ac.in");
 
     // ─────────────────────────────────────────────────────────────────
-    // Step 1: Check if user exists
-    // ─────────────────────────────────────────────────────────────────
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-
-    const isNewUser = !existingUser;
-
-    // ─────────────────────────────────────────────────────────────────
-    // Step 2: Create or update user with VERIFIED data
-    // For IIT BHU users: auto-set college name
+    // Step 1: Upsert user with VERIFIED data
+    // For IIT BHU users: always ensure college is set
     // ─────────────────────────────────────────────────────────────────
 
     const user = await prisma.user.upsert({
       where: { email },
       update: {
         ...(picture && { googleAvatarUrl: picture }),
+        // Always set IIT BHU data on login for IIT BHU users
+        ...(isFromIITBhu && {
+          isFromIITBhu: true,
+          college: IIT_BHU_COLLEGE_NAME,
+        }),
       },
       create: {
         id: googleUserId,
@@ -61,7 +56,6 @@ export const authenticateUser = catchAsync(
         googleAvatarUrl: picture ?? undefined,
         role: { create: { level: "USER" } },
         isFromIITBhu: isFromIITBhu,
-        // Auto-set college for IIT BHU users
         ...(isFromIITBhu && { college: IIT_BHU_COLLEGE_NAME }),
       },
       include: {
@@ -70,16 +64,15 @@ export const authenticateUser = catchAsync(
     });
 
     // ─────────────────────────────────────────────────────────────────
-    // Step 3: MongoDB operations (parallel)
-    // For IIT BHU users: mark college step as complete
+    // Step 2: MongoDB operations (parallel)
+    // For IIT BHU users: always mark college step as complete
     // ─────────────────────────────────────────────────────────────────
     const [progress] = await Promise.all([
       AccountProgressModel.findOneAndUpdate(
         { userId: googleUserId },
         { 
           userId: googleUserId,
-          // For IIT BHU users, mark college step complete on first auth
-          ...(isNewUser && isFromIITBhu && {
+          ...(isFromIITBhu && {
             "profileCompletionAndVerification.hasSelectedCollegeDetails": true,
           }),
         },
@@ -93,28 +86,18 @@ export const authenticateUser = catchAsync(
       }),
     ]);
 
-    const roleLevel = user.role?.level;
-
-    if (isNewUser) {
-      logger.info("New user registered via Google OAuth", {
-        userId: user.id,
-        email: user.email,
-        role: roleLevel,
-        isFromIITBhu,
-        ...(isFromIITBhu && { autoSetCollege: IIT_BHU_COLLEGE_NAME }),
-      });
-    } else {
-      logger.debug("Returning user authenticated via Google OAuth", {
-        userId: user.id,
-        role: roleLevel,
-      });
-    }
+    logger.info("User authenticated via Google OAuth", {
+      userId: user.id,
+      email: user.email,
+      role: user.role?.level,
+      isFromIITBhu,
+      ...(isFromIITBhu && { autoSetCollege: IIT_BHU_COLLEGE_NAME }),
+    });
 
     new OkResponseStrategy().handleResponse(res, {
       info: "User authenticated successfully",
       role: user.role,
       accountStatus: progress?.accountStatus,
-      isNewUser,
     });
   },
 );
