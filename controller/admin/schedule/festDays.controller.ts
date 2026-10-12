@@ -129,23 +129,29 @@ export const updateFestDay = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 // DELETE FEST DAY
 // ═══════════════════════════════════════════════════════════════════
+// DELETE FEST DAY (Soft Delete - sets active to false)
+// ═══════════════════════════════════════════════════════════════════
 
 export const deleteFestDay = catchAsync(
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { festDayId } = req.params;
 
-    const festDay = await FestDayModel.findByIdAndDelete(festDayId);
+    const festDay = await FestDayModel.findByIdAndUpdate(
+      festDayId,
+      { active: false },
+      { new: true }
+    );
 
     if (!festDay) {
       new NotFound().handleResponse(res, { info: "Fest day not found" });
       return;
     }
 
-    logger.info("Fest day deleted", { festDayId: festDay._id, dayNumber: festDay.dayNumber });
+    logger.info("Fest day deactivated", { festDayId: festDay._id, dayNumber: festDay.dayNumber });
 
     new OkResponseStrategy().handleResponse(res, {
-      info: "Fest day deleted successfully",
-      deletedFestDayId: festDayId,
+      info: "Fest day deactivated successfully",
+      festDay,
     });
   },
 );

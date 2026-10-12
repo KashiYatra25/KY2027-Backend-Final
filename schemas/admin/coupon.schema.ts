@@ -59,3 +59,75 @@ export const createCouponRequestSchema = z
   );
 
 export type CreateCouponRequestSchemaType = z.infer<typeof createCouponRequestSchema>;
+
+/**
+ * Schema for the coupon id route param
+ */
+export const couponIdParamRequestSchema = z.object({
+  couponId: z.string().min(1, "Coupon ID is required"),
+});
+
+export type CouponIdParamRequestSchemaType = z.infer<typeof couponIdParamRequestSchema>;
+
+/**
+ * Schema for updating an existing coupon
+ * All fields are optional - only provided fields are updated.
+ * Note: `code` and `type` are intentionally immutable once created
+ * (changing them would invalidate existing usage records / discount math).
+ */
+export const updateCouponRequestSchema = z
+  .object({
+    description: z.string().max(500).nullable().optional(),
+
+    value: z.number().positive("Value must be positive").optional(),
+
+    maxUsageCount: z.number().int().positive().nullable().optional(),
+    maxUsagePerUser: z.number().int().positive().optional(),
+
+    validFrom: z.string().datetime().optional(),
+    validUntil: z.string().datetime().nullable().optional(),
+
+    applicablePassIds: z.array(z.string()).optional(),
+  })
+  .refine(
+    (data) => {
+      // At least one field must be provided for an update
+      return Object.keys(data).length > 0;
+    },
+    {
+      message: "At least one field must be provided to update",
+    }
+  )
+  .refine(
+    (data) => {
+      // If both validFrom and validUntil are provided, validUntil must be later
+      if (data.validFrom && data.validUntil) {
+        return new Date(data.validUntil) > new Date(data.validFrom);
+      }
+      return true;
+    },
+    {
+      message: "Valid until date must be after valid from date",
+      path: ["validUntil"],
+    }
+  );
+
+export type UpdateCouponRequestSchemaType = z.infer<typeof updateCouponRequestSchema>;
+
+/**
+ * Schema for changing a coupon's status (disable / reactivate)
+ *
+ * Only ACTIVE and DISABLED are admin-controllable:
+ *   - DISABLED → manually turn a coupon off
+ *   - ACTIVE   → reactivate a disabled coupon
+ *
+ * EXPIRED is a derived/system state (driven by validUntil) and is NOT
+ * settable through this endpoint.
+ */
+export const changeCouponStatusRequestSchema = z.object({
+  status: z.enum(["ACTIVE", "DISABLED"], {
+    message: "Status must be either ACTIVE or DISABLED",
+  }),
+});
+
+export type ChangeCouponStatusRequestSchemaType = z.infer<typeof changeCouponStatusRequestSchema>;
