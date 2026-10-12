@@ -13,7 +13,13 @@ export { approveCaApplication } from "./ca/approveCaApplication.controller.js";
 export { updateCaApplicationStatus } from "./ca/updateCaApplicationStatus.controller.js";
 
 // Coupon management
-export { createCoupon } from "./coupon/createCoupon.controller.js";
+export {
+  createCoupon,
+  getCoupons,
+  updateCoupon,
+  changeCouponStatus,
+  deleteCoupon,
+} from "./coupon/index.js";
 
 // Admin invite
 export { makeUserAdminOrPromoteAdmin } from "./promote/makeUserAdminOrPromoteAdmin.controller.js";

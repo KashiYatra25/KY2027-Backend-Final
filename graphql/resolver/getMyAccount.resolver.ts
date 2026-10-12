@@ -9,6 +9,8 @@ import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 // ═══════════════════════════════════════════════════════════════════
 // GET MY ACCOUNT RESOLVER
 // Returns combined user profile (Prisma) + account progress (MongoDB)
+//
+// Step Order: College (1) → Aadhaar Upload (2) → Aadhaar Verify (3) → Phone (4)
 // ═══════════════════════════════════════════════════════════════════
 
 export const getMyAccountResolver = new MiddlewareChainPipeline()
@@ -53,6 +55,7 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
       const accountProgress = await AccountProgressModel.findOne({ userId });
 
       // Calculate progress
+      // Step completion flags
       const steps = {
         aadhaarUploaded:
           accountProgress?.profileCompletionAndVerification
@@ -67,9 +70,30 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
           accountProgress?.profileCompletionAndVerification
             ?.hasVerifiedPhoneNumber ?? false,
       };
+
+      // ─────────────────────────────────────────────────────────────────
+      // Calculate currentStep based on NEW order:
+      // Step 1: College
+      // Step 2: Aadhaar Upload
+      // Step 3: Aadhaar Verify
+      // Step 4: Phone
+      // Step 5: All complete (redirect to profile)
+      // ─────────────────────────────────────────────────────────────────
+      let currentStep: number;
+      if (!steps.college) {
+        currentStep = 1; // College step
+      } else if (!steps.aadhaarUploaded) {
+        currentStep = 2; // Aadhaar upload step
+      } else if (!steps.aadhaarVerified) {
+        currentStep = 3; // Aadhaar verify step
+      } else if (!steps.phone) {
+        currentStep = 4; // Phone step
+      } else {
+        currentStep = 5; // All complete
+      }
+
       const completedSteps = Object.values(steps).filter(Boolean).length;
       const totalSteps = 4;
-      const currentStep = completedSteps + 1; // Next step to complete
       const completionPercentage = Math.round(
         (completedSteps / totalSteps) * 100
       );

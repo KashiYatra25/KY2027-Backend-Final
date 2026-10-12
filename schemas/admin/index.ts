@@ -21,7 +21,13 @@ export {
 
 export {
   createCouponRequestSchema,
+  couponIdParamRequestSchema,
+  updateCouponRequestSchema,
+  changeCouponStatusRequestSchema,
   type CreateCouponRequestSchemaType,
+  type CouponIdParamRequestSchemaType,
+  type UpdateCouponRequestSchemaType,
+  type ChangeCouponStatusRequestSchemaType,
 } from "./coupon.schema.js";
 
 export {

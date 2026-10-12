@@ -4,6 +4,35 @@ import {
 } from "libphonenumber-js";
 import { z } from "zod";
 
+// ═══════════════════════════════════════════════════════════════════
+// IIT BHU COLLEGE NAME VALIDATION
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Regex to detect IIT BHU / IIT Varanasi variants that users should NOT be able to manually enter.
+ * IIT BHU users get their college auto-set via Google OAuth.
+ * 
+ * Catches:
+ * - iit bhu, iitbhu, iit(bhu), iit [bhu], iit-bhu
+ * - iit varanasi
+ * - indian institute of technology bhu
+ * - indian institute of technology (bhu) varanasi
+ * - indian institute of technology varanasi
+ * - banaras hindu university (different institution but also blocked to avoid confusion)
+ */
+const IIT_BHU_REGEX = /i{1,2}\.?\s*t\.?\s*[\(\[\-]?\s*bhu\s*[\)\]]?|i{1,2}\.?\s*t\.?\s*varanasi|indian\s+institute\s+of\s+technology\s*[\(\[]?\s*bhu\s*[\)\]]?\s*varanasi?|indian\s+institute\s+of\s+technology\s+varanasi|banaras\s+hindu\s+university/i;
+
+/**
+ * Check if a college name contains IIT BHU / IIT Varanasi variants
+ */
+export function isIITBhuCollege(collegeName: string): boolean {
+  return IIT_BHU_REGEX.test(collegeName);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PROFILE UPDATE SCHEMA
+// ═══════════════════════════════════════════════════════════════════
+
 export const profileUpdationRequestSchema = z.object({
   phoneNumber: z
     .string()
@@ -51,7 +80,17 @@ export const profileUpdationRequestSchema = z.object({
       return phoneNumber.number; // Returns '+919876543210'
     })
     .optional(),
-  college: z.string().min(2).max(200).optional(),
+  college: z
+    .string()
+    .min(2, "College name must be at least 2 characters")
+    .max(200, "College name must be at most 200 characters")
+    .refine(
+      (val) => !isIITBhuCollege(val),
+      {
+        message: "IIT BHU students are automatically verified via their institute email. Please use your @itbhu.ac.in or @iitbhu.ac.in email to sign in.",
+      }
+    )
+    .optional(),
 });
 
 export type ProfileUpdationRequestSchemaType = z.infer<typeof profileUpdationRequestSchema>;

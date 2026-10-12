@@ -7,6 +7,12 @@ import { AccountProgressModel, IpSecurityModel } from "@lib/mongo/index.js";
 import type { GoogleVerifiedRequest } from "@root/middleware/user/auth/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════════
+
+const IIT_BHU_COLLEGE_NAME = "Indian Institute of Technology (BHU) Varanasi";
+
+// ═══════════════════════════════════════════════════════════════════
 // AUTHENTICATE USER
 //
 // Expects: verifyGoogleTokenMiddleware to have run before this controller
@@ -15,7 +21,8 @@ import type { GoogleVerifiedRequest } from "@root/middleware/user/auth/index.js"
 // Flow:
 // 1. Extract verified user data from req.googleData
 // 2. Create or update user with VERIFIED data only
-// 3. Track IP for security
+// 3. For IIT BHU emails: auto-set college and mark college step complete
+// 4. Track IP for security
 // ═══════════════════════════════════════════════════════════════════
 
 export const authenticateUser = catchAsync(
@@ -23,7 +30,9 @@ export const authenticateUser = catchAsync(
     const { id: googleUserId, email, picture } = req.googleData;
 
     const slugName: string = email.split("@")[0] as string;
-    const isFromIITBhu: boolean = email.endsWith("itbhu.ac.in");
+    
+    // Check for both .itbhu.ac.in and .iitbhu.ac.in domains
+    const isFromIITBhu: boolean = email.endsWith(".itbhu.ac.in") || email.endsWith(".iitbhu.ac.in");
 
     // ─────────────────────────────────────────────────────────────────
     // Step 1: Check if user exists
@@ -37,6 +46,7 @@ export const authenticateUser = catchAsync(
 
     // ─────────────────────────────────────────────────────────────────
     // Step 2: Create or update user with VERIFIED data
+    // For IIT BHU users: auto-set college name
     // ─────────────────────────────────────────────────────────────────
 
     const user = await prisma.user.upsert({
@@ -51,6 +61,8 @@ export const authenticateUser = catchAsync(
         googleAvatarUrl: picture ?? undefined,
         role: { create: { level: "USER" } },
         isFromIITBhu: isFromIITBhu,
+        // Auto-set college for IIT BHU users
+        ...(isFromIITBhu && { college: IIT_BHU_COLLEGE_NAME }),
       },
       include: {
         role: true,
@@ -59,11 +71,18 @@ export const authenticateUser = catchAsync(
 
     // ─────────────────────────────────────────────────────────────────
     // Step 3: MongoDB operations (parallel)
+    // For IIT BHU users: mark college step as complete
     // ─────────────────────────────────────────────────────────────────
     const [progress] = await Promise.all([
       AccountProgressModel.findOneAndUpdate(
         { userId: googleUserId },
-        { userId: googleUserId },
+        { 
+          userId: googleUserId,
+          // For IIT BHU users, mark college step complete on first auth
+          ...(isNewUser && isFromIITBhu && {
+            "profileCompletionAndVerification.hasSelectedCollegeDetails": true,
+          }),
+        },
         { upsert: true, returnDocument: "after" },
       ),
 
@@ -82,6 +101,7 @@ export const authenticateUser = catchAsync(
         email: user.email,
         role: roleLevel,
         isFromIITBhu,
+        ...(isFromIITBhu && { autoSetCollege: IIT_BHU_COLLEGE_NAME }),
       });
     } else {
       logger.debug("Returning user authenticated via Google OAuth", {
