@@ -20,6 +20,12 @@ model User {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
+  // Account status
+  isSuspended Boolean @default(false)
+
+  // Unique Kashiyatra ID - generated on profile completion
+  kyId String? @unique
+
   // Aadhaar verification
   aadhaarNumber String? // Full Aadhaar number (stored securely, never sent to frontend)
   aadhaarS3Key  String? // S3 key for uploaded Aadhaar image (temporary)
@@ -36,5 +42,6 @@ model User {
   caApplication CaApplication?
   caProfile     CaProfile?
   couponUsages  CouponUsage[]
-  referredByCa  CaProfile?    @relation("ReferredUsers", fields: [referredByCaId], references: [id])
+  referredByCa  CaProfile?           @relation("ReferredUsers", fields: [referredByCaId], references: [id])
+  suspensions   AccountSuspension[]  // Suspension records for this user
 }

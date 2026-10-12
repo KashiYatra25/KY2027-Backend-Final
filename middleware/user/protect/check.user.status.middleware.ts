@@ -1,4 +1,4 @@
-import { AccountProgressModel } from "@root/databaseManagers/mongoose";
+import { prisma } from "@root/prisma.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 import { logger } from "@logger/logger.js";
 import type { NextFunction, Response } from "express";
@@ -13,14 +13,17 @@ const checkUserAccountStatusMiddleware = catchAsync(
   ) => {
     const { id } = req.user;
 
-    const accountProgress = await AccountProgressModel.findOne({ userId: id }).select("accountStatus");
-    if(!accountProgress || accountProgress.accountStatus == "SUSPENDED") {
-        logger.warn("Blocked suspended account", { userId: id, path: (req as any).path });
-        return next(new ForbiddenErrorResponse().handleResponse(res, {info : "Your account has been suspended"}));
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: { isSuspended: true },
+    });
+
+    if (!user || user.isSuspended) {
+      logger.warn("Blocked suspended account", { userId: id, path: (req as any).path });
+      return next(new ForbiddenErrorResponse().handleResponse(res, { info: "Your account has been suspended" }));
     }
 
     next();
-
   },
 );
 

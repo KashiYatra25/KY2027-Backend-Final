@@ -1,0 +1,16 @@
+model AccountSuspension {
+  id          String   @id @default(uuid())
+  userId      String   // User who was suspended
+  suspendedBy String   // Admin ID who performed the suspension
+  reason      String   // Reason for suspension (min 10 chars enforced at app level)
+  suspendedOn DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id])
+  admin Admin @relation(fields: [suspendedBy], references: [id])
+
+  @@index([userId])
+  @@index([suspendedBy])
+}

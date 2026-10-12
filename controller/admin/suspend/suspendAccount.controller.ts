@@ -8,13 +8,10 @@ import {
 } from "zodex-axon/errors";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { logger } from "@logger/logger.js";
-import {
-  AccountProgressModel,
-  AccountSuspensionModel,
-} from "@root/databaseManagers/mongoose/index.js";
 import type { AdminSuspendRequestSchemaType } from "@schemas/admin/admin.schema.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/functions/index.js";
 import type { RoleLevel } from "@lib/prisma/index.js";
+import { queueAccountStatusChangeEmail } from "@services/queue/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // SUSPEND USER OR ADMIN ACCOUNT
@@ -47,7 +44,7 @@ export const suspendAccount = catchAsync(
     next: NextFunction,
   ): Promise<void> => {
     const { targetEmail, reason } = req.validatedData;
-    const { id: suspendedById, role: incumbentRole } = req.admin;
+    const { adminId: suspendedById, userId: suspendedByUserId, role: incumbentRole } = req.admin;
 
     // ─────────────────────────────────────────────────────────────────
     // Find target user
@@ -56,6 +53,9 @@ export const suspendAccount = catchAsync(
       where: { email: targetEmail },
       select: {
         id: true,
+        email: true,
+        firstName: true,
+        slugName: true,
         isSuspended: true,
         admin: {
           select: { id: true },
@@ -104,30 +104,44 @@ export const suspendAccount = catchAsync(
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Perform suspension - just mark as suspended, preserve all data
+    // Get the admin who is performing the suspension
     // ─────────────────────────────────────────────────────────────────
-    await Promise.all([
-      // Mark user as suspended in Prisma
-      prisma.user.update({
+    const suspendingAdmin = await prisma.user.findUnique({
+      where: { id: suspendedByUserId },
+      select: { firstName: true, slugName: true },
+    });
+
+    // ─────────────────────────────────────────────────────────────────
+    // Perform suspension - mark as suspended and create audit record
+    // ─────────────────────────────────────────────────────────────────
+    const suspensionRecord = await prisma.$transaction(async (tx) => {
+      // Mark user as suspended
+      await tx.user.update({
         where: { id: targetUser.id },
         data: { isSuspended: true },
-      }),
+      });
 
-      // MongoDB operations
-      Promise.all([
-        AccountProgressModel.findOneAndUpdate(
-          { userId: targetUser.id },
-          { accountStatus: "SUSPENDED" },
-          { returnDocument: "after" },
-        ),
-        AccountSuspensionModel.create({
+      // Create suspension audit record
+      return tx.accountSuspension.create({
+        data: {
           userId: targetUser.id,
           suspendedBy: suspendedById,
           reason: reason || "No reason provided",
-          suspendedOn: new Date(),
-        }),
-      ]),
-    ]);
+        },
+      });
+    });
+
+    // ─────────────────────────────────────────────────────────────────
+    // Send email notification to suspended user
+    // ─────────────────────────────────────────────────────────────────
+    await queueAccountStatusChangeEmail({
+      userName: targetUser.firstName || targetUser.slugName || "User",
+      email: targetUser.email,
+      action: "SUSPENDED",
+      reason: reason || "No reason provided",
+      suspendedByName: suspendingAdmin?.firstName || suspendingAdmin?.slugName || "Admin",
+      suspendedByRole: incumbentRole,
+    });
 
     logger.info("Account suspended", {
       targetUserId: targetUser.id,
@@ -143,7 +157,7 @@ export const suspendAccount = catchAsync(
       suspendedUserId: targetUser.id,
       role: targetRole,
       suspendedBy: suspendedById,
-      suspendedOn: new Date().toISOString(),
+      suspendedOn: suspensionRecord.suspendedOn.toISOString(),
     });
   },
 );
