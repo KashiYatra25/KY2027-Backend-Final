@@ -41,7 +41,6 @@ const getCoupons = catchAsync(
         currentUsageCount: true,
         validFrom: true,
         validUntil: true,
-        applicablePassIds: true,
         status: true,
         createdBy: true,
         createdAt: true,

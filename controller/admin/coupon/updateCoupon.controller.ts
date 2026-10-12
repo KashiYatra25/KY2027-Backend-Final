@@ -41,7 +41,6 @@ const updateCoupon = catchAsync(
       maxUsagePerUser,
       validFrom,
       validUntil,
-      applicablePassIds,
     } = req.validatedData;
 
     // Ensure the coupon exists
@@ -82,7 +81,6 @@ const updateCoupon = catchAsync(
         ...(validUntil !== undefined && {
           validUntil: validUntil ? new Date(validUntil) : null,
         }),
-        ...(applicablePassIds !== undefined && { applicablePassIds }),
       },
       select: {
         id: true,
@@ -95,7 +93,6 @@ const updateCoupon = catchAsync(
         currentUsageCount: true,
         validFrom: true,
         validUntil: true,
-        applicablePassIds: true,
         status: true,
         updatedAt: true,
       },

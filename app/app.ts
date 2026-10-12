@@ -7,6 +7,7 @@ import { userRouter } from "@api/user/user.routes.js";
 import { eventRouter } from "@api/event/event.routes.js";
 import { teamRouter } from "@api/team/team.routes.js";
 import { scheduleRouter } from "@api/schedule/schedule.routes.js";
+import { paymentRouter } from "@api/payment/payment.routes.js";
 import { corsOptions } from "@constants/cors.options.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
@@ -47,6 +48,7 @@ app.use(`${env.BASE_API_ENDPOINT}/campus-ambassador`, caRouter);
 app.use(`${env.BASE_API_ENDPOINT}/pass`, passRouter);
 app.use(`${env.BASE_API_ENDPOINT}/coupons`, couponRouter);
 app.use(`${env.BASE_API_ENDPOINT}/schedule`, scheduleRouter);
+app.use(`${env.BASE_API_ENDPOINT}/payment`, paymentRouter);
 
 app.use(globalErrorHandler);
 

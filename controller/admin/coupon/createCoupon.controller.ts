@@ -33,7 +33,6 @@ const createCoupon = catchAsync(
       maxUsagePerUser,
       validFrom,
       validUntil,
-      applicablePassIds,
     } = req.validatedData;
 
     // Check if coupon code already exists
@@ -60,7 +59,6 @@ const createCoupon = catchAsync(
         maxUsagePerUser,
         validFrom: validFrom ? new Date(validFrom) : undefined,
         validUntil: validUntil ? new Date(validUntil) : undefined,
-        applicablePassIds,
         createdBy: adminId,
         status: "ACTIVE",
       },
@@ -74,7 +72,6 @@ const createCoupon = catchAsync(
         maxUsagePerUser: true,
         validFrom: true,
         validUntil: true,
-        applicablePassIds: true,
         status: true,
         createdAt: true,
       },

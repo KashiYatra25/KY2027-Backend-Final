@@ -35,9 +35,6 @@ model Coupon {
   // Status
   status          CouponStatus @default(ACTIVE)
   
-  // Pass restrictions (null = applicable to all passes)
-  applicablePassIds String[]  @default([]) // Empty = all passes
-  
   // Metadata
   createdBy       String?               // Admin who created it
   createdAt       DateTime   @default(now())
