@@ -29,10 +29,11 @@ const AADHAAR_RATE_LIMIT_MAX = 5;
 
 /**
  * CA Application - prevent spam
- * 3 requests per hour per user
+ * DEV: 50 requests per minute (for testing)
+ * PROD: Change back to 3 requests per hour
  */
-const CA_APPLICATION_RATE_LIMIT_WINDOW = 60 * 60; // 1 hour
-const CA_APPLICATION_RATE_LIMIT_MAX = 3;
+const CA_APPLICATION_RATE_LIMIT_WINDOW = 60; // 1 minute (DEV) | 60 * 60 for PROD
+const CA_APPLICATION_RATE_LIMIT_MAX = 50; // DEV: 50 | PROD: 3
 
 /**
  * Referral application - prevent abuse
