@@ -21,13 +21,6 @@ export {
 } from "./user/accountProgress.model.js";
 
 export {
-  AccountSuspensionModel,
-  AccountSuspensionSchema,
-  type AccountSuspensionDoc,
-  type AccountSuspensionSchemaType,
-} from './user/accountSuspension.model.js';
-
-export {
   EventRegistrationModel,
   EventRegistrationSchema,
   type EventRegistrationDoc,
@@ -61,5 +54,20 @@ export {
   type CartDoc,
   type CartSchemaType,
 } from "./cart/cart.model.js";
+
+export {
+  VenueModel,
+  VenueSchema,
+  type VenueDoc,
+  type VenueSchemaType,
+  FestDayModel,
+  FestDaySchema,
+  type FestDayDoc,
+  type FestDaySchemaType,
+  ScheduleEntryModel,
+  ScheduleEntrySchema,
+  type ScheduleEntryDoc,
+  type ScheduleEntrySchemaType,
+} from "./schedule/index.js";
 
 export { connInstance, MongoDbConnection } from "./connection.js";
