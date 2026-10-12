@@ -18,9 +18,11 @@ import { z } from "zod";
  * - indian institute of technology bhu
  * - indian institute of technology (bhu) varanasi
  * - indian institute of technology varanasi
- * - banaras hindu university (different institution but also blocked to avoid confusion)
+ * 
+ * Does NOT block:
+ * - Banaras Hindu University (BHU) - separate institution, allowed
  */
-const IIT_BHU_REGEX = /i{1,2}\.?\s*t\.?\s*[\(\[\-]?\s*bhu\s*[\)\]]?|i{1,2}\.?\s*t\.?\s*varanasi|indian\s+institute\s+of\s+technology\s*[\(\[]?\s*bhu\s*[\)\]]?\s*varanasi?|indian\s+institute\s+of\s+technology\s+varanasi|banaras\s+hindu\s+university/i;
+const IIT_BHU_REGEX = /i{1,2}\.?\s*t\.?\s*[\(\[\-]?\s*bhu|i{1,2}\.?\s*t\.?\s*varanasi|indian\s+institute\s+of\s+technology\s*[\(\[]?\s*bhu|indian\s+institute\s+of\s+technology\s+varanasi/i;
 
 /**
  * Check if a college name contains IIT BHU / IIT Varanasi variants
