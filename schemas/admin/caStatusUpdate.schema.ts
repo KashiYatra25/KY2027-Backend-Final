@@ -8,7 +8,7 @@ import { z } from "zod";
 // This endpoint is for changing status of already-processed applications
 // ═══════════════════════════════════════════════════════════════════
 
-export const caApplicationStatusUpdateSchema = z.object({
+export const caApplicationStatusUpdateRequestSchema = z.object({
   applicationId: z.string().min(1, "Application ID is required"),
   
   // Only ACCEPTED or REJECTED allowed - PENDING is NOT valid for updates
@@ -34,4 +34,4 @@ export const caApplicationStatusUpdateSchema = z.object({
   }
 );
 
-export type CaApplicationStatusUpdateSchemaType = z.infer<typeof caApplicationStatusUpdateSchema>;
+export type CaApplicationStatusUpdateRequestSchemaType = z.infer<typeof caApplicationStatusUpdateRequestSchema>;

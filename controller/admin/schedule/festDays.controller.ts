@@ -5,8 +5,8 @@ import { BadRequest, NotFound } from "zodex-axon/errors";
 import { FestDayModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
 import type {
-  CreateFestDaySchemaType,
-  UpdateFestDaySchemaType,
+  CreateFestDayRequestSchemaType,
+  UpdateFestDayRequestSchemaType,
 } from "@schemas/admin/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -52,7 +52,7 @@ export const getFestDayByIdAdmin = catchAsync(
 
 export const createFestDay = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const data = req.body as CreateFestDaySchemaType;
+    const data = req.body as CreateFestDayRequestSchemaType;
 
     // Check for duplicate dayNumber
     const existing = await FestDayModel.findOne({ dayNumber: data.dayNumber });
@@ -83,7 +83,7 @@ export const createFestDay = catchAsync(
 export const updateFestDay = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { festDayId } = req.params;
-    const data = req.body as UpdateFestDaySchemaType;
+    const data = req.body as UpdateFestDayRequestSchemaType;
 
     // If updating dayNumber, check for conflicts
     if (data.dayNumber) {
@@ -157,7 +157,7 @@ export const deleteFestDay = catchAsync(
 
 export const bulkCreateFestDays = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { festDays } = req.body as { festDays: CreateFestDaySchemaType[] };
+    const { festDays } = req.body as { festDays: CreateFestDayRequestSchemaType[] };
 
     // Check for duplicate dayNumbers in request
     const dayNumbers = festDays.map((d) => d.dayNumber);

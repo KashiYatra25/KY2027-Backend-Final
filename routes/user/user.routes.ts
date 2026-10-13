@@ -10,17 +10,17 @@ import { removeFromCart } from "@controller/user/cart/removeFromCart.controller.
 import { clearCart } from "@controller/user/cart/clearCart.controller.js";
 import { updateCartQuantity } from "@controller/user/cart/updateCartQuantity.controller.js";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
-import { checkUserAccountStatusMiddleware } from "@root/middleware/user/protect/check.user.status.middleware.js";
+import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
 import { blockIfProfileAlreadyCompletedMiddleware } from "@root/middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
 import { checkWhetherProfileIsCompleteMiddleware } from "@root/middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
 import { verifyGoogleTokenMiddleware } from "@root/middleware/user/auth/index.js";
 import {
-  authRateLimiter,
-  contactRateLimiter,
-  searchRateLimiter,
-  referralRateLimiter,
-  profileRateLimiter,
-  cartRateLimiter,
+  authRateLimiterMiddleware,
+  contactRateLimiterMiddleware,
+  searchRateLimiterMiddleware,
+  referralRateLimiterMiddleware,
+  profileRateLimiterMiddleware,
+  cartRateLimiterMiddleware,
 } from "@root/middleware/limiters/index.js";
 import {
   profileUpdationRequestSchema,
@@ -44,7 +44,7 @@ export const userRouter: ExpressRouter = Router();
 
 userRouter.post(
   "/auth",
-  authRateLimiter,
+  authRateLimiterMiddleware,
   RequestGuardMiddleware({ body: userAuthenticationRequestSchema }),
   verifyGoogleTokenMiddleware,
   authenticateUser,
@@ -52,7 +52,7 @@ userRouter.post(
 
 userRouter.post(
   "/contact",
-  contactRateLimiter,
+  contactRateLimiterMiddleware,
   RequestGuardMiddleware({ body: contactUsRequestSchema }),
   submitContact,
 );
@@ -70,7 +70,7 @@ userRouter.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended us
 // Search users (for team creation)
 userRouter.get(
   "/search",
-  searchRateLimiter,
+  searchRateLimiterMiddleware,
   RequestGuardMiddleware({ query: searchUsersRequestSchema }),
   searchUsers,
 );
@@ -84,14 +84,14 @@ userRouter.get("/payment-status", getPaymentStatus);
 // Apply a CA's referral code (one-time only)
 userRouter.post(
   "/apply-referral",
-  referralRateLimiter,
+  referralRateLimiterMiddleware,
   RequestGuardMiddleware({ body: addReferralIdRequestSchema }),
   applyReferral,
 );
 
 userRouter.patch(
   "/profile",
-  profileRateLimiter,
+  profileRateLimiterMiddleware,
   RequestGuardMiddleware({ body: profileUpdationRequestSchema }),
   blockIfProfileAlreadyCompletedMiddleware,
   updateProfile,
@@ -106,7 +106,7 @@ userRouter.get("/cart", checkWhetherProfileIsCompleteMiddleware, getCart);
 
 userRouter.post(
   "/cart/add",
-  cartRateLimiter,
+  cartRateLimiterMiddleware,
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: addToCartRequestSchema }),
   addToCart,
@@ -114,7 +114,7 @@ userRouter.post(
 
 userRouter.patch(
   "/cart/update-quantity",
-  cartRateLimiter,
+  cartRateLimiterMiddleware,
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: updateCartQuantityRequestSchema }),
   updateCartQuantity,
@@ -122,7 +122,7 @@ userRouter.patch(
 
 userRouter.delete(
   "/cart/remove",
-  cartRateLimiter,
+  cartRateLimiterMiddleware,
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: removeFromCartRequestSchema }),
   removeFromCart,
@@ -130,7 +130,7 @@ userRouter.delete(
 
 userRouter.delete(
   "/cart/clear",
-  cartRateLimiter,
+  cartRateLimiterMiddleware,
   checkWhetherProfileIsCompleteMiddleware,
   clearCart,
 );

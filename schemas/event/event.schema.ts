@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Query params for listing events
-export const getEventsQuerySchema = z.object({
+export const getEventsQueryRequestSchema = z.object({
   category: z
     .enum([
       "NATRAJ",
@@ -46,4 +46,4 @@ export const registerForEventRequestSchema = z.discriminatedUnion("type", [
 
 export type EventSlugParamRequestSchemaType = z.infer<typeof eventSlugParamRequestSchema>;
 export type RegisterForEventRequestSchemaType = z.infer<typeof registerForEventRequestSchema>;
-export type GetEventsQueryType = z.infer<typeof getEventsQuerySchema>;
+export type GetEventsQueryRequestSchemaType = z.infer<typeof getEventsQueryRequestSchema>;

@@ -15,8 +15,8 @@ export {
 } from "./caApproval.schema.js";
 
 export {
-  caApplicationStatusUpdateSchema,
-  type CaApplicationStatusUpdateSchemaType,
+  caApplicationStatusUpdateRequestSchema,
+  type CaApplicationStatusUpdateRequestSchemaType,
 } from "./caStatusUpdate.schema.js";
 
 export {
@@ -38,22 +38,22 @@ export {
 } from "./forgotPassword.schema.js";
 
 export {
-  createVenueSchema,
-  updateVenueSchema,
-  venueIdParamSchema,
-  createFestDaySchema,
-  updateFestDaySchema,
-  festDayIdParamSchema,
-  createScheduleEntrySchema,
-  updateScheduleEntrySchema,
-  scheduleEntryIdParamSchema,
-  bulkCreateVenuesSchema,
-  bulkCreateFestDaysSchema,
-  bulkCreateScheduleEntriesSchema,
-  type CreateVenueSchemaType,
-  type UpdateVenueSchemaType,
-  type CreateFestDaySchemaType,
-  type UpdateFestDaySchemaType,
-  type CreateScheduleEntrySchemaType,
-  type UpdateScheduleEntrySchemaType,
+  createVenueRequestSchema,
+  updateVenueRequestSchema,
+  venueIdParamRequestSchema,
+  createFestDayRequestSchema,
+  updateFestDayRequestSchema,
+  festDayIdParamRequestSchema,
+  createScheduleEntryRequestSchema,
+  updateScheduleEntryRequestSchema,
+  scheduleEntryIdParamRequestSchema,
+  bulkCreateVenuesRequestSchema,
+  bulkCreateFestDaysRequestSchema,
+  bulkCreateScheduleEntriesRequestSchema,
+  type CreateVenueRequestSchemaType,
+  type UpdateVenueRequestSchemaType,
+  type CreateFestDayRequestSchemaType,
+  type UpdateFestDayRequestSchemaType,
+  type CreateScheduleEntryRequestSchemaType,
+  type UpdateScheduleEntryRequestSchemaType,
 } from "./schedule.schema.js";

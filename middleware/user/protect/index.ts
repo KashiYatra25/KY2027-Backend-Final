@@ -5,10 +5,10 @@ export { userRoutesRESTProtectMiddleware } from "./userRoutesRESTProtect.middlew
 export { userRoutesGQLProtectMiddleware } from "./userRoutesGQLProtect.middleware.js";
 
 // Role checker
-export { roleCheckerMiddleware } from "./role.checker.middleware.js";
+export { roleCheckerMiddleware } from "./roleChecker.middleware.js";
 
 // User status check
-export { checkUserAccountStatusMiddleware } from "./check.user.status.middleware.js";
+export { checkUserAccountStatusMiddleware } from "./checkUserStatus.middleware.js";
 
 // Types
 export type { DecodedUser, AuthenticatedUser } from "./helper/types/protect.types.js";

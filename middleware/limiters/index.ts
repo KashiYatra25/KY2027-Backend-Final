@@ -17,20 +17,20 @@ export {
 
 // Pre-configured Rate Limiters
 export {
-  globalRateLimiter,
-  authRateLimiter,
-  adminRateLimiter,
-  aadhaarRateLimiter,
-  caApplicationRateLimiter,
-  referralRateLimiter,
-  caPublicRateLimiter,
-  cartRateLimiter,
-  searchRateLimiter,
-  profileRateLimiter,
-  contactRateLimiter,
-  publicReadRateLimiter,
-  eventRegistrationRateLimiter,
-  teamRateLimiter,
+  globalRateLimiterMiddleware,
+  authRateLimiterMiddleware,
+  adminRateLimiterMiddleware,
+  aadhaarRateLimiterMiddleware,
+  caApplicationRateLimiterMiddleware,
+  referralRateLimiterMiddleware,
+  caPublicRateLimiterMiddleware,
+  cartRateLimiterMiddleware,
+  searchRateLimiterMiddleware,
+  profileRateLimiterMiddleware,
+  contactRateLimiterMiddleware,
+  publicReadRateLimiterMiddleware,
+  eventRegistrationRateLimiterMiddleware,
+  teamRateLimiterMiddleware,
 } from "./rateLimiters.js";
 
 // OTP Limiters

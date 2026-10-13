@@ -5,7 +5,7 @@ import { BadRequest, NotFound } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
-import type { CaApplicationStatusUpdateSchemaType } from "@schemas/admin/caStatusUpdate.schema.js";
+import type { CaApplicationStatusUpdateRequestSchemaType } from "@schemas/admin/caStatusUpdate.schema.js";
 import { referralIdService } from "@root/services/referral/index.js";
 import { queueCaApplicationStatusEmail } from "@root/services/queue/index.js";
 import { env } from "@lib/env/environment.js";
@@ -31,7 +31,7 @@ import { env } from "@lib/env/environment.js";
 export const updateCaApplicationStatus = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: CaApplicationStatusUpdateSchemaType },
+      { body: CaApplicationStatusUpdateRequestSchemaType },
       AdminRequestWithVerifiedCreds
     >,
     res: Response,

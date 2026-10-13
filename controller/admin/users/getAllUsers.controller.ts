@@ -1,7 +1,7 @@
 import type { Response, NextFunction } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import { prisma } from "@root/prisma.js";
+import { prisma, Prisma } from "@root/prisma.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -35,7 +35,7 @@ export const getAllUsers = catchAsync(
     const search = (req.query.search as string)?.trim();
 
     // Build where clause - only users with role level "USER" (not admins)
-    const whereClause: any = {
+    const whereClause: Prisma.UserWhereInput = {
       OR: [
         { role: null }, // Users without a role record
         { role: { level: "USER" } }, // Users with USER role

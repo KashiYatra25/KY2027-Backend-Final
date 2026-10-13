@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const LABEL_TONES = ["blue", "red", "green", "white", "text"] as const;
 
-export const createVenueSchema = z.object({
+export const createVenueRequestSchema = z.object({
   slug: z
     .string()
     .min(1, "Slug is required")
@@ -25,7 +25,7 @@ export const createVenueSchema = z.object({
   sortOrder: z.number().int().default(0),
 });
 
-export const updateVenueSchema = z.object({
+export const updateVenueRequestSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   label: z.string().min(1).max(100).optional(),
   tone: z.enum(LABEL_TONES).optional(),
@@ -39,7 +39,7 @@ export const updateVenueSchema = z.object({
   sortOrder: z.number().int().optional(),
 });
 
-export const venueIdParamSchema = z.object({
+export const venueIdParamRequestSchema = z.object({
   venueId: z.string().min(1, "Venue ID is required"),
 });
 
@@ -47,7 +47,7 @@ export const venueIdParamSchema = z.object({
 // FEST DAY SCHEMAS
 // ═══════════════════════════════════════════════════════════════════
 
-export const createFestDaySchema = z.object({
+export const createFestDayRequestSchema = z.object({
   dayNumber: z.number().int().min(1, "Day number must be at least 1"),
   date: z.string().datetime({ message: "Invalid date format" }),
   displayDate: z.string().min(1, "Display date is required").max(20, "Display date too long"),
@@ -55,7 +55,7 @@ export const createFestDaySchema = z.object({
   active: z.boolean().default(true),
 });
 
-export const updateFestDaySchema = z.object({
+export const updateFestDayRequestSchema = z.object({
   dayNumber: z.number().int().min(1).optional(),
   date: z.string().datetime().optional(),
   displayDate: z.string().min(1).max(20).optional(),
@@ -63,7 +63,7 @@ export const updateFestDaySchema = z.object({
   active: z.boolean().optional(),
 });
 
-export const festDayIdParamSchema = z.object({
+export const festDayIdParamRequestSchema = z.object({
   festDayId: z.string().min(1, "FestDay ID is required"),
 });
 
@@ -83,7 +83,7 @@ const EVENT_CATEGORIES = [
   "ZAIKA",
 ] as const;
 
-export const createScheduleEntrySchema = z.object({
+export const createScheduleEntryRequestSchema = z.object({
   eventSlug: z
     .string()
     .min(1, "Event slug is required")
@@ -105,7 +105,7 @@ export const createScheduleEntrySchema = z.object({
   sortOrder: z.number().int().default(0),
 });
 
-export const updateScheduleEntrySchema = z.object({
+export const updateScheduleEntryRequestSchema = z.object({
   eventSlug: z
     .string()
     .min(1)
@@ -128,7 +128,7 @@ export const updateScheduleEntrySchema = z.object({
   sortOrder: z.number().int().optional(),
 });
 
-export const scheduleEntryIdParamSchema = z.object({
+export const scheduleEntryIdParamRequestSchema = z.object({
   scheduleEntryId: z.string().min(1, "Schedule entry ID is required"),
 });
 
@@ -136,25 +136,25 @@ export const scheduleEntryIdParamSchema = z.object({
 // BULK OPERATIONS
 // ═══════════════════════════════════════════════════════════════════
 
-export const bulkCreateVenuesSchema = z.object({
-  venues: z.array(createVenueSchema).min(1, "At least one venue is required"),
+export const bulkCreateVenuesRequestSchema = z.object({
+  venues: z.array(createVenueRequestSchema).min(1, "At least one venue is required"),
 });
 
-export const bulkCreateFestDaysSchema = z.object({
-  festDays: z.array(createFestDaySchema).min(1, "At least one fest day is required"),
+export const bulkCreateFestDaysRequestSchema = z.object({
+  festDays: z.array(createFestDayRequestSchema).min(1, "At least one fest day is required"),
 });
 
-export const bulkCreateScheduleEntriesSchema = z.object({
-  entries: z.array(createScheduleEntrySchema).min(1, "At least one entry is required"),
+export const bulkCreateScheduleEntriesRequestSchema = z.object({
+  entries: z.array(createScheduleEntryRequestSchema).min(1, "At least one entry is required"),
 });
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPE EXPORTS
 // ═══════════════════════════════════════════════════════════════════
 
-export type CreateVenueSchemaType = z.infer<typeof createVenueSchema>;
-export type UpdateVenueSchemaType = z.infer<typeof updateVenueSchema>;
-export type CreateFestDaySchemaType = z.infer<typeof createFestDaySchema>;
-export type UpdateFestDaySchemaType = z.infer<typeof updateFestDaySchema>;
-export type CreateScheduleEntrySchemaType = z.infer<typeof createScheduleEntrySchema>;
-export type UpdateScheduleEntrySchemaType = z.infer<typeof updateScheduleEntrySchema>;
+export type CreateVenueRequestSchemaType = z.infer<typeof createVenueRequestSchema>;
+export type UpdateVenueRequestSchemaType = z.infer<typeof updateVenueRequestSchema>;
+export type CreateFestDayRequestSchemaType = z.infer<typeof createFestDayRequestSchema>;
+export type UpdateFestDayRequestSchemaType = z.infer<typeof updateFestDayRequestSchema>;
+export type CreateScheduleEntryRequestSchemaType = z.infer<typeof createScheduleEntryRequestSchema>;
+export type UpdateScheduleEntryRequestSchemaType = z.infer<typeof updateScheduleEntryRequestSchema>;

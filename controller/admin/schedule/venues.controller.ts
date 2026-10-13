@@ -5,8 +5,8 @@ import { BadRequest, NotFound } from "zodex-axon/errors";
 import { VenueModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
 import type {
-  CreateVenueSchemaType,
-  UpdateVenueSchemaType,
+  CreateVenueRequestSchemaType,
+  UpdateVenueRequestSchemaType,
 } from "@schemas/admin/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -52,7 +52,7 @@ export const getVenueByIdAdmin = catchAsync(
 
 export const createVenue = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const data = req.body as CreateVenueSchemaType;
+    const data = req.body as CreateVenueRequestSchemaType;
 
     // Check for duplicate slug
     const existing = await VenueModel.findOne({ slug: data.slug });
@@ -80,7 +80,7 @@ export const createVenue = catchAsync(
 export const updateVenue = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { venueId } = req.params;
-    const data = req.body as UpdateVenueSchemaType;
+    const data = req.body as UpdateVenueRequestSchemaType;
 
     const venue = await VenueModel.findByIdAndUpdate(
       venueId,
@@ -134,7 +134,7 @@ export const deleteVenue = catchAsync(
 
 export const bulkCreateVenues = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { venues } = req.body as { venues: CreateVenueSchemaType[] };
+    const { venues } = req.body as { venues: CreateVenueRequestSchemaType[] };
 
     // Check for duplicate slugs in request
     const slugs = venues.map((v) => v.slug);

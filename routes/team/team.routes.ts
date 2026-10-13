@@ -1,10 +1,10 @@
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
-import { checkUserAccountStatusMiddleware } from "@root/middleware/user/protect/check.user.status.middleware.js";
+import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
 import { checkWhetherProfileIsCompleteMiddleware } from "@root/middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
 import { checkUserHasPaidMiddleware } from "@middleware/user/payment/index.js";
-import { teamRateLimiter } from "@root/middleware/limiters/index.js";
+import { teamRateLimiterMiddleware } from "@root/middleware/limiters/index.js";
 import { createTeam } from "@controller/user/team/createTeam.controller.js";
 import { getMyTeams } from "@controller/user/team/getMyTeams.controller.js";
 import { createTeamRequestSchema } from "@schemas/team/team.schema.js";
@@ -26,7 +26,7 @@ teamRouter.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended us
 // Note: Controller also validates all MEMBERS have profile + paid
 teamRouter.post(
   "/",
-  teamRateLimiter,
+  teamRateLimiterMiddleware,
   checkWhetherProfileIsCompleteMiddleware,
   checkUserHasPaidMiddleware,
   RequestGuardMiddleware({ body: createTeamRequestSchema }),

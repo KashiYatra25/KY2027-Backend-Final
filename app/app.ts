@@ -9,7 +9,7 @@ import { scheduleRouter } from "@api/schedule/schedule.routes.js";
 import { corsOptions } from "@constants/cors.options.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
-import { globalRateLimiter } from "@root/middleware/limiters/index.js";
+import { globalRateLimiterMiddleware } from "@root/middleware/limiters/index.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
@@ -35,7 +35,7 @@ app.use(helmet());
 app.use(cors(corsOptions));
 
 // Global rate limiter - 100 requests/minute per IP across all endpoints
-app.use(globalRateLimiter);
+app.use(globalRateLimiterMiddleware);
 
 app.use(`${env.BASE_API_ENDPOINT}/user`, userRouter);
 app.use(`${env.BASE_API_ENDPOINT}/admin`, adminRouter);

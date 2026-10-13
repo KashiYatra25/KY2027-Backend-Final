@@ -44,7 +44,7 @@ import {
   deleteScheduleEntry,
   bulkCreateScheduleEntries,
 } from "@controller/admin/schedule/index.js";
-import { adminRateLimiter } from "@middleware/limiters/index.js";
+import { adminRateLimiterMiddleware } from "@middleware/limiters/index.js";
 import { adminRoutesRESTProtectMiddleware } from "@middleware/admin/protect/adminRoutesRESTProtect.middleware.js";
 import { checkAdminAccountStatusMiddleware } from "@middleware/admin/protect/checkAdminAccountStatus.middleware.js";
 import { adminRoleCheckerMiddleware } from "@middleware/admin/protect/adminRoleChecker.middleware.js";
@@ -60,7 +60,7 @@ import {
 } from "@schemas/admin/forgotPassword.schema.js";
 import { changePasswordRequestSchema } from "@schemas/admin/changePassword.schema.js";
 import { caApplicationApprovalRequestSchema } from "@schemas/admin/caApproval.schema.js";
-import { caApplicationStatusUpdateSchema } from "@schemas/admin/caStatusUpdate.schema.js";
+import { caApplicationStatusUpdateRequestSchema } from "@schemas/admin/caStatusUpdate.schema.js";
 import {
   createCouponRequestSchema,
   updateCouponRequestSchema,
@@ -68,18 +68,18 @@ import {
   couponIdParamRequestSchema,
 } from "@schemas/admin/coupon.schema.js";
 import {
-  createVenueSchema,
-  updateVenueSchema,
-  venueIdParamSchema,
-  createFestDaySchema,
-  updateFestDaySchema,
-  festDayIdParamSchema,
-  createScheduleEntrySchema,
-  updateScheduleEntrySchema,
-  scheduleEntryIdParamSchema,
-  bulkCreateVenuesSchema,
-  bulkCreateFestDaysSchema,
-  bulkCreateScheduleEntriesSchema,
+  createVenueRequestSchema,
+  updateVenueRequestSchema,
+  venueIdParamRequestSchema,
+  createFestDayRequestSchema,
+  updateFestDayRequestSchema,
+  festDayIdParamRequestSchema,
+  createScheduleEntryRequestSchema,
+  updateScheduleEntryRequestSchema,
+  scheduleEntryIdParamRequestSchema,
+  bulkCreateVenuesRequestSchema,
+  bulkCreateFestDaysRequestSchema,
+  bulkCreateScheduleEntriesRequestSchema,
 } from "@schemas/admin/schedule.schema.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
@@ -104,7 +104,7 @@ adminRouter.get("/get-session", getAdminSession);
  */
 adminRouter.post(
   "/login",
-  adminRateLimiter,
+  adminRateLimiterMiddleware,
   RequestGuardMiddleware({ body: adminLoginRequestSchema }),
   adminLogin,
 );
@@ -129,7 +129,7 @@ adminRouter.post("/refresh-token", refreshAdminToken);
  */
 adminRouter.post(
   "/confirm-onboarding",
-  adminRateLimiter,
+  adminRateLimiterMiddleware,
   RequestGuardMiddleware({ body: adminOnboardingRequestSchema }),
   confirmAdminOnboarding,
 );
@@ -141,7 +141,7 @@ adminRouter.post(
  */
 adminRouter.post(
   "/forgot-password",
-  adminRateLimiter,
+  adminRateLimiterMiddleware,
   RequestGuardMiddleware({ body: forgotPasswordRequestSchema }),
   forgotPassword,
 );
@@ -153,7 +153,7 @@ adminRouter.post(
  */
 adminRouter.post(
   "/reset-password",
-  adminRateLimiter,
+  adminRateLimiterMiddleware,
   RequestGuardMiddleware({ body: resetPasswordRequestSchema }),
   resetPassword,
 );
@@ -163,7 +163,7 @@ adminRouter.post(
 // ═══════════════════════════════════════════════════════════════════
 
 adminRouter.use(
-  adminRateLimiter,
+  adminRateLimiterMiddleware,
   adminRoutesRESTProtectMiddleware,
   checkAdminAccountStatusMiddleware,
 );
@@ -194,11 +194,11 @@ adminRouter.get(
  * GET /get-all-users
  * Get paginated list of all regular users (role: USER)
  * Query params: page, limit (max 50), search
- * Requires: MASTER_ADMIN or MANAGER role
+ * Requires: MASTER_ADMIN, MANAGER, or OPERATOR role
  */
 adminRouter.get(
   "/get-all-users",
-  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
   getAllUsers,
 );
 
@@ -268,7 +268,7 @@ adminRouter.post(
 adminRouter.patch(
   "/campus-ambassador/update-status",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ body: caApplicationStatusUpdateSchema }),
+  RequestGuardMiddleware({ body: caApplicationStatusUpdateRequestSchema }),
   updateCaApplicationStatus,
 );
 
@@ -322,35 +322,35 @@ adminRouter.get(
 adminRouter.get(
   "/schedule/venues/:venueId",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ params: venueIdParamSchema }),
+  RequestGuardMiddleware({ params: venueIdParamRequestSchema }),
   getVenueByIdAdmin,
 );
 
 adminRouter.post(
   "/schedule/venues",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ body: createVenueSchema }),
+  RequestGuardMiddleware({ body: createVenueRequestSchema }),
   createVenue,
 );
 
 adminRouter.post(
   "/schedule/venues/bulk",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ body: bulkCreateVenuesSchema }),
+  RequestGuardMiddleware({ body: bulkCreateVenuesRequestSchema }),
   bulkCreateVenues,
 );
 
 adminRouter.patch(
   "/schedule/venues/:venueId",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ params: venueIdParamSchema, body: updateVenueSchema }),
+  RequestGuardMiddleware({ params: venueIdParamRequestSchema, body: updateVenueRequestSchema }),
   updateVenue,
 );
 
 adminRouter.delete(
   "/schedule/venues/:venueId",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ params: venueIdParamSchema }),
+  RequestGuardMiddleware({ params: venueIdParamRequestSchema }),
   deleteVenue,
 );
 
@@ -367,35 +367,35 @@ adminRouter.get(
 adminRouter.get(
   "/schedule/fest-days/:festDayId",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ params: festDayIdParamSchema }),
+  RequestGuardMiddleware({ params: festDayIdParamRequestSchema }),
   getFestDayByIdAdmin,
 );
 
 adminRouter.post(
   "/schedule/fest-days",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ body: createFestDaySchema }),
+  RequestGuardMiddleware({ body: createFestDayRequestSchema }),
   createFestDay,
 );
 
 adminRouter.post(
   "/schedule/fest-days/bulk",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ body: bulkCreateFestDaysSchema }),
+  RequestGuardMiddleware({ body: bulkCreateFestDaysRequestSchema }),
   bulkCreateFestDays,
 );
 
 adminRouter.patch(
   "/schedule/fest-days/:festDayId",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ params: festDayIdParamSchema, body: updateFestDaySchema }),
+  RequestGuardMiddleware({ params: festDayIdParamRequestSchema, body: updateFestDayRequestSchema }),
   updateFestDay,
 );
 
 adminRouter.delete(
   "/schedule/fest-days/:festDayId",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ params: festDayIdParamSchema }),
+  RequestGuardMiddleware({ params: festDayIdParamRequestSchema }),
   deleteFestDay,
 );
 
@@ -412,35 +412,35 @@ adminRouter.get(
 adminRouter.get(
   "/schedule/entries/:scheduleEntryId",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ params: scheduleEntryIdParamSchema }),
+  RequestGuardMiddleware({ params: scheduleEntryIdParamRequestSchema }),
   getScheduleEntryByIdAdmin,
 );
 
 adminRouter.post(
   "/schedule/entries",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ body: createScheduleEntrySchema }),
+  RequestGuardMiddleware({ body: createScheduleEntryRequestSchema }),
   createScheduleEntry,
 );
 
 adminRouter.post(
   "/schedule/entries/bulk",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ body: bulkCreateScheduleEntriesSchema }),
+  RequestGuardMiddleware({ body: bulkCreateScheduleEntriesRequestSchema }),
   bulkCreateScheduleEntries,
 );
 
 adminRouter.patch(
   "/schedule/entries/:scheduleEntryId",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ params: scheduleEntryIdParamSchema, body: updateScheduleEntrySchema }),
+  RequestGuardMiddleware({ params: scheduleEntryIdParamRequestSchema, body: updateScheduleEntryRequestSchema }),
   updateScheduleEntry,
 );
 
 adminRouter.delete(
   "/schedule/entries/:scheduleEntryId",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ params: scheduleEntryIdParamSchema }),
+  RequestGuardMiddleware({ params: scheduleEntryIdParamRequestSchema }),
   deleteScheduleEntry,
 );
 

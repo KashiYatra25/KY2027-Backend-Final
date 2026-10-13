@@ -1,10 +1,10 @@
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
-import { checkUserAccountStatusMiddleware } from "@root/middleware/user/protect/check.user.status.middleware.js";
+import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
 import {
-  publicReadRateLimiter,
-  eventRegistrationRateLimiter,
+  publicReadRateLimiterMiddleware,
+  eventRegistrationRateLimiterMiddleware,
 } from "@root/middleware/limiters/index.js";
 import {
   getEvents,
@@ -12,7 +12,7 @@ import {
   registerForEvent,
 } from "@controller/user/event/index.js";
 import {
-  getEventsQuerySchema,
+  getEventsQueryRequestSchema,
   eventSlugParamRequestSchema,
   registerForEventRequestSchema,
 } from "@schemas/event/event.schema.js";
@@ -25,14 +25,14 @@ export const eventRouter: ExpressRouter = Router();
 
 eventRouter.get(
   "/",
-  publicReadRateLimiter,
-  RequestGuardMiddleware({ query: getEventsQuerySchema }),
+  publicReadRateLimiterMiddleware,
+  RequestGuardMiddleware({ query: getEventsQueryRequestSchema }),
   getEvents,
 );
 
 eventRouter.get(
   "/:slug",
-  publicReadRateLimiter,
+  publicReadRateLimiterMiddleware,
   RequestGuardMiddleware({ params: eventSlugParamRequestSchema }),
   getEventBySlug,
 );
@@ -51,7 +51,7 @@ eventRouter.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended u
 // Profile check not needed - payment requires profile completion first
 eventRouter.post(
   "/:slug/register",
-  eventRegistrationRateLimiter,
+  eventRegistrationRateLimiterMiddleware,
   RequestGuardMiddleware({
     params: eventSlugParamRequestSchema,
     body: registerForEventRequestSchema,

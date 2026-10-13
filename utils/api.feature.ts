@@ -5,7 +5,7 @@ interface QueryString {
   sort?: string;
   limit?: string;
   fields?: string;
-  [key: string]: any;
+  [key: string]: string | undefined;
 }
 
 class APIFeatures<T extends Document> {

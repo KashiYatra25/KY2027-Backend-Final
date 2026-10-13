@@ -6,10 +6,10 @@
  *
  * @example
  * // In user.route.ts
- * import { authRateLimiter, cartRateLimiter } from "@middleware/limiters/rateLimiters.js";
+ * import { authRateLimiterMiddleware, cartRateLimiterMiddleware } from "@middleware/limiters/rateLimiters.js";
  *
- * userRouter.post("/auth", authRateLimiter, authenticateUser);
- * userRouter.post("/cart/add", cartRateLimiter, addToCart);
+ * userRouter.post("/auth", authRateLimiterMiddleware, authenticateUser);
+ * userRouter.post("/cart/add", cartRateLimiterMiddleware, addToCart);
  */
 
 import {
@@ -49,7 +49,7 @@ import {
  * 100 requests/minute per IP
  * Use in app.ts before all routes
  */
-export const globalRateLimiter = createGlobalRateLimiter(
+export const globalRateLimiterMiddleware = createGlobalRateLimiter(
   GLOBAL_RATE_LIMIT_WINDOW,
   GLOBAL_RATE_LIMIT_MAX,
 );
@@ -63,7 +63,7 @@ export const globalRateLimiter = createGlobalRateLimiter(
  * Strict limit to prevent credential stuffing
  * 10 requests/minute per IP
  */
-export const authRateLimiter = createIpBasedLimiter(
+export const authRateLimiterMiddleware = createIpBasedLimiter(
   "auth",
   AUTH_RATE_LIMIT_WINDOW,
   AUTH_RATE_LIMIT_MAX,
@@ -76,7 +76,7 @@ export const authRateLimiter = createIpBasedLimiter(
  * Admin actions limiter (User-based)
  * 30 requests/minute per user
  */
-export const adminRateLimiter = createUserBasedLimiter(
+export const adminRateLimiterMiddleware = createUserBasedLimiter(
   "admin",
   ADMIN_RATE_LIMIT_WINDOW,
   ADMIN_RATE_LIMIT_MAX,
@@ -94,7 +94,7 @@ export const adminRateLimiter = createUserBasedLimiter(
  * Strict limit - AWS Textract costs money
  * 5 requests/minute per user
  */
-export const aadhaarRateLimiter = createUserBasedLimiter(
+export const aadhaarRateLimiterMiddleware = createUserBasedLimiter(
   "aadhaar",
   AADHAAR_RATE_LIMIT_WINDOW,
   AADHAAR_RATE_LIMIT_MAX,
@@ -112,7 +112,7 @@ export const aadhaarRateLimiter = createUserBasedLimiter(
  * Very strict - prevent spam applications
  * 3 requests/hour per user
  */
-export const caApplicationRateLimiter = createUserBasedLimiter(
+export const caApplicationRateLimiterMiddleware = createUserBasedLimiter(
   "ca-apply",
   CA_APPLICATION_RATE_LIMIT_WINDOW,
   CA_APPLICATION_RATE_LIMIT_MAX,
@@ -126,7 +126,7 @@ export const caApplicationRateLimiter = createUserBasedLimiter(
  * Moderate limit
  * 10 requests/minute per user
  */
-export const referralRateLimiter = createUserBasedLimiter(
+export const referralRateLimiterMiddleware = createUserBasedLimiter(
   "referral",
   REFERRAL_RATE_LIMIT_WINDOW,
   REFERRAL_RATE_LIMIT_MAX,
@@ -144,7 +144,7 @@ export const referralRateLimiter = createUserBasedLimiter(
  * Moderate limit for cart add/update/remove
  * 30 requests/minute per user
  */
-export const cartRateLimiter = createUserBasedLimiter(
+export const cartRateLimiterMiddleware = createUserBasedLimiter(
   "cart",
   CART_RATE_LIMIT_WINDOW,
   CART_RATE_LIMIT_MAX,
@@ -158,7 +158,7 @@ export const cartRateLimiter = createUserBasedLimiter(
  * Frontend should debounce, but this is a safety net
  * 30 requests/minute per user
  */
-export const searchRateLimiter = createUserBasedLimiter(
+export const searchRateLimiterMiddleware = createUserBasedLimiter(
   "search",
   SEARCH_RATE_LIMIT_WINDOW,
   SEARCH_RATE_LIMIT_MAX,
@@ -172,7 +172,7 @@ export const searchRateLimiter = createUserBasedLimiter(
  * Moderate limit
  * 20 requests/minute per user
  */
-export const profileRateLimiter = createUserBasedLimiter(
+export const profileRateLimiterMiddleware = createUserBasedLimiter(
   "profile",
   60, // 1 minute
   20,
@@ -190,7 +190,7 @@ export const profileRateLimiter = createUserBasedLimiter(
  * Strict to prevent spam
  * 5 requests/hour per IP
  */
-export const contactRateLimiter = createIpBasedLimiter(
+export const contactRateLimiterMiddleware = createIpBasedLimiter(
   "contact",
   CONTACT_RATE_LIMIT_WINDOW,
   CONTACT_RATE_LIMIT_MAX,
@@ -204,7 +204,7 @@ export const contactRateLimiter = createIpBasedLimiter(
  * Lenient - for /events, /pass, /ca/leaderboard, etc.
  * 60 requests/minute per IP
  */
-export const publicReadRateLimiter = createIpBasedLimiter(
+export const publicReadRateLimiterMiddleware = createIpBasedLimiter(
   "public",
   PUBLIC_RATE_LIMIT_WINDOW,
   PUBLIC_RATE_LIMIT_MAX,
@@ -215,7 +215,7 @@ export const publicReadRateLimiter = createIpBasedLimiter(
  * Public endpoints but can be abused
  * 30 requests/minute per IP
  */
-export const caPublicRateLimiter = createIpBasedLimiter(
+export const caPublicRateLimiterMiddleware = createIpBasedLimiter(
   "ca-public",
   60, // 1 minute
   30,
@@ -230,7 +230,7 @@ export const caPublicRateLimiter = createIpBasedLimiter(
  * Moderate limit
  * 20 requests/minute per user
  */
-export const eventRegistrationRateLimiter = createUserBasedLimiter(
+export const eventRegistrationRateLimiterMiddleware = createUserBasedLimiter(
   "event-register",
   60, // 1 minute
   20,
@@ -244,7 +244,7 @@ export const eventRegistrationRateLimiter = createUserBasedLimiter(
  * Strict - teams are permanent
  * 10 requests/minute per user
  */
-export const teamRateLimiter = createUserBasedLimiter(
+export const teamRateLimiterMiddleware = createUserBasedLimiter(
   "team",
   60, // 1 minute
   10,

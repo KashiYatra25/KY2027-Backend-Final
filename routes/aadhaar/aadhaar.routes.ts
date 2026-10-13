@@ -6,8 +6,8 @@ import {
 } from "@root/controller/user/aadhaar/index.js";
 import { extractAadhaarDataMiddleware } from "@root/middleware/user/aadhaar/extractAadhaarData.middleware.js";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
-import { checkUserAccountStatusMiddleware } from "@root/middleware/user/protect/check.user.status.middleware.js";
-import { aadhaarRateLimiter } from "@root/middleware/limiters/index.js";
+import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
+import { aadhaarRateLimiterMiddleware } from "@root/middleware/limiters/index.js";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import {
   getAadhaarUploadUrlRequestSchema,
@@ -33,14 +33,14 @@ router.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended users
  */
 router.post(
   "/upload-url",
-  aadhaarRateLimiter,
+  aadhaarRateLimiterMiddleware,
   RequestGuardMiddleware({ body: getAadhaarUploadUrlRequestSchema }),
   getUploadUrl,
 );
 
 router.patch(
   "/confirm-upload",
-  aadhaarRateLimiter,
+  aadhaarRateLimiterMiddleware,
   RequestGuardMiddleware({ body: confirmAadhaarUploadRequestSchema }),
   getAadhaarUploadConfirmation,
 );
@@ -56,7 +56,7 @@ router.patch(
  */
 router.post(
   "/extract-details-and-update-profile",
-  aadhaarRateLimiter,
+  aadhaarRateLimiterMiddleware,
   extractAadhaarDataMiddleware,
   updateUserInfoBasedOnAadhaarData,
 );

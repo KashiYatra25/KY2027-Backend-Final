@@ -6,8 +6,8 @@ import { ScheduleEntryModel, VenueModel } from "@root/databaseManagers/mongoose/
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
 import type {
-  CreateScheduleEntrySchemaType,
-  UpdateScheduleEntrySchemaType,
+  CreateScheduleEntryRequestSchemaType,
+  UpdateScheduleEntryRequestSchemaType,
 } from "@schemas/admin/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -63,7 +63,7 @@ export const getScheduleEntryByIdAdmin = catchAsync(
 
 export const createScheduleEntry = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const data = req.body as CreateScheduleEntrySchemaType;
+    const data = req.body as CreateScheduleEntryRequestSchemaType;
 
     // Check event exists in Prisma
     const event = await prisma.event.findUnique({
@@ -126,7 +126,7 @@ export const createScheduleEntry = catchAsync(
 export const updateScheduleEntry = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { scheduleEntryId } = req.params;
-    const data = req.body as UpdateScheduleEntrySchemaType;
+    const data = req.body as UpdateScheduleEntryRequestSchemaType;
 
     const existingEntry = await ScheduleEntryModel.findById(scheduleEntryId);
     if (!existingEntry) {
@@ -224,7 +224,7 @@ export const deleteScheduleEntry = catchAsync(
 
 export const bulkCreateScheduleEntries = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { entries } = req.body as { entries: CreateScheduleEntrySchemaType[] };
+    const { entries } = req.body as { entries: CreateScheduleEntryRequestSchemaType[] };
 
     // Check for duplicate eventSlugs in request
     const eventSlugs = entries.map((e) => e.eventSlug);

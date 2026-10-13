@@ -9,12 +9,12 @@ import {
   userRoutesRESTProtectMiddleware,
   roleCheckerMiddleware,
 } from "@root/middleware/user/protect/index.js";
-import { checkUserAccountStatusMiddleware } from "@root/middleware/user/protect/check.user.status.middleware.js";
+import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
 import { checkWhetherProfileIsCompleteMiddleware } from "@root/middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
 import { checkUserIsCaMiddleware } from "@root/middleware/user/ca/checkUserIsCa.middleware.js";
 import {
-  caPublicRateLimiter,
-  caApplicationRateLimiter,
+  caPublicRateLimiterMiddleware,
+  caApplicationRateLimiterMiddleware,
 } from "@root/middleware/limiters/index.js";
 import { becomeCaRequestSchema } from "@schemas/user/caApplication.schema.js";
 import { addReferralIdRequestSchema } from "@schemas/user/referral.schema.js";
@@ -28,12 +28,12 @@ export const caRouter: ExpressRouter = Router();
 // ═══════════════════════════════════════════════════════════════════
 
 // Get top 10 CAs by referral count
-caRouter.get("/leaderboard", caPublicRateLimiter, getCaLeaderboard);
+caRouter.get("/leaderboard", caPublicRateLimiterMiddleware, getCaLeaderboard);
 
 // Validate a referral ID (for frontend validation)
 caRouter.get(
   "/validate/:referralId",
-  caPublicRateLimiter,
+  caPublicRateLimiterMiddleware,
   RequestGuardMiddleware({ params: addReferralIdRequestSchema }),
   validateReferralId,
 );
@@ -51,7 +51,7 @@ caRouter.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended user
 // Apply for CA - requires USER role and completed profile
 caRouter.post(
   "/apply",
-  caApplicationRateLimiter,
+  caApplicationRateLimiterMiddleware,
   roleCheckerMiddleware("REST", "USER"),
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: becomeCaRequestSchema }),

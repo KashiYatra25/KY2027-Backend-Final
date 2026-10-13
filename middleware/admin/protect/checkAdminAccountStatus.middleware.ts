@@ -19,7 +19,7 @@ const checkAdminAccountStatusMiddleware = catchAsync(
     });
 
     if (!user || user.isSuspended) {
-      logger.warn("Blocked suspended admin account", { userId, adminId, path: (req as any).path });
+      logger.warn("Blocked suspended admin account", { userId, adminId, path: req.path });
       return next(new ForbiddenErrorResponse().handleResponse(res, { info: "Your account has been suspended" }));
     }
 

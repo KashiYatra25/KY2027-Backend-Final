@@ -33,6 +33,7 @@ import type {
   RateLimiterConfig,
   RateLimitResult,
 } from "./helper/types/rateLimiter.types.js";
+import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // HELPERS
@@ -262,9 +263,9 @@ export const createUserBasedLimiter = (
   return createRateLimiter({
     routeName,
     keyGenerator: (req) => {
-      const user = (req as any).user;
-      if (user?.id) {
-        return { type: "user", value: user.id };
+      const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
+      if (authReq.user?.id) {
+        return { type: "user", value: authReq.user.id };
       }
       // Fallback to IP if user not authenticated
       return { type: "ip", value: getClientIp(req) };

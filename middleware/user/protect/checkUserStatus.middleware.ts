@@ -19,7 +19,7 @@ const checkUserAccountStatusMiddleware = catchAsync(
     });
 
     if (!user || user.isSuspended) {
-      logger.warn("Blocked suspended account", { userId: id, path: (req as any).path });
+      logger.warn("Blocked suspended account", { userId: id, path: req.path });
       return next(new ForbiddenErrorResponse().handleResponse(res, { info: "Your account has been suspended" }));
     }
 

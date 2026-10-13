@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
-import type { GetEventsQueryType } from "@schemas/event/event.schema.js";
+import type { GetEventsQueryRequestSchemaType } from "@schemas/event/event.schema.js";
 
 /**
  * GET /events
@@ -10,7 +10,7 @@ import type { GetEventsQueryType } from "@schemas/event/event.schema.js";
  */
 const getEvents = catchAsync(
   async (
-    req: Request & { validatedQuery?: GetEventsQueryType },
+    req: Request & { validatedQuery?: GetEventsQueryRequestSchemaType },
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
