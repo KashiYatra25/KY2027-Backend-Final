@@ -60,6 +60,33 @@ const registerForEvent = catchAsync(
       );
     }
 
+    // 1.5. Check registration deadline
+    if (event.registrationDeadline && new Date() > event.registrationDeadline) {
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Registration deadline has passed for this event",
+        }),
+      );
+    }
+
+    // 1.6. Check max participants capacity (if set)
+    if (event.maxParticipants !== null) {
+      const currentRegistrationCount = await EventRegistrationModel.countDocuments({
+        eventSlug: slug,
+        status: { $in: ["pending", "confirmed"] }, // Don't count cancelled
+      });
+
+      if (currentRegistrationCount >= event.maxParticipants) {
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: "This event has reached maximum capacity. Registration is closed.",
+            currentCount: currentRegistrationCount,
+            maxParticipants: event.maxParticipants,
+          }),
+        );
+      }
+    }
+
     // 2. Handle based on request type (discriminated union)
     if (body.type === "individual") {
       // Validate event allows individual participation

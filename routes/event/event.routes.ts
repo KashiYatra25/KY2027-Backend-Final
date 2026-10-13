@@ -10,6 +10,7 @@ import {
   getEvents,
   getEventBySlug,
   registerForEvent,
+  cancelRegistration,
 } from "@controller/user/event/index.js";
 import {
   getEventsQueryRequestSchema,
@@ -57,4 +58,15 @@ eventRouter.post(
     body: registerForEventRequestSchema,
   }),
   registerForEvent,
+);
+
+// Cancel registration for event
+// Only the user (individual) or team creator (team) can cancel
+eventRouter.delete(
+  "/:slug/registration",
+  eventRegistrationRateLimiterMiddleware,
+  RequestGuardMiddleware({
+    params: eventSlugParamRequestSchema,
+  }),
+  cancelRegistration,
 );
