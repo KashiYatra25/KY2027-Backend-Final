@@ -9,6 +9,7 @@ import { addToCart } from "@controller/user/cart/addToCart.controller.js";
 import { removeFromCart } from "@controller/user/cart/removeFromCart.controller.js";
 import { clearCart } from "@controller/user/cart/clearCart.controller.js";
 import { updateCartQuantity } from "@controller/user/cart/updateCartQuantity.controller.js";
+import { checkoutCart } from "@controller/user/cart/checkoutCart.controller.js";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
 import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
 import { blockIfProfileAlreadyCompletedMiddleware } from "@root/middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
@@ -30,6 +31,7 @@ import {
   addToCartRequestSchema,
   removeFromCartRequestSchema,
   updateCartQuantityRequestSchema,
+  checkoutCartRequestSchema,
   userAuthenticationRequestSchema,
 } from "@schemas/user/index.js";
 import { Router, type Router as ExpressRouter } from "express";
@@ -133,4 +135,12 @@ userRouter.delete(
   cartRateLimiterMiddleware,
   checkWhetherProfileIsCompleteMiddleware,
   clearCart,
+);
+
+userRouter.post(
+  "/cart/checkout",
+  cartRateLimiter,
+  checkWhetherProfileIsCompleteMiddleware,
+  RequestGuardMiddleware({ body: checkoutCartRequestSchema }),
+  checkoutCart,
 );

@@ -3,7 +3,7 @@ import { Schema, type HydratedDocument, type InferSchemaType } from "mongoose";
 
 // ═══════════════════════════════════════════════════════════════════
 // PURCHASE MODEL
-// Tracks completed purchases - one document per order/transaction
+// Tracks purchases - from pending to completed/failed
 // ═══════════════════════════════════════════════════════════════════
 
 const PurchaseItemSchema = new Schema(
@@ -12,10 +12,18 @@ const PurchaseItemSchema = new Schema(
       type: String,
       required: true,
     },
+    passName: {
+      type: String,
+      required: true,
+    },
     quantity: {
       type: Number,
       required: true,
       min: 1,
+    },
+    unitPrice: {
+      type: Number,
+      required: true,
     },
   },
   { _id: false }
@@ -32,15 +40,39 @@ export const PurchaseSchema = new Schema(
       required: true,
       unique: true,
     },
+    paymentSessionId: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["PENDING", "PAID", "FAILED", "EXPIRED"],
+      default: "PENDING",
+    },
     items: {
       type: [PurchaseItemSchema],
       required: true,
+    },
+    // Amounts stored in INR (not paise)
+    subtotal: {
+      type: Number,
+      required: true,
+    },
+    discount: {
+      type: Number,
+      default: 0,
     },
     totalAmount: {
       type: Number,
       required: true,
     },
+    // Coupon tracking
     couponId: {
+      type: String,
+      default: null,
+    },
+    couponCode: {
       type: String,
       default: null,
     },
@@ -49,9 +81,9 @@ export const PurchaseSchema = new Schema(
       required: true,
       enum: ["EXTERNAL", "WEB_APP"],
     },
-    purchasedAt: {
+    paidAt: {
       type: Date,
-      default: Date.now,
+      default: null,
     },
   },
   {
@@ -61,7 +93,8 @@ export const PurchaseSchema = new Schema(
 
 PurchaseSchema.index({ userId: 1 });
 // orderId already has unique: true which creates an index
-PurchaseSchema.index({ userId: 1, purchasedAt: -1 });
+PurchaseSchema.index({ userId: 1, status: 1 });
+PurchaseSchema.index({ status: 1, createdAt: 1 }); // For cleanup of expired pending orders
 
 export type PurchaseSchemaType = InferSchemaType<typeof PurchaseSchema> & {
   createdAt: Date;

@@ -65,25 +65,38 @@ function promisify<TRequest, TResponse>(
 class PaymentClient {
   private client: PaymentServiceClient;
   private static instance: PaymentClient;
+  private address: string;
 
   private constructor() {
     const host = env.PAYMENT_GRPC_HOST || "localhost";
     const port = env.PAYMENT_GRPC_PORT || "50051";
-    const address = `${host}:${port}`;
+    this.address = `${host}:${port}`;
 
+    this.client = this.createClient();
+    console.log(`[gRPC] PaymentServiceClient connected to ${this.address}`);
+  }
+
+  private createClient(): PaymentServiceClient {
     // No TLS — internal service communication within AWS VPC.
     // See KY27_backend_go/docs/ADR.md for rationale.
     const credentials = grpc.credentials.createInsecure();
 
-    this.client = new PaymentServiceClient(address, credentials, {
+    return new PaymentServiceClient(this.address, credentials, {
       "grpc.keepalive_time_ms": 10000,
       "grpc.keepalive_timeout_ms": 5000,
       "grpc.keepalive_permit_without_calls": 1,
       "grpc.max_receive_message_length": 4 * 1024 * 1024,
       "grpc.max_send_message_length": 4 * 1024 * 1024,
     });
+  }
 
-    console.log(`[gRPC] PaymentServiceClient connected to ${address}`);
+  /**
+   * Reconnect the client (for recovering from connection failures)
+   */
+  private reconnect(): void {
+    console.log(`[gRPC] Reconnecting to ${this.address}...`);
+    this.client.close();
+    this.client = this.createClient();
   }
 
   public static getInstance(): PaymentClient {
@@ -94,12 +107,33 @@ class PaymentClient {
   }
 
   /**
-   * Create a payment order
+   * Reset the singleton instance (forces reconnection on next getInstance)
+   */
+  public static resetInstance(): void {
+    if (PaymentClient.instance) {
+      PaymentClient.instance.client.close();
+      PaymentClient.instance = null as unknown as PaymentClient;
+      console.log("[gRPC] PaymentClient instance reset");
+    }
+  }
+
+  /**
+   * Create a payment order (with automatic retry on connection failure)
    */
   async createPayment(
     request: CreatePaymentRequest,
   ): Promise<CreatePaymentResponse> {
-    return promisify(this.client, this.client.createPayment, request);
+    try {
+      return await promisify(this.client, this.client.createPayment, request);
+    } catch (error) {
+      // If connection failed, try reconnecting once
+      if (error instanceof Error && error.message.includes("UNAVAILABLE")) {
+        console.log("[gRPC] Connection failed, attempting reconnect...");
+        this.reconnect();
+        return promisify(this.client, this.client.createPayment, request);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -144,6 +178,9 @@ class PaymentClient {
 
 // Export singleton getter
 export const getPaymentClient = () => PaymentClient.getInstance();
+
+// Export for resetting connection
+export const resetPaymentClient = () => PaymentClient.resetInstance();
 
 // Export for graceful shutdown
 export const closePaymentClient = () => {

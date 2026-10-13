@@ -19,8 +19,6 @@ export const createCouponRequestSchema = z
 
     validFrom: z.string().datetime().optional(),
     validUntil: z.string().datetime().optional(),
-
-    applicablePassIds: z.array(z.string()).default([]),
   })
   .refine(
     (data) => {
@@ -77,8 +75,6 @@ export const updateCouponRequestSchema = z
 
     validFrom: z.string().datetime().optional(),
     validUntil: z.string().datetime().nullable().optional(),
-
-    applicablePassIds: z.array(z.string()).optional(),
   })
   .refine(
     (data) => {

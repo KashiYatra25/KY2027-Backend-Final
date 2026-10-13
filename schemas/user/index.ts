@@ -7,9 +7,11 @@ export {
   addToCartRequestSchema,
   updateCartQuantityRequestSchema,
   removeFromCartRequestSchema,
+  checkoutCartRequestSchema,
   type AddToCartRequestSchemaType,
   type UpdateCartQuantityRequestSchemaType,
   type RemoveFromCartRequestSchemaType,
+  type CheckoutCartRequestSchemaType,
 } from "./cart.schema.js";
 
 export {

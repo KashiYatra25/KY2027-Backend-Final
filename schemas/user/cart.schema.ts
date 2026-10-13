@@ -50,3 +50,18 @@ export const removeFromCartRequestSchema = z.object({
 });
 
 export type RemoveFromCartRequestSchemaType = z.infer<typeof removeFromCartRequestSchema>;
+
+/**
+ * Schema for cart checkout
+ * couponCode: Optional discount coupon code
+ */
+export const checkoutCartRequestSchema = z.object({
+  couponCode: z
+    .string()
+    .min(1, "Coupon code cannot be empty")
+    .max(50, "Coupon code is too long")
+    .toUpperCase()
+    .optional(),
+});
+
+export type CheckoutCartRequestSchemaType = z.infer<typeof checkoutCartRequestSchema>;
