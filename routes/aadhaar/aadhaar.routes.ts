@@ -6,6 +6,7 @@ import {
 } from "@root/controller/user/aadhaar/index.js";
 import { extractAadhaarDataMiddleware } from "@root/middleware/user/aadhaar/extractAadhaarData.middleware.js";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
+import { checkUserAccountStatusMiddleware } from "@root/middleware/user/protect/check.user.status.middleware.js";
 import { aadhaarRateLimiter } from "@root/middleware/limiters/index.js";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import {
@@ -15,14 +16,21 @@ import {
 
 const router = Router();
 
+// ═══════════════════════════════════════════════════════════════════
+// PROTECTED ROUTES
+// All routes below require:
+// 1. Valid NextAuth session (userRoutesRESTProtectMiddleware)
+// 2. Active account status (checkUserAccountStatusMiddleware) - SEC-006 FIX
+// ═══════════════════════════════════════════════════════════════════
+
+router.use(userRoutesRESTProtectMiddleware);
+router.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended users
+
 /**
  * POST /aadhaar/upload-url
  * Get pre-signed URL for uploading Aadhaar image to S3
  * Body: { fileType: "image/jpeg" | "image/png" }
  */
-router.use(userRoutesRESTProtectMiddleware);
-
-// All Aadhaar operations are rate limited - expensive AWS calls
 router.post(
   "/upload-url",
   aadhaarRateLimiter,

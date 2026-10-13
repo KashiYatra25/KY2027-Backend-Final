@@ -1,11 +1,11 @@
 export {
   promoteUserOrAdminRoleRequestSchema,
   adminOnboardingRequestSchema,
-  adminSuspendRequestSchema,
+  adminAccountStatusChangeRequestSchema,
   adminLoginRequestSchema,
   type PromoteUserOrAdminRoleRequestSchemaType,
   type AdminOnboardingRequestSchemaType,
-  type AdminSuspendRequestSchemaType,
+  type AdminAccountStatusChangeRequestSchemaType,
   type AdminLoginRequestSchemaType,
 } from "./admin.schema.js";
 

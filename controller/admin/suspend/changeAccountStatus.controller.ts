@@ -8,18 +8,18 @@ import {
 } from "zodex-axon/errors";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { logger } from "@logger/logger.js";
-import type { AdminSuspendRequestSchemaType } from "@schemas/admin/admin.schema.js";
+import type { AdminAccountStatusChangeRequestSchemaType } from "@schemas/admin/admin.schema.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/functions/index.js";
 import type { RoleLevel } from "@lib/prisma/index.js";
 import { queueAccountStatusChangeEmail } from "@services/queue/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
-// SUSPEND USER OR ADMIN ACCOUNT
+// CHANGE ACCOUNT STATUS (SUSPEND / REACTIVATE)
 //
 // Hierarchy:
-// - MASTER_ADMIN can suspend: MANAGER, OPERATOR, USER
-// - MANAGER can suspend: OPERATOR, USER
-// - OPERATOR cannot suspend anyone (blocked by role checker middleware)
+// - MASTER_ADMIN can change status of: MANAGER, OPERATOR, USER
+// - MANAGER can change status of: OPERATOR, USER
+// - OPERATOR cannot change anyone's status (blocked by role checker middleware)
 //
 // Prerequisites (handled by middleware):
 // - adminRoutesRESTProtectMiddleware: Valid admin JWT
@@ -27,24 +27,24 @@ import { queueAccountStatusChangeEmail } from "@services/queue/index.js";
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Roles that each admin level can suspend
+ * Roles that each admin level can manage
  */
-const SUSPENSION_AUTHORITY: Record<string, RoleLevel[]> = {
+const STATUS_CHANGE_AUTHORITY: Record<string, RoleLevel[]> = {
   MASTER_ADMIN: ["MANAGER", "OPERATOR", "USER"],
   MANAGER: ["OPERATOR", "USER"],
 };
 
-export const suspendAccount = catchAsync(
+export const changeAccountStatus = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: AdminSuspendRequestSchemaType },
+      { body: AdminAccountStatusChangeRequestSchemaType },
       AdminRequestWithVerifiedCreds
     >,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    const { targetEmail, reason } = req.validatedData;
-    const { adminId: suspendedById, userId: suspendedByUserId, role: incumbentRole } = req.admin;
+    const { targetEmail, action, reason } = req.validatedData;
+    const { adminId: performedById, userId: performedByUserId, role: incumbentRole } = req.admin;
 
     // ─────────────────────────────────────────────────────────────────
     // Find target user
@@ -74,7 +74,10 @@ export const suspendAccount = catchAsync(
       );
     }
 
-    if (targetUser.isSuspended) {
+    // ─────────────────────────────────────────────────────────────────
+    // Validate action is valid for current state
+    // ─────────────────────────────────────────────────────────────────
+    if (action === "SUSPEND" && targetUser.isSuspended) {
       return next(
         new BadRequest().handleResponse(res, {
           info: "User is already suspended",
@@ -82,82 +85,98 @@ export const suspendAccount = catchAsync(
       );
     }
 
+    if (action === "REACTIVATE" && !targetUser.isSuspended) {
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "User is not suspended",
+        }),
+      );
+    }
+
     const targetRole = targetUser.role?.level ?? "USER";
 
     // ─────────────────────────────────────────────────────────────────
-    // Check suspension authority based on hierarchy
+    // Check authority based on hierarchy
     // ─────────────────────────────────────────────────────────────────
-    const allowedToSuspend = SUSPENSION_AUTHORITY[incumbentRole] ?? [];
+    const allowedToManage = STATUS_CHANGE_AUTHORITY[incumbentRole] ?? [];
 
-    if (!allowedToSuspend.includes(targetRole)) {
-      logger.warn("Unauthorized suspension attempt", {
+    if (!allowedToManage.includes(targetRole)) {
+      logger.warn("Unauthorized account status change attempt", {
         incumbentRole,
         targetRole,
         targetEmail,
-        suspendedById,
+        action,
+        performedById,
       });
       return next(
         new ForbiddenErrorResponse().handleResponse(res, {
-          info: `${incumbentRole} cannot suspend ${targetRole}`,
+          info: `${incumbentRole} cannot ${action.toLowerCase()} ${targetRole}`,
         }),
       );
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Get the admin who is performing the suspension
+    // Get the admin who is performing the action
     // ─────────────────────────────────────────────────────────────────
-    const suspendingAdmin = await prisma.user.findUnique({
-      where: { id: suspendedByUserId },
+    const performingAdmin = await prisma.user.findUnique({
+      where: { id: performedByUserId },
       select: { firstName: true, slugName: true },
     });
 
     // ─────────────────────────────────────────────────────────────────
-    // Perform suspension - mark as suspended and create audit record
+    // Perform status change and create audit record
     // ─────────────────────────────────────────────────────────────────
-    const suspensionRecord = await prisma.$transaction(async (tx) => {
-      // Mark user as suspended
+    const newSuspendedState = action === "SUSPEND";
+    const actionReason = reason || (action === "SUSPEND" ? "No reason provided" : "Account reactivated");
+
+    const auditRecord = await prisma.$transaction(async (tx) => {
+      // Update user's suspended status
       await tx.user.update({
         where: { id: targetUser.id },
-        data: { isSuspended: true },
+        data: { isSuspended: newSuspendedState },
       });
 
-      // Create suspension audit record
+      // Create audit record
+      // Note: Using existing schema fields (suspendedBy, suspendedOn)
+      // The reason field stores both the action and the reason for audit purposes
       return tx.accountSuspension.create({
         data: {
           userId: targetUser.id,
-          suspendedBy: suspendedById,
-          reason: reason || "No reason provided",
+          suspendedBy: performedById,
+          reason: `[${action}] ${actionReason}`,
         },
       });
     });
 
     // ─────────────────────────────────────────────────────────────────
-    // Send email notification to suspended user
+    // Send email notification
     // ─────────────────────────────────────────────────────────────────
     await queueAccountStatusChangeEmail({
       userName: targetUser.firstName || targetUser.slugName || "User",
       email: targetUser.email,
-      action: "SUSPENDED",
-      reason: reason || "No reason provided",
-      suspendedByName: suspendingAdmin?.firstName || suspendingAdmin?.slugName || "Admin",
+      action: action === "SUSPEND" ? "SUSPENDED" : "REACTIVATED",
+      reason: actionReason,
+      suspendedByName: performingAdmin?.firstName || performingAdmin?.slugName || "Admin",
       suspendedByRole: incumbentRole,
     });
 
-    logger.info("Account suspended", {
+    logger.info("Account status changed", {
       targetUserId: targetUser.id,
       targetEmail,
       targetRole,
-      suspendedBy: suspendedById,
+      action,
+      performedBy: performedById,
       incumbentRole,
-      reason: reason ?? "No reason provided",
+      reason: actionReason,
     });
 
     new OkResponseStrategy().handleResponse(res, {
-      info: "Account suspended successfully",
-      suspendedUserId: targetUser.id,
+      info: `Account ${action === "SUSPEND" ? "suspended" : "reactivated"} successfully`,
+      userId: targetUser.id,
       role: targetRole,
-      suspendedBy: suspendedById,
-      suspendedOn: suspensionRecord.suspendedOn.toISOString(),
+      action,
+      performedBy: performedById,
+      performedAt: auditRecord.suspendedOn.toISOString(),
     });
   },
 );

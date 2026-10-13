@@ -1,8 +1,14 @@
+// ═══════════════════════════════════════════════════════════════════
+// ACCOUNT STATUS CHANGE AUDIT LOG
+// Tracks both suspensions and reactivations
+// The `reason` field is prefixed with [SUSPEND] or [REACTIVATE] to identify the action
+// ═══════════════════════════════════════════════════════════════════
+
 model AccountSuspension {
   id          String   @id @default(uuid())
-  userId      String   // User who was suspended
-  suspendedBy String   // Admin ID who performed the suspension
-  reason      String   // Reason for suspension (min 10 chars enforced at app level)
+  userId      String   // User whose status was changed
+  suspendedBy String   // Admin ID who performed the action
+  reason      String   // Prefixed with [SUSPEND] or [REACTIVATE] + reason (min 10 chars enforced at app level)
   suspendedOn DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

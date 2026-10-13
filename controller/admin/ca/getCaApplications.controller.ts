@@ -3,6 +3,10 @@ import { prisma } from "@root/prisma.js";
 import type { NextFunction, Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
+import { BadRequest } from "zodex-axon/errors";
+
+const VALID_CA_STATUSES = ["PENDING", "ACCEPTED", "REJECTED"] as const;
+type CaStatus = (typeof VALID_CA_STATUSES)[number];
 
 /**
  * GET /admin/ca/applications
@@ -12,13 +16,21 @@ export const getCaApplications = catchAsync(
   async (
     req: AdminRequestWithVerifiedCreds,
     res: Response,
-    _next: NextFunction,
+    next: NextFunction,
   ): Promise<void> => {
-    const status = req.query.status as "PENDING" | "ACCEPTED" | "REJECTED" | undefined;
+    const rawStatus = req.query.status as string | undefined;
 
-    const whereClause = status
-      ? { status: status as "PENDING" | "ACCEPTED" | "REJECTED" }
-      : {};
+    // Validate optional status filter against the enum (avoid Prisma 500 on bad input)
+    if (rawStatus !== undefined && !VALID_CA_STATUSES.includes(rawStatus as CaStatus)) {
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: `Invalid status filter. Must be one of: ${VALID_CA_STATUSES.join(", ")}`,
+        }),
+      );
+    }
+
+    const status = rawStatus as CaStatus | undefined;
+    const whereClause = status ? { status } : {};
 
     const applications = await prisma.caApplication.findMany({
       where: whereClause,

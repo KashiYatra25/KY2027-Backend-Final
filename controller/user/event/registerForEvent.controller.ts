@@ -171,6 +171,27 @@ const registerForEvent = catchAsync(
         }
       }
 
+      // 3.5. Check all team members have paid passes
+      const memberIds = team.members.map((m) => m.userId);
+      const paidMembers = await prisma.user.findMany({
+        where: { 
+          id: { in: memberIds },
+          isPaidUser: true,
+        },
+        select: { id: true },
+      });
+
+      if (paidMembers.length !== memberIds.length) {
+        const paidIds = new Set(paidMembers.map((p) => p.id));
+        const unpaidMemberIds = memberIds.filter((id) => !paidIds.has(id));
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: "All team members must have purchased a pass before registering for events",
+            unpaidMemberCount: unpaidMemberIds.length,
+          }),
+        );
+      }
+
       // 4. Check team not already registered for this event
       const existingTeamReg = await EventRegistrationModel.findOne({
         eventSlug: slug,
@@ -186,7 +207,7 @@ const registerForEvent = catchAsync(
       }
 
       // 5. Check no team member is already registered (individually or via another team)
-      const memberIds = team.members.map((m) => m.userId);
+      // Note: memberIds was already extracted in step 3.5
 
       // Get all team IDs that these members belong to
       const memberTeamIds = await getTeamIdsForUsers(memberIds);

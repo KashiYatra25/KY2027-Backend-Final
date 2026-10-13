@@ -15,7 +15,7 @@ import type {
 // ═══════════════════════════════════════════════════════════════════
 
 export const getScheduleEntriesAdmin = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { day, venue, category } = req.query;
 
     const query: Record<string, unknown> = {};
@@ -41,14 +41,13 @@ export const getScheduleEntriesAdmin = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const getScheduleEntryByIdAdmin = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { scheduleEntryId } = req.params;
 
     const entry = await ScheduleEntryModel.findById(scheduleEntryId).populate("venueId").lean();
 
     if (!entry) {
-      new NotFound().handleResponse(res, { info: "Schedule entry not found" });
-      return;
+      return next(new NotFound().handleResponse(res, { info: "Schedule entry not found" }));
     }
 
     new OkResponseStrategy().handleResponse(res, {
@@ -63,7 +62,7 @@ export const getScheduleEntryByIdAdmin = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const createScheduleEntry = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const data = req.body as CreateScheduleEntrySchemaType;
 
     // Check event exists in Prisma
@@ -73,36 +72,32 @@ export const createScheduleEntry = catchAsync(
     });
 
     if (!event) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Event with slug '${data.eventSlug}' not found`,
-      });
-      return;
+      }));
     }
 
     // Check category matches
     if (event.category !== data.categorySlug) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Event category mismatch. Event is '${event.category}', provided '${data.categorySlug}'`,
-      });
-      return;
+      }));
     }
 
     // Check venue exists
     const venue = await VenueModel.findOne({ slug: data.venueSlug });
     if (!venue) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Venue with slug '${data.venueSlug}' not found`,
-      });
-      return;
+      }));
     }
 
     // Check for duplicate eventSlug (one schedule per event)
     const existing = await ScheduleEntryModel.findOne({ eventSlug: data.eventSlug });
     if (existing) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Event '${data.eventSlug}' is already scheduled`,
-      });
-      return;
+      }));
     }
 
     const entry = await ScheduleEntryModel.create({
@@ -129,14 +124,13 @@ export const createScheduleEntry = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const updateScheduleEntry = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { scheduleEntryId } = req.params;
     const data = req.body as UpdateScheduleEntrySchemaType;
 
     const existingEntry = await ScheduleEntryModel.findById(scheduleEntryId);
     if (!existingEntry) {
-      new NotFound().handleResponse(res, { info: "Schedule entry not found" });
-      return;
+      return next(new NotFound().handleResponse(res, { info: "Schedule entry not found" }));
     }
 
     const updateData: Record<string, unknown> = { ...data };
@@ -149,10 +143,9 @@ export const updateScheduleEntry = catchAsync(
       });
 
       if (!event) {
-        new BadRequest().handleResponse(res, {
+        return next(new BadRequest().handleResponse(res, {
           info: `Event with slug '${data.eventSlug}' not found`,
-        });
-        return;
+        }));
       }
 
       // Check for duplicate
@@ -161,10 +154,9 @@ export const updateScheduleEntry = catchAsync(
         _id: { $ne: scheduleEntryId },
       });
       if (duplicate) {
-        new BadRequest().handleResponse(res, {
+        return next(new BadRequest().handleResponse(res, {
           info: `Event '${data.eventSlug}' is already scheduled`,
-        });
-        return;
+        }));
       }
 
       // Update category to match event
@@ -175,10 +167,9 @@ export const updateScheduleEntry = catchAsync(
     if (data.venueSlug) {
       const venue = await VenueModel.findOne({ slug: data.venueSlug });
       if (!venue) {
-        new BadRequest().handleResponse(res, {
+        return next(new BadRequest().handleResponse(res, {
           info: `Venue with slug '${data.venueSlug}' not found`,
-        });
-        return;
+        }));
       }
       updateData.venueId = venue._id;
     }
@@ -205,7 +196,7 @@ export const updateScheduleEntry = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const deleteScheduleEntry = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { scheduleEntryId } = req.params;
 
     const entry = await ScheduleEntryModel.findByIdAndUpdate(
@@ -215,8 +206,7 @@ export const deleteScheduleEntry = catchAsync(
     );
 
     if (!entry) {
-      new NotFound().handleResponse(res, { info: "Schedule entry not found" });
-      return;
+      return next(new NotFound().handleResponse(res, { info: "Schedule entry not found" }));
     }
 
     logger.info("Schedule entry deactivated", { entryId: entry._id, eventSlug: entry.eventSlug });
@@ -233,17 +223,16 @@ export const deleteScheduleEntry = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const bulkCreateScheduleEntries = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { entries } = req.body as { entries: CreateScheduleEntrySchemaType[] };
 
     // Check for duplicate eventSlugs in request
     const eventSlugs = entries.map((e) => e.eventSlug);
     const uniqueEventSlugs = new Set(eventSlugs);
     if (uniqueEventSlugs.size !== eventSlugs.length) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: "Duplicate event slugs in request",
-      });
-      return;
+      }));
     }
 
     // Check all events exist
@@ -255,10 +244,9 @@ export const bulkCreateScheduleEntries = catchAsync(
     const eventMap = new Map(events.map((e) => [e.slug, e]));
     const missingEvents = eventSlugs.filter((slug) => !eventMap.has(slug));
     if (missingEvents.length > 0) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Events not found: ${missingEvents.join(", ")}`,
-      });
-      return;
+      }));
     }
 
     // Check all venues exist
@@ -267,10 +255,9 @@ export const bulkCreateScheduleEntries = catchAsync(
     const venueMap = new Map(venues.map((v) => [v.slug, v]));
     const missingVenues = venueSlugs.filter((slug) => !venueMap.has(slug));
     if (missingVenues.length > 0) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Venues not found: ${missingVenues.join(", ")}`,
-      });
-      return;
+      }));
     }
 
     // Check for existing schedule entries
@@ -278,10 +265,9 @@ export const bulkCreateScheduleEntries = catchAsync(
       eventSlug: { $in: eventSlugs },
     }).lean();
     if (existingEntries.length > 0) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Events already scheduled: ${existingEntries.map((e) => e.eventSlug).join(", ")}`,
-      });
-      return;
+      }));
     }
 
     // Prepare entries with venueId

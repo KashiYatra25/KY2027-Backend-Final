@@ -9,6 +9,7 @@ import {
   userRoutesRESTProtectMiddleware,
   roleCheckerMiddleware,
 } from "@root/middleware/user/protect/index.js";
+import { checkUserAccountStatusMiddleware } from "@root/middleware/user/protect/check.user.status.middleware.js";
 import { checkWhetherProfileIsCompleteMiddleware } from "@root/middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
 import { checkUserIsCaMiddleware } from "@root/middleware/user/ca/checkUserIsCa.middleware.js";
 import {
@@ -39,9 +40,13 @@ caRouter.get(
 
 // ═══════════════════════════════════════════════════════════════════
 // AUTHENTICATED ENDPOINTS
+// All routes below require:
+// 1. Valid NextAuth session (userRoutesRESTProtectMiddleware)
+// 2. Active account status (checkUserAccountStatusMiddleware) - SEC-006 FIX
 // ═══════════════════════════════════════════════════════════════════
 
 caRouter.use(userRoutesRESTProtectMiddleware);
+caRouter.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended users
 
 // Apply for CA - requires USER role and completed profile
 caRouter.post(

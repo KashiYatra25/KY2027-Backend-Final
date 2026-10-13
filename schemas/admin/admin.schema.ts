@@ -11,8 +11,9 @@ export const adminOnboardingRequestSchema = z.object({
   loginToken: z.string().min(32, "Invalid login token"),
 });
 
-export const adminSuspendRequestSchema = z.object({
+export const adminAccountStatusChangeRequestSchema = z.object({
   targetEmail: z.email("Invalid email address"),
+  action: z.enum(["SUSPEND", "REACTIVATE"]),
   reason: z.string().min(10, "Reason must be at least 10 characters long").optional(),
 });
 
@@ -27,5 +28,5 @@ export const adminLoginRequestSchema = z.object({
 
 export type PromoteUserOrAdminRoleRequestSchemaType = z.infer<typeof promoteUserOrAdminRoleRequestSchema>;
 export type AdminOnboardingRequestSchemaType = z.infer<typeof adminOnboardingRequestSchema>;
-export type AdminSuspendRequestSchemaType = z.infer<typeof adminSuspendRequestSchema>;
+export type AdminAccountStatusChangeRequestSchemaType = z.infer<typeof adminAccountStatusChangeRequestSchema>;
 export type AdminLoginRequestSchemaType = z.infer<typeof adminLoginRequestSchema>;

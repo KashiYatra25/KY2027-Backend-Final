@@ -24,8 +24,8 @@ export {
 // Admin invite
 export { makeUserAdminOrPromoteAdmin } from "./promote/makeUserAdminOrPromoteAdmin.controller.js";
 
-// Account suspension
-export { suspendAccount } from "./suspend/suspendAccount.controller.js";
+// Account status change (suspend/reactivate)
+export { changeAccountStatus } from "./suspend/changeAccountStatus.controller.js";
 
 // User management
 export { getAdminUsers } from "./users/getAdminUsers.controller.js";

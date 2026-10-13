@@ -14,7 +14,7 @@ import type {
 // ═══════════════════════════════════════════════════════════════════
 
 export const getVenuesAdmin = catchAsync(
-  async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     const venues = await VenueModel.find().sort({ sortOrder: 1, createdAt: -1 }).lean();
 
     new OkResponseStrategy().handleResponse(res, {
@@ -30,14 +30,13 @@ export const getVenuesAdmin = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const getVenueByIdAdmin = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { venueId } = req.params;
 
     const venue = await VenueModel.findById(venueId).lean();
 
     if (!venue) {
-      new NotFound().handleResponse(res, { info: "Venue not found" });
-      return;
+      return next(new NotFound().handleResponse(res, { info: "Venue not found" }));
     }
 
     new OkResponseStrategy().handleResponse(res, {
@@ -52,16 +51,15 @@ export const getVenueByIdAdmin = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const createVenue = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const data = req.body as CreateVenueSchemaType;
 
     // Check for duplicate slug
     const existing = await VenueModel.findOne({ slug: data.slug });
     if (existing) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: "Venue with this slug already exists",
-      });
-      return;
+      }));
     }
 
     const venue = await VenueModel.create(data);
@@ -80,7 +78,7 @@ export const createVenue = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const updateVenue = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { venueId } = req.params;
     const data = req.body as UpdateVenueSchemaType;
 
@@ -91,8 +89,7 @@ export const updateVenue = catchAsync(
     );
 
     if (!venue) {
-      new NotFound().handleResponse(res, { info: "Venue not found" });
-      return;
+      return next(new NotFound().handleResponse(res, { info: "Venue not found" }));
     }
 
     logger.info("Venue updated", { venueId: venue._id, slug: venue.slug });
@@ -109,7 +106,7 @@ export const updateVenue = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const deleteVenue = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { venueId } = req.params;
 
     const venue = await VenueModel.findByIdAndUpdate(
@@ -119,8 +116,7 @@ export const deleteVenue = catchAsync(
     );
 
     if (!venue) {
-      new NotFound().handleResponse(res, { info: "Venue not found" });
-      return;
+      return next(new NotFound().handleResponse(res, { info: "Venue not found" }));
     }
 
     logger.info("Venue deactivated", { venueId: venue._id, slug: venue.slug });
@@ -137,26 +133,24 @@ export const deleteVenue = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const bulkCreateVenues = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { venues } = req.body as { venues: CreateVenueSchemaType[] };
 
     // Check for duplicate slugs in request
     const slugs = venues.map((v) => v.slug);
     const uniqueSlugs = new Set(slugs);
     if (uniqueSlugs.size !== slugs.length) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: "Duplicate slugs in request",
-      });
-      return;
+      }));
     }
 
     // Check for existing slugs
     const existingSlugs = await VenueModel.find({ slug: { $in: slugs } }).select("slug").lean();
     if (existingSlugs.length > 0) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Venues with these slugs already exist: ${existingSlugs.map((v) => v.slug).join(", ")}`,
-      });
-      return;
+      }));
     }
 
     const createdVenues = await VenueModel.insertMany(venues);

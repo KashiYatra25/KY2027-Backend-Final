@@ -18,7 +18,8 @@ import {
   changeCouponStatus,
   deleteCoupon,
 } from "@controller/admin/coupon/index.js";
-import { suspendAccount } from "@controller/admin/suspend/suspendAccount.controller.js";
+import { changeAccountStatus } from "@controller/admin/suspend/changeAccountStatus.controller.js";
+import { makeUserAdminOrPromoteAdmin } from "@controller/admin/promote/makeUserAdminOrPromoteAdmin.controller.js";
 import { getAdminUsers } from "@controller/admin/users/getAdminUsers.controller.js";
 import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
 import { getAllTeams } from "@controller/admin/teams/index.js";
@@ -50,7 +51,8 @@ import { adminRoleCheckerMiddleware } from "@middleware/admin/protect/adminRoleC
 import {
   adminOnboardingRequestSchema,
   adminLoginRequestSchema,
-  adminSuspendRequestSchema,
+  adminAccountStatusChangeRequestSchema,
+  promoteUserOrAdminRoleRequestSchema,
 } from "@schemas/admin/admin.schema.js";
 import {
   forgotPasswordRequestSchema,
@@ -201,19 +203,36 @@ adminRouter.get(
 );
 
 /**
- * POST /suspend-account
- * Suspend a user or admin account
- * Body: { targetEmail, reason? }
+ * POST /change-account-status
+ * Suspend or reactivate a user or admin account
+ * Body: { targetEmail, action: "SUSPEND" | "REACTIVATE", reason? }
  * Hierarchy:
- * - MASTER_ADMIN can suspend: MANAGER, OPERATOR, USER
- * - MANAGER can suspend: OPERATOR, USER
+ * - MASTER_ADMIN can change: MANAGER, OPERATOR, USER
+ * - MANAGER can change: OPERATOR, USER
  * Requires: MASTER_ADMIN or MANAGER role
  */
 adminRouter.post(
-  "/suspend-account",
+  "/change-account-status",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
-  RequestGuardMiddleware({ body: adminSuspendRequestSchema }),
-  suspendAccount,
+  RequestGuardMiddleware({ body: adminAccountStatusChangeRequestSchema }),
+  changeAccountStatus,
+);
+
+/**
+ * POST /convert-to-admin
+ * Promote a regular user to admin role
+ * Body: { targetEmail, role: "MANAGER" | "OPERATOR" }
+ * Only IIT BHU users can be promoted.
+ * Hierarchy:
+ * - MASTER_ADMIN can promote to: MANAGER, OPERATOR
+ * - MANAGER can promote to: OPERATOR only
+ * Requires: MASTER_ADMIN or MANAGER role
+ */
+adminRouter.post(
+  "/convert-to-admin",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  RequestGuardMiddleware({ body: promoteUserOrAdminRoleRequestSchema }),
+  makeUserAdminOrPromoteAdmin,
 );
 
 /**

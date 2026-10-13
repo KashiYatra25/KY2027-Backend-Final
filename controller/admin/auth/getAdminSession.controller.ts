@@ -109,10 +109,14 @@ export const getAdminSession = catchAsync(
       return;
     }
 
+    // Check if user is suspended
+    const isSuspended = admin.user?.isSuspended ?? false;
+
     // ─────────────────────────────────────────────────────────────────
     // Case 3: Valid session - user is authenticated
+    // Return suspension status so frontend can handle it
     // ─────────────────────────────────────────────────────────────────
-    logger.debug("getAdminSession - valid session", { adminId, email, role: userRole });
+    logger.debug("getAdminSession - valid session", { adminId, email, role: userRole, isSuspended });
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Session valid",
@@ -121,6 +125,7 @@ export const getAdminSession = catchAsync(
         role: userRole,
         firstName: admin.user?.firstName ?? null,
         googleAvatarUrl: admin.user?.googleAvatarUrl ?? null,
+        isSuspended,
       },
       userExists: true,
     });

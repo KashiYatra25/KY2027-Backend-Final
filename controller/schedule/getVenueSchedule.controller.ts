@@ -12,14 +12,13 @@ import { prisma } from "@root/prisma.js";
 // ═══════════════════════════════════════════════════════════════════
 
 export const getVenueSchedule = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const venueSlug = req.params.venueSlug as string;
 
     if (!venueSlug) {
-      new NotFound().handleResponse(res, {
+      return next(new NotFound().handleResponse(res, {
         info: "Venue slug is required",
-      });
-      return;
+      }));
     }
 
     // Find venue
@@ -30,10 +29,9 @@ export const getVenueSchedule = catchAsync(
     }).lean();
 
     if (!venue) {
-      new NotFound().handleResponse(res, {
+      return next(new NotFound().handleResponse(res, {
         info: "Venue not found",
-      });
-      return;
+      }));
     }
 
     // Fetch schedule entries for this venue

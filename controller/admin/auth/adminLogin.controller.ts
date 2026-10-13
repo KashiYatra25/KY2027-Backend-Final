@@ -59,6 +59,17 @@ export const adminLogin = catchAsync(
       );
     }
 
+    // Check if user is suspended - block login
+    if (user.isSuspended) {
+      logger.warn("Admin login attempt - account suspended", { email, userId: user.id });
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Your account has been suspended. Please contact the administrator.",
+          code: "ACCOUNT_SUSPENDED",
+        }),
+      );
+    }
+
     const userRole = user.role?.level;
     if (!userRole || !VALID_ADMIN_ROLES.includes(userRole)) {
       logger.debug("Admin login attempt - not an admin", { email, userId: user.id, role: userRole });

@@ -14,7 +14,7 @@ import type {
 // ═══════════════════════════════════════════════════════════════════
 
 export const getFestDaysAdmin = catchAsync(
-  async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     const festDays = await FestDayModel.find().sort({ dayNumber: 1 }).lean();
 
     new OkResponseStrategy().handleResponse(res, {
@@ -30,14 +30,13 @@ export const getFestDaysAdmin = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const getFestDayByIdAdmin = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { festDayId } = req.params;
 
     const festDay = await FestDayModel.findById(festDayId).lean();
 
     if (!festDay) {
-      new NotFound().handleResponse(res, { info: "Fest day not found" });
-      return;
+      return next(new NotFound().handleResponse(res, { info: "Fest day not found" }));
     }
 
     new OkResponseStrategy().handleResponse(res, {
@@ -52,16 +51,15 @@ export const getFestDayByIdAdmin = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const createFestDay = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const data = req.body as CreateFestDaySchemaType;
 
     // Check for duplicate dayNumber
     const existing = await FestDayModel.findOne({ dayNumber: data.dayNumber });
     if (existing) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Day ${data.dayNumber} already exists`,
-      });
-      return;
+      }));
     }
 
     const festDay = await FestDayModel.create({
@@ -83,7 +81,7 @@ export const createFestDay = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const updateFestDay = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { festDayId } = req.params;
     const data = req.body as UpdateFestDaySchemaType;
 
@@ -94,10 +92,9 @@ export const updateFestDay = catchAsync(
         _id: { $ne: festDayId },
       });
       if (existing) {
-        new BadRequest().handleResponse(res, {
+        return next(new BadRequest().handleResponse(res, {
           info: `Day ${data.dayNumber} already exists`,
-        });
-        return;
+        }));
       }
     }
 
@@ -113,8 +110,7 @@ export const updateFestDay = catchAsync(
     );
 
     if (!festDay) {
-      new NotFound().handleResponse(res, { info: "Fest day not found" });
-      return;
+      return next(new NotFound().handleResponse(res, { info: "Fest day not found" }));
     }
 
     logger.info("Fest day updated", { festDayId: festDay._id, dayNumber: festDay.dayNumber });
@@ -133,7 +129,7 @@ export const updateFestDay = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const deleteFestDay = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { festDayId } = req.params;
 
     const festDay = await FestDayModel.findByIdAndUpdate(
@@ -143,8 +139,7 @@ export const deleteFestDay = catchAsync(
     );
 
     if (!festDay) {
-      new NotFound().handleResponse(res, { info: "Fest day not found" });
-      return;
+      return next(new NotFound().handleResponse(res, { info: "Fest day not found" }));
     }
 
     logger.info("Fest day deactivated", { festDayId: festDay._id, dayNumber: festDay.dayNumber });
@@ -161,17 +156,16 @@ export const deleteFestDay = catchAsync(
 // ═══════════════════════════════════════════════════════════════════
 
 export const bulkCreateFestDays = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { festDays } = req.body as { festDays: CreateFestDaySchemaType[] };
 
     // Check for duplicate dayNumbers in request
     const dayNumbers = festDays.map((d) => d.dayNumber);
     const uniqueDayNumbers = new Set(dayNumbers);
     if (uniqueDayNumbers.size !== dayNumbers.length) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: "Duplicate day numbers in request",
-      });
-      return;
+      }));
     }
 
     // Check for existing dayNumbers
@@ -179,10 +173,9 @@ export const bulkCreateFestDays = catchAsync(
       .select("dayNumber")
       .lean();
     if (existingDays.length > 0) {
-      new BadRequest().handleResponse(res, {
+      return next(new BadRequest().handleResponse(res, {
         info: `Days already exist: ${existingDays.map((d) => d.dayNumber).join(", ")}`,
-      });
-      return;
+      }));
     }
 
     // Convert date strings to Date objects

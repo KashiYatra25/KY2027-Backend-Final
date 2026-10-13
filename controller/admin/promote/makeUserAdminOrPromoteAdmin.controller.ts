@@ -1,58 +1,115 @@
-import { prisma } from "@root/prisma";
+import { prisma } from "@root/prisma.js";
 import { CryptoService } from "@helper/functions/crypto.helper.js";
-import type { Response, Request } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { Response, NextFunction } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
+import { BadRequest, NotFound, ForbiddenErrorResponse } from "zodex-axon/errors";
 import { logger } from "@logger/logger.js";
-// NOTE: The module "@root/controller/middleware/admin/invite" does not exist.
-// The invite middleware that attaches `targetAdminUser` has not been implemented yet.
-// Defining a local request type here so this controller type-checks until that
-// middleware is created and this import can be restored.
-// import type { AdminInviteRequestWithTargetUser } from "@root/controller/middleware/admin/invite";
-import type { RoleLevel } from "@lib/prisma/index.js";
 import { queueAdminOnboardCredsEmail } from "@services/queue/index.js";
 import { env } from "@lib/env/environment.js";
 import { VerificationTokenModel } from "@lib/mongo/index.js";
-
-// Local type: request augmented by the admin-invite middleware.
-interface AdminInviteRequestWithTargetUser extends Request {
-  targetAdminUser: {
-    targetUserId: string;
-    targetRole: RoleLevel;
-    targetEmail: string;
-    targetName?: string;
-  };
-  user: {
-    id: string;
-  };
-}
+import type { PromoteUserOrAdminRoleRequestSchemaType } from "@schemas/admin/admin.schema.js";
+import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
-// MAKE USER ADMIN
+// CONVERT USER TO ADMIN
 // 
-// Promotes a user to admin role and sends invite email via BullMQ.
-// The email is queued asynchronously so the API responds instantly.
+// Promotes a regular user to admin role (MANAGER or OPERATOR).
+// Only IIT BHU users can be promoted to admin.
+// Sends invite email with temporary password via BullMQ.
+//
+// Hierarchy:
+// - MASTER_ADMIN can promote to: MANAGER, OPERATOR
+// - MANAGER can promote to: OPERATOR only
 // ═══════════════════════════════════════════════════════════════════
 
 export const makeUserAdminOrPromoteAdmin = catchAsync(
   async (
-    req: AdminInviteRequestWithTargetUser,
+    req: VerifiedRequest<
+      { body: PromoteUserOrAdminRoleRequestSchemaType },
+      AdminRequestWithVerifiedCreds
+    >,
     res: Response,
+    next: NextFunction,
   ): Promise<void> => {
-    const { targetUserId, targetRole, targetEmail, targetName } = req.targetAdminUser;
+    const { targetEmail, role: targetRole } = req.validatedData;
+    const requestingAdmin = req.admin;
 
-    // Generate temporary password
+    // 1. Check if requesting admin has permission to assign this role
+    if (requestingAdmin.role === "MANAGER" && targetRole === "MANAGER") {
+      return next(
+        new ForbiddenErrorResponse().handleResponse(res, {
+          info: "Managers can only promote users to Operator role",
+        }),
+      );
+    }
+
+    // 2. Find the target user
+    const targetUser = await prisma.user.findUnique({
+      where: { email: targetEmail },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        slugName: true,
+        isFromIITBhu: true,
+        isSuspended: true,
+        role: {
+          select: { level: true },
+        },
+        admin: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!targetUser) {
+      return next(
+        new NotFound().handleResponse(res, {
+          info: "User not found with this email",
+        }),
+      );
+    }
+
+    // 3. Check if user is from IIT BHU
+    if (!targetUser.isFromIITBhu) {
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Only IIT BHU users can be promoted to admin",
+        }),
+      );
+    }
+
+    // 4. Check if user is suspended
+    if (targetUser.isSuspended) {
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Cannot promote a suspended user",
+        }),
+      );
+    }
+
+    // 5. Check if user is already an admin
+    if (targetUser.admin) {
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "User is already an admin",
+          currentRole: targetUser.role?.level,
+        }),
+      );
+    }
+
+    // 6. Generate temporary password and login token
     const tempPassword = CryptoService.generateTempPassword();
     const hashedPassword = await CryptoService.hash(tempPassword);
-
-    // Generate login token for email verification link
     const loginToken = CryptoService.generateRandomToken(32);
     const hashedLoginToken = await CryptoService.hash(loginToken);
 
-    // Create admin record and update user role in transaction
+    // 7. Create admin record and update user role in transaction
     const { user, newAdmin } = await prisma.$transaction(async (tx) => {
       const user = await tx.user.update({
-        where: { id: targetUserId },
+        where: { id: targetUser.id },
         data: {
           role: {
             upsert: {
@@ -80,20 +137,19 @@ export const makeUserAdminOrPromoteAdmin = catchAsync(
       return { user, newAdmin };
     });
 
-    // Store login token in MongoDB (expires in 10 minutes)
-    // Note: Old tokens cleaned up by cron job - we just use newest token for verification
+    // 8. Store login token in MongoDB (expires in 10 minutes)
     await VerificationTokenModel.create({
-      userId: targetUserId,
+      userId: targetUser.id,
       tokenType: "ADMIN_LOGIN_URL_TOKEN",
       tokenValue: hashedLoginToken,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
     });
 
-    // Build login URL with token
+    // 9. Build login URL with token
     const loginUrl = `${env.CLIENT_ADMIN_PANEL_ORIGIN}/admin-verification/${loginToken}`;
 
-    // Queue email via BullMQ (async - doesn't block response)
-    const userName = targetName || user.firstName || user.slugName || "Admin";
+    // 10. Queue email via BullMQ (async - doesn't block response)
+    const userName = targetUser.firstName || targetUser.slugName || "Admin";
     
     const jobId = await queueAdminOnboardCredsEmail({
       userName,
@@ -103,8 +159,8 @@ export const makeUserAdminOrPromoteAdmin = catchAsync(
     });
 
     logger.info("User promoted to admin, invite email queued", {
-      promotedBy: req.user.id,
-      targetUserId,
+      promotedBy: requestingAdmin.userId,
+      targetUserId: targetUser.id,
       targetRole,
       adminId: newAdmin.id,
       emailJobId: jobId,

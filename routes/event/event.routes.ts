@@ -1,6 +1,7 @@
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
+import { checkUserAccountStatusMiddleware } from "@root/middleware/user/protect/check.user.status.middleware.js";
 import {
   publicReadRateLimiter,
   eventRegistrationRateLimiter,
@@ -18,7 +19,10 @@ import {
 
 export const eventRouter: ExpressRouter = Router();
 
-// Public routes - no auth required
+// ═══════════════════════════════════════════════════════════════════
+// PUBLIC ROUTES (no auth required)
+// ═══════════════════════════════════════════════════════════════════
+
 eventRouter.get(
   "/",
   publicReadRateLimiter,
@@ -33,8 +37,15 @@ eventRouter.get(
   getEventBySlug,
 );
 
-// Protected routes - auth required
+// ═══════════════════════════════════════════════════════════════════
+// PROTECTED ROUTES
+// All routes below require:
+// 1. Valid NextAuth session (userRoutesRESTProtectMiddleware)
+// 2. Active account status (checkUserAccountStatusMiddleware) - SEC-006 FIX
+// ═══════════════════════════════════════════════════════════════════
+
 eventRouter.use(userRoutesRESTProtectMiddleware);
+eventRouter.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended users
 
 // Register for event
 // Profile check not needed - payment requires profile completion first
