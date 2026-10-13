@@ -35,65 +35,69 @@
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #D4A85320;">
                                             <tr>
                                                 <td>
-                                                    <p style="margin: 0; color: #D4A853; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Invoice</p>
-                                                    <p style="margin: 4px 0 0 0; color: #FDF6E3; font-size: 14px; font-family: monospace;">#{{invoiceId}}</p>
+                                                    <p style="margin: 0; color: #D4A853; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Order</p>
+                                                    <p style="margin: 4px 0 0 0; color: #FDF6E3; font-size: 14px; font-family: monospace;">#{{orderId}}</p>
                                                 </td>
                                                 <td style="text-align: right;">
                                                     <p style="margin: 0; color: #8B8B8B; font-size: 12px;">Date</p>
-                                                    <p style="margin: 4px 0 0 0; color: #FDF6E3; font-size: 14px;">{{date}}</p>
+                                                    <p style="margin: 4px 0 0 0; color: #FDF6E3; font-size: 14px;">{{paidAt}}</p>
                                                 </td>
                                             </tr>
                                         </table>
-                                        
+
                                         <!-- Pass Details -->
                                         <p style="margin: 0 0 12px 0; color: #D4A853; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Pass Details</p>
+
+                                        <!-- Column headers -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 4px;">
+                                            <tr>
+                                                <td style="padding: 6px 0; color: #6B6B6B; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Pass</td>
+                                                <td style="padding: 6px 0; color: #6B6B6B; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; width: 60px;">Qty</td>
+                                                <td style="padding: 6px 0; color: #6B6B6B; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: right; width: 110px;">Amount</td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Line items -->
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            {{#each items}}
                                             <tr>
-                                                <td style="padding: 8px 0; color: #8B8B8B; font-size: 14px;">Pass Type</td>
-                                                <td style="padding: 8px 0; color: #FDF6E3; font-size: 14px; text-align: right;">{{passName}}</td>
+                                                <td style="padding: 8px 0; color: #FDF6E3; font-size: 14px;">{{this.passName}}</td>
+                                                <td style="padding: 8px 0; color: #D4B896; font-size: 14px; text-align: center;">{{this.quantity}}</td>
+                                                <td style="padding: 8px 0; color: #FDF6E3; font-size: 14px; text-align: right;">&#8377;{{this.unitPrice}}</td>
                                             </tr>
+                                            {{/each}}
+                                        </table>
+
+                                        <!-- Subtotal / Discount -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #D4A85320;">
                                             <tr>
-                                                <td style="padding: 8px 0; color: #8B8B8B; font-size: 14px;">Quantity</td>
-                                                <td style="padding: 8px 0; color: #FDF6E3; font-size: 14px; text-align: right;">{{quantity}}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 8px 0; color: #8B8B8B; font-size: 14px;">Price per Pass</td>
-                                                <td style="padding: 8px 0; color: #FDF6E3; font-size: 14px; text-align: right;">₹{{pricePerPass}}</td>
+                                                <td style="padding: 6px 0; color: #8B8B8B; font-size: 14px;">Subtotal</td>
+                                                <td style="padding: 6px 0; color: #FDF6E3; font-size: 14px; text-align: right;">&#8377;{{subtotal}}</td>
                                             </tr>
                                             {{#if discount}}
                                             <tr>
-                                                <td style="padding: 8px 0; color: #8B8B8B; font-size: 14px;">Discount</td>
-                                                <td style="padding: 8px 0; color: #4ade80; font-size: 14px; text-align: right;">-₹{{discount}}</td>
+                                                <td style="padding: 6px 0; color: #8B8B8B; font-size: 14px;">Discount{{#if couponCode}} ({{couponCode}}){{/if}}</td>
+                                                <td style="padding: 6px 0; color: #4ade80; font-size: 14px; text-align: right;">&#8722;&#8377;{{discount}}</td>
                                             </tr>
                                             {{/if}}
                                         </table>
-                                        
+
                                         <!-- Total -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #D4A85330;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 12px; padding-top: 16px; border-top: 1px solid #D4A85330;">
                                             <tr>
                                                 <td style="color: #FDF6E3; font-size: 16px; font-weight: 700;">Total Paid</td>
-                                                <td style="color: #FFD700; font-size: 20px; font-weight: 700; text-align: right;">₹{{totalAmount}}</td>
+                                                <td style="color: #FFD700; font-size: 20px; font-weight: 700; text-align: right;">&#8377;{{totalAmount}}</td>
                                             </tr>
                                         </table>
                                     </td>
                                 </tr>
                             </table>
-                            
+
                             <!-- Payment Info -->
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
                                 <tr>
                                     <td style="padding: 16px; background-color: #1a2520; border-radius: 8px; border-left: 4px solid #4ade80;">
-                                        <p style="margin: 0 0 8px 0; color: #4ade80; font-size: 13px; font-weight: 700;">✓ Payment Successful</p>
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                            <tr>
-                                                <td style="padding: 4px 0; color: #8B8B8B; font-size: 13px;">Transaction ID</td>
-                                                <td style="padding: 4px 0; color: #D4B896; font-size: 13px; font-family: monospace; text-align: right;">{{transactionId}}</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="padding: 4px 0; color: #8B8B8B; font-size: 13px;">Payment Method</td>
-                                                <td style="padding: 4px 0; color: #D4B896; font-size: 13px; text-align: right;">{{paymentMethod}}</td>
-                                            </tr>
-                                        </table>
+                                        <p style="margin: 0; color: #4ade80; font-size: 13px; font-weight: 700;">&#10003; Payment Successful</p>
                                     </td>
                                 </tr>
                             </table>

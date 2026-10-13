@@ -6,7 +6,7 @@ import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { PurchaseModel, CartModel } from "@lib/mongo/index.js";
 import { env } from "@lib/env/environment.js";
-import { queuePassesInvoiceEmail } from "@services/queue/index.js";
+import { queuePassesInvoiceEmail, queuePaymentFailedEmail } from "@services/queue/index.js";
 import type { PaymentWebhookRequestSchemaType } from "@schemas/payment/webhook.schema.js";
 
 /**
@@ -98,6 +98,9 @@ export const handlePaymentWebhook = catchAsync(
         status: normalizedStatus,
         userId: purchase.userId,
       });
+
+      // Send payment failed email notification
+      await handleFailedPayment(purchase, normalizedStatus as "FAILED" | "EXPIRED");
     }
 
     new OkResponseStrategy().handleResponse(res, {
@@ -196,7 +199,7 @@ async function handleSuccessfulPayment(
       await queuePassesInvoiceEmail({
         userName,
         email: user.email,
-        invoiceUrl: `${env.CLIENT_ORIGIN}/purchases/${orderId}`,
+        invoiceUrl: `${env.CLIENT_ORIGIN}/purchases`,
         orderDetails: {
           orderId,
           items: items.map((item) => ({
@@ -207,7 +210,11 @@ async function handleSuccessfulPayment(
           subtotal: purchase.subtotal,
           discount: discount,
           totalAmount: totalAmount,
-          paidAt: purchase.paidAt?.toISOString(),
+          paidAt: (purchase.paidAt ?? new Date()).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
           couponCode: purchase.couponCode ?? undefined,
         },
       });
@@ -229,4 +236,56 @@ async function handleSuccessfulPayment(
     totalAmount: purchase.totalAmount,
     couponId: couponId ?? "none",
   });
+}
+
+
+/**
+ * Handle failed/expired payment:
+ * - Send notification email to user
+ * - Cart is NOT cleared (so user can retry)
+ */
+async function handleFailedPayment(
+  purchase: Awaited<ReturnType<typeof PurchaseModel.findOne>>,
+  status: "FAILED" | "EXPIRED",
+): Promise<void> {
+  if (!purchase) return;
+
+  const { userId, orderId, items, totalAmount } = purchase;
+
+  // Get user email from Postgres
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { firstName: true, lastName: true, email: true },
+  });
+
+  if (!user?.email) {
+    logger.warn("Cannot send payment failed email - no user email", { orderId, userId });
+    return;
+  }
+
+  const userName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Valued Customer";
+
+  try {
+    await queuePaymentFailedEmail({
+      userName,
+      email: user.email,
+      orderId,
+      totalAmount,
+      items: items.map((item) => ({
+        passName: item.passName,
+        quantity: item.quantity,
+      })),
+      status,
+      cartUrl: `${env.CLIENT_ORIGIN}/cart`,
+    });
+
+    logger.info("Payment failed email queued", { orderId, email: user.email, status });
+  } catch (emailError) {
+    // Don't fail the webhook if email queueing fails
+    logger.error("Failed to queue payment failed email", {
+      orderId,
+      email: user.email,
+      error: emailError instanceof Error ? emailError.message : "Unknown error",
+    });
+  }
 }

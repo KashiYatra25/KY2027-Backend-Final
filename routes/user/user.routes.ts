@@ -10,6 +10,7 @@ import { removeFromCart } from "@controller/user/cart/removeFromCart.controller.
 import { clearCart } from "@controller/user/cart/clearCart.controller.js";
 import { updateCartQuantity } from "@controller/user/cart/updateCartQuantity.controller.js";
 import { checkoutCart } from "@controller/user/cart/checkoutCart.controller.js";
+import { getMyPurchases } from "@controller/user/purchases/index.js";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
 import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
 import { blockIfProfileAlreadyCompletedMiddleware } from "@root/middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
@@ -83,6 +84,9 @@ userRouter.get("/registrations", getMyRegistrations);
 // Get user's payment status
 userRouter.get("/payment-status", getPaymentStatus);
 
+// Get user's purchase history
+userRouter.get("/purchases", getMyPurchases);
+
 // Apply a CA's referral code (one-time only)
 userRouter.post(
   "/apply-referral",
@@ -139,7 +143,7 @@ userRouter.delete(
 
 userRouter.post(
   "/cart/checkout",
-  cartRateLimiter,
+  cartRateLimiterMiddleware,
   checkWhetherProfileIsCompleteMiddleware,
   RequestGuardMiddleware({ body: checkoutCartRequestSchema }),
   checkoutCart,

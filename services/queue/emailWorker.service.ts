@@ -5,7 +5,9 @@ import { AdminInviteEmail } from "@email/utils/admin.invite.email.js";
 import { ForgotPasswordEmail } from "@email/utils/forgot.password.email.js";
 import { AccountStatusChangeEmail } from "@email/utils/account.status.change.email.js";
 import { CaApplicationStatusEmail } from "@email/utils/ca.application.status.email.js";
-import type { EmailJobData, AdminOnboardCredsEmailJobData, AdminForgotPasswordEmailJobData, AccountStatusChangeEmailJobData, PassesInvoiceEmailJobData, CaApplicationStatusEmailJobData } from "./emailQueue.service.js";
+import { InvoiceEmail } from "@email/utils/passes.invoice.email.js";
+import { PaymentFailedEmail } from "@email/utils/payment.failed.email.js";
+import type { EmailJobData, AdminOnboardCredsEmailJobData, AdminForgotPasswordEmailJobData, AccountStatusChangeEmailJobData, PassesInvoiceEmailJobData, PaymentFailedEmailJobData, CaApplicationStatusEmailJobData } from "./emailQueue.service.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // EMAIL WORKER
@@ -86,8 +88,23 @@ async function processAccountStatusChangeEmail(data: AccountStatusChangeEmailJob
  * Process passes invoice email
  */
 async function processPassesInvoiceEmail(data: PassesInvoiceEmailJobData["payload"]): Promise<void> {
-  // TODO: Implement passes invoice email
-  logger.info("Passes invoice email sent", { email: data.email });
+  const { userName, email, invoiceUrl, orderDetails } = data;
+
+  const emailService = new InvoiceEmail(
+    { name: userName, email },
+    {
+      // template reads {{viewPassUrl}} + invoice fields spread from orderDetails
+      viewPassUrl: invoiceUrl,
+      ...orderDetails,
+    },
+  );
+
+  await emailService.sendEmail(
+    "Your Kashiyatra 2027 Pass - Invoice",
+    "passesInvoice",
+  );
+
+  logger.info("Passes invoice email sent", { email });
 }
 
 /**
@@ -114,6 +131,32 @@ async function processCaApplicationStatusEmail(data: CaApplicationStatusEmailJob
   await emailService.sendEmail(subject, "caApplicationStatus");
 
   logger.info("CA application status email sent", { email, status });
+}
+
+/**
+ * Process payment failed email
+ */
+async function processPaymentFailedEmail(data: PaymentFailedEmailJobData["payload"]): Promise<void> {
+  const { userName, email, orderId, totalAmount, items, status, cartUrl } = data;
+
+  const emailService = new PaymentFailedEmail(
+    { name: userName, email },
+    {
+      orderId,
+      totalAmount,
+      items,
+      status,
+      cartUrl,
+    }
+  );
+
+  const subject = status === "EXPIRED"
+    ? "Payment Session Expired - Kashiyatra 2027"
+    : "Payment Failed - Kashiyatra 2027";
+
+  await emailService.sendEmail(subject, "paymentFailed");
+
+  logger.info("Payment failed email sent", { email, orderId, status });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -148,6 +191,10 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
 
     case "ca-application-status":
       await processCaApplicationStatusEmail(payload as CaApplicationStatusEmailJobData["payload"]);
+      break;
+
+    case "payment-failed":
+      await processPaymentFailedEmail(payload as PaymentFailedEmailJobData["payload"]);
       break;
 
     default:

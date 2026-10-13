@@ -75,15 +75,13 @@
                                                     <span style="display: block; color: #1a1a1a; font-size: 14px; font-weight: 500;">{{suspendedByName}} ({{suspendedByRole}})</span>
                                                 </td>
                                             </tr>
-                                            {{#if isSuspended}}
-                                            <!-- Reason -->
+                                            <!-- Reason - shown for both suspension and reactivation -->
                                             <tr>
                                                 <td style="padding: 12px 0 8px 0;">
-                                                    <span style="display: block; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Reason</span>
+                                                    <span style="display: block; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">{{#if isSuspended}}Reason{{else}}Reactivation Note{{/if}}</span>
                                                     <span style="display: block; color: #1a1a1a; font-size: 14px; line-height: 1.5;">{{reason}}</span>
                                                 </td>
                                             </tr>
-                                            {{/if}}
                                         </table>
                                     </td>
                                 </tr>

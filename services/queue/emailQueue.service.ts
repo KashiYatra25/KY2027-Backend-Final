@@ -19,7 +19,7 @@ import { logger } from "@logger/logger.js";
 // JOB TYPES
 // ═══════════════════════════════════════════════════════════════════
 
-export type EmailJobType = "admin-onboard-creds" | "admin-forgot-password" | "account-status-change" | "passes-invoice" | "ca-application-status" | "otp" | "welcome";
+export type EmailJobType = "admin-onboard-creds" | "admin-forgot-password" | "account-status-change" | "passes-invoice" | "payment-failed" | "ca-application-status" | "otp" | "welcome";
 
 export interface AdminOnboardCredsEmailJobData {
   type: "admin-onboard-creds";
@@ -75,8 +75,24 @@ export interface CaApplicationStatusEmailJobData {
   };
 }
 
+export interface PaymentFailedEmailJobData {
+  type: "payment-failed";
+  payload: {
+    userName: string;
+    email: string;
+    orderId: string;
+    totalAmount: number;
+    items: Array<{
+      passName: string;
+      quantity: number;
+    }>;
+    status: "FAILED" | "EXPIRED";
+    cartUrl: string;
+  };
+}
+
 // Union type for all email jobs
-export type EmailJobData = AdminOnboardCredsEmailJobData | AdminForgotPasswordEmailJobData | AccountStatusChangeEmailJobData | PassesInvoiceEmailJobData | CaApplicationStatusEmailJobData;
+export type EmailJobData = AdminOnboardCredsEmailJobData | AdminForgotPasswordEmailJobData | AccountStatusChangeEmailJobData | PassesInvoiceEmailJobData | PaymentFailedEmailJobData | CaApplicationStatusEmailJobData;
 
 // ═══════════════════════════════════════════════════════════════════
 // QUEUE CONFIGURATION
@@ -236,6 +252,31 @@ export async function queueCaApplicationStatusEmail(data: CaApplicationStatusEma
   logger.debug("CA application status email job queued", {
     jobId: job.id,
     email: data.email,
+    status: data.status,
+  });
+
+  return job.id!;
+}
+
+/**
+ * Add a payment failed email job to the queue
+ */
+export async function queuePaymentFailedEmail(data: PaymentFailedEmailJobData["payload"]): Promise<string> {
+  const job = await emailQueue.add(
+    "payment-failed",
+    {
+      type: "payment-failed",
+      payload: data,
+    },
+    {
+      priority: 1, // High priority for payment notifications
+    }
+  );
+
+  logger.debug("Payment failed email job queued", {
+    jobId: job.id,
+    email: data.email,
+    orderId: data.orderId,
     status: data.status,
   });
 

@@ -6,6 +6,7 @@
  */
 
 import * as grpc from "@grpc/grpc-js";
+import { readFileSync } from "fs";
 import { env } from "@lib/env/environment.js";
 import {
   PaymentServiceClient,
@@ -77,9 +78,28 @@ class PaymentClient {
   }
 
   private createClient(): PaymentServiceClient {
-    // No TLS — internal service communication within AWS VPC.
-    // See KY27_backend_go/docs/ADR.md for rationale.
-    const credentials = grpc.credentials.createInsecure();
+    // The Go payment service serves gRPC over TLS (see KY27_backend_go
+    // cmd/server.go — grpc.Creds from certs/server.crt). When a CA/server cert
+    // path is configured we build a TLS channel trusting that cert; otherwise
+    // we fall back to an insecure channel (local dev with a plaintext server).
+    let credentials: grpc.ChannelCredentials;
+    const caCertPath = env.PAYMENT_GRPC_CA_CERT;
+
+    if (caCertPath) {
+      try {
+        const rootCert = readFileSync(caCertPath);
+        credentials = grpc.credentials.createSsl(rootCert);
+        console.log(`[gRPC] Using TLS (root cert: ${caCertPath})`);
+      } catch (err) {
+        console.error(
+          `[gRPC] Failed to read TLS cert at ${caCertPath}, falling back to insecure:`,
+          (err as Error).message,
+        );
+        credentials = grpc.credentials.createInsecure();
+      }
+    } else {
+      credentials = grpc.credentials.createInsecure();
+    }
 
     return new PaymentServiceClient(this.address, credentials, {
       "grpc.keepalive_time_ms": 10000,

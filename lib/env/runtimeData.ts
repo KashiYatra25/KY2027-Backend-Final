@@ -115,6 +115,9 @@ function createRuntimeEnvironment(
       PAYMENT_SERVICE_TOKEN: z
         .string()
         .min(32, "Payment service token must be at least 32 characters"),
+      // Optional path to the payment service's TLS cert (used as the trusted
+      // root for the gRPC client). Empty/unset → insecure channel (dev only).
+      PAYMENT_GRPC_CA_CERT: z.string().optional().default(""),
     },
     clientPrefix: "CLIENT",
     client: {

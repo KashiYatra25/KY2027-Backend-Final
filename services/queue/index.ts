@@ -5,6 +5,7 @@ export {
   queueForgotPasswordEmail,
   queueAccountStatusChangeEmail,
   queuePassesInvoiceEmail,
+  queuePaymentFailedEmail,
   queueCaApplicationStatusEmail,
   getEmailQueueStats,
   closeEmailQueue,
@@ -13,6 +14,7 @@ export {
   type AdminForgotPasswordEmailJobData,
   type AccountStatusChangeEmailJobData,
   type PassesInvoiceEmailJobData,
+  type PaymentFailedEmailJobData,
   type CaApplicationStatusEmailJobData,
 } from "./emailQueue.service.js";
 
