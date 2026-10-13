@@ -3,6 +3,7 @@ import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { logger } from "@logger/logger.js";
 import { decodeAdminToken } from "@controller/admin/helper/functions/index.js";
+import { revokeAdminRefreshTokens } from "@services/redis/adminToken.service.js";
 import {
   ADMIN_REFRESH_TOKEN_COOKIE_NAME,
   ADMIN_COOKIE_PATH,
@@ -11,12 +12,13 @@ import {
 // ═══════════════════════════════════════════════════════════════════
 // ADMIN LOGOUT
 //
-// Simple logout - just clears the refresh token cookie.
-// Since we're not using Redis session storage, there's no server-side
-// session to invalidate. The JWT tokens will naturally expire.
+// Revokes the admin session by deleting the stored refresh token JTI
+// from Redis, then clears the refresh token cookie.
 //
-// Note: For immediate invalidation, you would need to implement
-// a token blacklist (in Redis or database), but that adds complexity.
+// After this, any access token still held by the client will be
+// rejected by the guards because its correlated refresh JTI no longer
+// exists in Redis, and the refresh endpoint will refuse to issue new
+// tokens.
 // ═══════════════════════════════════════════════════════════════════
 
 export const adminLogout = catchAsync(
@@ -25,8 +27,13 @@ export const adminLogout = catchAsync(
 
     if (refreshToken) {
       const decoded = decodeAdminToken(refreshToken);
-      if (decoded) {
-        logger.info("Admin logged out", { adminId: decoded.adminId });
+      if (decoded?.userId) {
+        // Immediately revoke the session server-side.
+        await revokeAdminRefreshTokens(decoded.userId);
+        logger.info("Admin logged out", {
+          adminId: decoded.adminId,
+          userId: decoded.userId,
+        });
       }
     }
 

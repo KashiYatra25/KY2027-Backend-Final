@@ -5,6 +5,8 @@ import { ApolloServer } from "@apollo/server";
 import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
 import { ApolloServerPluginLandingPageDisabled } from "@apollo/server/plugin/disabled";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import depthLimit from "graphql-depth-limit";
+import { type ValidationRule, GraphQLError } from "graphql";
 import type { Request } from "express";
 import { resolvers } from "@gql/resolver/main.resolver.js";
 import { type RoleLevel } from "@lib/prisma/index.js";
@@ -18,6 +20,40 @@ const __dirname = path.dirname(__filename);
 // Exposing schema to attackers allows them to understand your API
 // ═══════════════════════════════════════════════════════════════════
 const isProduction = process.env.NODE_ENV === "production";
+
+// ═══════════════════════════════════════════════════════════════════
+// H5 FIX: Query depth limiting + complexity (alias) analysis
+// Prevents denial-of-service via deeply-nested or alias-amplified
+// queries that explode server-side resolution cost.
+// ═══════════════════════════════════════════════════════════════════
+const MAX_QUERY_DEPTH = 7;
+const MAX_ALIASES = 15;
+
+/**
+ * Lightweight complexity guard: rejects operations that use an excessive
+ * number of field aliases (a common amplification technique where the same
+ * expensive field is requested many times under different alias names).
+ */
+function maxAliasesRule(maxAliases: number): ValidationRule {
+  return (context) => {
+    let aliasCount = 0;
+    return {
+      Field(node) {
+        if (node.alias) {
+          aliasCount += 1;
+          if (aliasCount > maxAliases) {
+            context.reportError(
+              new GraphQLError(
+                `Query uses too many aliases (max ${maxAliases}).`,
+                { nodes: [node] },
+              ),
+            );
+          }
+        }
+      },
+    };
+  };
+}
 
 export type GqlGlobalContext = {
   user: {
@@ -40,6 +76,8 @@ export function createApolloServer(server: Server) {
     resolvers,
     // SEC-009: Disable introspection in production
     introspection: !isProduction,
+    // H5 FIX: enforce query depth + alias/complexity limits
+    validationRules: [depthLimit(MAX_QUERY_DEPTH), maxAliasesRule(MAX_ALIASES)],
     plugins: [
       ApolloServerPluginDrainHttpServer({ httpServer: server }),
       // SEC-009: Disable landing page in production

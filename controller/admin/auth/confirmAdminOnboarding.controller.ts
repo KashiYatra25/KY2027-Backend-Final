@@ -5,7 +5,11 @@ import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { BadRequest, NotFound } from "zodex-axon/errors";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { logger } from "@logger/logger.js";
-import { generateAdminTokens } from "@controller/admin/helper/functions/index.js";
+import {
+  generateAdminTokens,
+  getAdminTokenId,
+} from "@controller/admin/helper/functions/index.js";
+import { storeAdminRefreshJti } from "@services/redis/adminToken.service.js";
 import { VerificationTokenModel } from "@root/databaseManagers/mongoose/index.js";
 import { prisma } from "@root/prisma.js";
 import {
@@ -170,6 +174,15 @@ export const confirmAdminOnboarding = catchAsync(
       email,
       role,
     });
+
+    // ─────────────────────────────────────────────────────────────────
+    // Persist the refresh token JTI in Redis so the session can be
+    // revoked on logout / password change and validated by the guards.
+    // ─────────────────────────────────────────────────────────────────
+    const refreshJti = getAdminTokenId(tokens.refreshToken);
+    if (refreshJti) {
+      await storeAdminRefreshJti(userId, refreshJti);
+    }
 
     // ─────────────────────────────────────────────────────────────────
     // Step 8: Set refresh token as HttpOnly cookie

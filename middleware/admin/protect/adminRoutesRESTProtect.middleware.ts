@@ -6,6 +6,10 @@ import {
   verifyAccessToken,
   decodeAdminToken,
 } from "@controller/admin/helper/functions/index.js";
+import {
+  isAdminRefreshJtiValid,
+  toRefreshJti,
+} from "@services/redis/adminToken.service.js";
 import type { AdminRequestWithVerifiedCreds } from "@root/middleware/admin/helper/types/jwt.types";
 // ═══════════════════════════════════════════════════════════════════
 // ADMIN JWT VERIFICATION MIDDLEWARE
@@ -100,6 +104,31 @@ export const adminRoutesRESTProtectMiddleware = catchAsync(
         new UnauthorizedAccess().handleResponse(res, {
           info: "Invalid admin token. Please login again.",
           code: "ADMIN_TOKEN_INVALID",
+        }),
+      );
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Session revocation check:
+    // The access token shares a base jti with its refresh token
+    // ("access_<base>" / "refresh_<base>"). We verify the correlated
+    // refresh jti is still the one stored in Redis. If the admin logged
+    // out or changed their password, the stored jti is gone/different and
+    // the access token must be rejected even though it is still within
+    // its signature validity window.
+    // ─────────────────────────────────────────────────────────────────
+    const refreshJti = toRefreshJti(decoded.jti);
+
+    if (!refreshJti || !(await isAdminRefreshJtiValid(decoded.userId, refreshJti))) {
+      logger.warn("Admin JWT rejected - session invalidated", {
+        path: req.path,
+        userId: decoded.userId,
+        adminId: decoded.adminId,
+      });
+      return next(
+        new UnauthorizedAccess().handleResponse(res, {
+          info: "Admin session has been invalidated. Please login again.",
+          code: "ADMIN_SESSION_INVALIDATED",
         }),
       );
     }

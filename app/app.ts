@@ -28,7 +28,17 @@ const app: Application = express();
 // This ensures req.ip returns the real client IP from X-Forwarded-For header.
 app.set("trust proxy", "loopback");
 
-app.use(express.json({ limit: "1mb" }));
+// Capture the raw request body so webhook handlers can verify HMAC
+// signatures over the exact bytes received (re-serialising the parsed
+// object would be ambiguous and break signature matching).
+app.use(
+  express.json({
+    limit: "1mb",
+    verify: (req, _res, buf) => {
+      (req as express.Request).rawBody = Buffer.from(buf);
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(morgan("dev"));
 app.use(cookieParser());

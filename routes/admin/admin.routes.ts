@@ -53,6 +53,8 @@ import {
   adminLoginRequestSchema,
   adminAccountStatusChangeRequestSchema,
   promoteUserOrAdminRoleRequestSchema,
+  getTeamsQuerySchema,
+  getRegistrationsQuerySchema,
 } from "@schemas/admin/admin.schema.js";
 import {
   forgotPasswordRequestSchema,
@@ -120,7 +122,11 @@ adminRouter.post("/logout", adminLogout);
  * Refresh access token using HttpOnly refresh token cookie
  * Returns: { accessToken, accessTokenExpiry }
  */
-adminRouter.post("/refresh-token", refreshAdminToken);
+adminRouter.post(
+  "/refresh-token",
+  adminRateLimiterMiddleware,
+  refreshAdminToken,
+);
 
 /**
  * POST /confirm-onboarding
@@ -285,6 +291,7 @@ adminRouter.patch(
 adminRouter.get(
   "/teams",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  RequestGuardMiddleware({ query: getTeamsQuerySchema }),
   getAllTeams,
 );
 
@@ -301,6 +308,7 @@ adminRouter.get(
 adminRouter.get(
   "/registrations",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  RequestGuardMiddleware({ query: getRegistrationsQuerySchema }),
   getAllRegistrations,
 );
 

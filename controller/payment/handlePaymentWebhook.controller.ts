@@ -1,13 +1,33 @@
 import type { Response, NextFunction } from "express";
+import crypto from "node:crypto";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import { NotFound, UnauthorizedAccess } from "zodex-axon/errors";
+import { NotFound, UnauthorizedAccess, BadRequest, ForbiddenErrorResponse } from "zodex-axon/errors";
 import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { PurchaseModel, CartModel } from "@lib/mongo/index.js";
 import { env } from "@lib/env/environment.js";
 import { queuePassesInvoiceEmail, queuePaymentFailedEmail } from "@services/queue/index.js";
-import type { PaymentWebhookRequestSchemaType } from "@schemas/payment/webhook.schema.js";
+import { verifyWebhookSignature } from "@services/payment/webhookSignature.js";
+import type {
+  PaymentWebhookRequestSchemaType,
+  PaymentWebhookStatus,
+} from "@schemas/payment/webhook.schema.js";
+
+/**
+ * Constant-time comparison of two strings.
+ *
+ * A plain `===` / `!==` on secret material short-circuits on the first
+ * differing byte, leaking timing information an attacker can use to recover
+ * the secret byte-by-byte. crypto.timingSafeEqual compares in constant time.
+ * We hash both inputs to equal-length SHA-256 digests first so timingSafeEqual
+ * never throws on a length mismatch (digest length reveals nothing secret).
+ */
+function safeCompare(a: string, b: string): boolean {
+  const digestA = crypto.createHash("sha256").update(a, "utf8").digest();
+  const digestB = crypto.createHash("sha256").update(b, "utf8").digest();
+  return crypto.timingSafeEqual(digestA, digestB);
+}
 
 /**
  * POST /payment/webhook
@@ -31,13 +51,15 @@ export const handlePaymentWebhook = catchAsync(
   ) => {
     // ═══════════════════════════════════════════════════════════════════
     // 1. Verify Bearer token (same token used for gRPC auth)
+    //    Constant-time comparison to avoid leaking the token via timing.
     // ═══════════════════════════════════════════════════════════════════
     const authHeader = req.headers.authorization;
     const expectedToken = `Bearer ${env.PAYMENT_SERVICE_TOKEN}`;
 
-    if (authHeader !== expectedToken) {
-      logger.warn("Payment webhook received with invalid auth", {
+    if (typeof authHeader !== "string" || !safeCompare(authHeader, expectedToken)) {
+      logger.warn("[security] Payment webhook rejected: invalid auth token", {
         hasAuth: !!authHeader,
+        ip: req.ip,
       });
       return next(
         new UnauthorizedAccess().handleResponse(res, {
@@ -46,13 +68,57 @@ export const handlePaymentWebhook = catchAsync(
       );
     }
 
-    // Schema transforms snake_case to camelCase
-    const { orderId, status, paidAt } = req.validatedData;
+    // ═══════════════════════════════════════════════════════════════════
+    // 2. Verify HMAC signature + timestamp (anti-tamper + anti-replay)
+    //    The Go service signs `${timestamp}.${rawBody}` with the shared
+    //    secret and sends x-webhook-signature / x-webhook-timestamp headers.
+    // ═══════════════════════════════════════════════════════════════════
+    const signatureHeader = req.headers["x-webhook-signature"];
+    const timestampHeader = req.headers["x-webhook-timestamp"];
+
+    const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader;
+    const timestamp = Array.isArray(timestampHeader) ? timestampHeader[0] : timestampHeader;
+
+    const verification = verifyWebhookSignature(signature, timestamp, req.rawBody);
+
+    if (!verification.ok) {
+      const unauthorizedReasons: readonly string[] = [
+        "missing_signature",
+        "missing_timestamp",
+      ];
+      const isUnauthorized = unauthorizedReasons.includes(verification.reason);
+
+      logger.warn("[security] Payment webhook rejected: signature verification failed", {
+        reason: verification.reason,
+        ip: req.ip,
+        hasSignature: !!signature,
+        hasTimestamp: !!timestamp,
+      });
+
+      // Missing headers → 401 (payload was never authenticated).
+      // Mismatch / stale / malformed timestamp → 403 (actively invalid,
+      // likely tampering or a replay attempt).
+      if (isUnauthorized) {
+        return next(
+          new UnauthorizedAccess().handleResponse(res, {
+            info: "Missing webhook signature",
+          }),
+        );
+      }
+      return next(
+        new ForbiddenErrorResponse().handleResponse(res, {
+          info: "Invalid webhook signature",
+        }),
+      );
+    }
+
+    // Schema transforms snake_case to camelCase and enum-validates status
+    const { orderId, status, amountPaise, paidAt } = req.validatedData;
 
     logger.info("Payment webhook received", { orderId, status });
 
     // ═══════════════════════════════════════════════════════════════════
-    // 2. Find the pending purchase
+    // 3. Find the pending purchase
     // ═══════════════════════════════════════════════════════════════════
     const purchase = await PurchaseModel.findOne({ orderId });
 
@@ -81,32 +147,54 @@ export const handlePaymentWebhook = catchAsync(
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 3. Handle based on status
+    // 4. Validate the paid amount matches the order total (only for PAID).
+    //    purchase.totalAmount is stored in rupees; the gateway reports
+    //    amountPaise in paise. This blocks an attacker (or bug) from marking
+    //    an order paid for a smaller/mismatched amount than was actually owed.
     // ═══════════════════════════════════════════════════════════════════
-    // Go sends status like "PAID", "FAILED", "EXPIRED" (from Cashfree mapping)
-    const normalizedStatus = status.toUpperCase();
+    if (status === "PAID") {
+      const expectedPaise = Math.round(purchase.totalAmount * 100);
+      if (amountPaise !== expectedPaise) {
+        logger.error("[security] Payment webhook amount mismatch", {
+          orderId,
+          expectedPaise,
+          receivedPaise: amountPaise,
+          userId: purchase.userId,
+          ip: req.ip,
+        });
+        return next(
+          new BadRequest().handleResponse(res, {
+            info: "Paid amount does not match order total",
+            orderId,
+          }),
+        );
+      }
+    }
 
-    if (normalizedStatus === "PAID") {
+    // ═══════════════════════════════════════════════════════════════════
+    // 5. Handle based on status (enum-validated: PAID | FAILED | EXPIRED)
+    // ═══════════════════════════════════════════════════════════════════
+    if (status === "PAID") {
       await handleSuccessfulPayment(purchase, paidAt);
     } else {
       // FAILED or EXPIRED
-      purchase.status = normalizedStatus as "FAILED" | "EXPIRED";
+      purchase.status = status;
       await purchase.save();
 
       logger.info("Payment failed/expired", {
         orderId,
-        status: normalizedStatus,
+        status,
         userId: purchase.userId,
       });
 
       // Send payment failed email notification
-      await handleFailedPayment(purchase, normalizedStatus as "FAILED" | "EXPIRED");
+      await handleFailedPayment(purchase, status);
     }
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Webhook processed successfully",
       orderId,
-      status: normalizedStatus,
+      status,
     });
   },
 );
@@ -131,7 +219,7 @@ async function handleSuccessfulPayment(
 ): Promise<void> {
   if (!purchase) return;
 
-  const { userId, orderId, couponId, discount, items, totalAmount } = purchase;
+  const { userId, orderId, couponId, couponUsageId, discount, items, totalAmount } = purchase;
 
   // ═══════════════════════════════════════════════════════════════════
   // 1. Update purchase status (MongoDB)
@@ -142,8 +230,13 @@ async function handleSuccessfulPayment(
   await purchase.save();
 
   // ═══════════════════════════════════════════════════════════════════
-  // 2. Postgres transaction: Mark user as paid + record coupon usage
-  //    These must succeed or fail together
+  // 2. Postgres transaction: Mark user as paid + finalise coupon reservation
+  //    These must succeed or fail together.
+  //
+  //    IMPORTANT: The coupon slot was already reserved (counter incremented
+  //    + RESERVED CouponUsage row created) atomically at checkout time. Here
+  //    we only transition the reservation RESERVED -> USED. We must NOT
+  //    increment currentUsageCount again, or the slot would be double-counted.
   // ═══════════════════════════════════════════════════════════════════
   const user = await prisma.$transaction(async (tx) => {
     // Mark user as paid and fetch their details for email
@@ -153,29 +246,21 @@ async function handleSuccessfulPayment(
       select: { firstName: true, lastName: true, email: true },
     });
 
-    // Record coupon usage if coupon was applied
-    if (couponId && discount > 0) {
-      await tx.couponUsage.create({
-        data: {
-          couponId,
-          userId,
-          discountAmount: Math.round(discount * 100), // Store in paise
-          orderId,
-        },
+    // Finalise the coupon reservation if one exists for this order.
+    if (couponId && couponUsageId) {
+      // Only transition reservations that are still RESERVED. updateMany is
+      // idempotent/safe on webhook retries (a second call affects 0 rows).
+      const finalised = await tx.couponUsage.updateMany({
+        where: { id: couponUsageId, status: "RESERVED" },
+        data: { status: "USED", usedAt: new Date(), reservedUntil: null },
       });
 
-      await tx.coupon.update({
-        where: { id: couponId },
-        data: {
-          currentUsageCount: { increment: 1 },
-        },
-      });
-
-      logger.info("Coupon usage recorded", {
+      logger.info("Coupon reservation finalised (USED)", {
         couponId,
+        couponUsageId,
         userId,
         orderId,
-        discountAmount: discount,
+        transitioned: finalised.count,
       });
     }
 
@@ -246,11 +331,59 @@ async function handleSuccessfulPayment(
  */
 async function handleFailedPayment(
   purchase: Awaited<ReturnType<typeof PurchaseModel.findOne>>,
-  status: "FAILED" | "EXPIRED",
+  status: Exclude<PaymentWebhookStatus, "PAID">,
 ): Promise<void> {
   if (!purchase) return;
 
-  const { userId, orderId, items, totalAmount } = purchase;
+  const { userId, orderId, couponId, couponUsageId, items, totalAmount } = purchase;
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Release the coupon reservation (if any) so the slot returns to the pool.
+  //
+  //   - Delete the RESERVED CouponUsage row.
+  //   - Decrement currentUsageCount, but ONLY if the row was still RESERVED
+  //     (we rely on deletedCount so a webhook retry cannot decrement twice,
+  //     and a reservation already finalised as USED is never touched).
+  //
+  // Both steps run in one transaction so the counter and the row stay
+  // consistent. A guard keeps currentUsageCount from going below zero.
+  // ═══════════════════════════════════════════════════════════════════
+  if (couponId && couponUsageId) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const deleted = await tx.couponUsage.deleteMany({
+          where: { id: couponUsageId, status: "RESERVED" },
+        });
+
+        if (deleted.count > 0) {
+          await tx.$executeRaw`
+            UPDATE "Coupon"
+            SET "currentUsageCount" = GREATEST("currentUsageCount" - 1, 0)
+            WHERE "id" = ${couponId}
+          `;
+        }
+
+        logger.info("Coupon reservation released", {
+          couponId,
+          couponUsageId,
+          userId,
+          orderId,
+          status,
+          released: deleted.count,
+        });
+      });
+    } catch (releaseError) {
+      // Don't fail the webhook if release fails; the cleanup job will
+      // eventually reclaim the stale reservation via reservedUntil.
+      logger.error("Failed to release coupon reservation", {
+        couponId,
+        couponUsageId,
+        orderId,
+        error:
+          releaseError instanceof Error ? releaseError.message : "Unknown error",
+      });
+    }
+  }
 
   // Get user email from Postgres
   const user = await prisma.user.findUnique({

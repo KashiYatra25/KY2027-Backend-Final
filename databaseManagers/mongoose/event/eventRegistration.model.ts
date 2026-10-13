@@ -48,16 +48,32 @@ export const EventRegistrationSchema = new Schema(
 
 // Indexes
 
-// Prevent duplicate individual registrations (one user per event)
+// Prevent duplicate individual registrations (one user per event).
+//
+// A partial index (not a plain sparse index) is used so the uniqueness
+// constraint only applies to documents that actually carry a `userId`.
+// With a plain `sparse` compound index, team registrations (which have no
+// `userId`) would still be indexed with `userId: null` and collide with each
+// other on `eventSlug + null`, incorrectly allowing only a single team per
+// event. The partial filter scopes the constraint strictly to individual
+// registrations, making this index a reliable source of truth for
+// duplicate-registration races.
 EventRegistrationSchema.index(
   { eventSlug: 1, userId: 1 },
-  { unique: true, sparse: true }
+  {
+    unique: true,
+    partialFilterExpression: { userId: { $exists: true } },
+  }
 );
 
-// Prevent duplicate team registrations (one team per event)
+// Prevent duplicate team registrations (one team per event). Same partial
+// index reasoning as above, scoped to documents that carry a `teamId`.
 EventRegistrationSchema.index(
   { eventSlug: 1, teamId: 1 },
-  { unique: true, sparse: true }
+  {
+    unique: true,
+    partialFilterExpression: { teamId: { $exists: true } },
+  }
 );
 
 // Find all registrations for a user or team

@@ -2,6 +2,8 @@ import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
 import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
+import { checkWhetherProfileIsCompleteMiddleware } from "@root/middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
+import { checkUserHasPaidMiddleware } from "@middleware/user/payment/index.js";
 import {
   publicReadRateLimiterMiddleware,
   eventRegistrationRateLimiterMiddleware,
@@ -49,10 +51,12 @@ eventRouter.use(userRoutesRESTProtectMiddleware);
 eventRouter.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended users
 
 // Register for event
-// Profile check not needed - payment requires profile completion first
+// Middleware checks: auth -> account status -> profile complete -> user paid -> validate body -> controller
 eventRouter.post(
   "/:slug/register",
   eventRegistrationRateLimiterMiddleware,
+  checkWhetherProfileIsCompleteMiddleware,
+  checkUserHasPaidMiddleware,
   RequestGuardMiddleware({
     params: eventSlugParamRequestSchema,
     body: registerForEventRequestSchema,

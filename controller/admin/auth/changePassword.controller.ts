@@ -5,6 +5,7 @@ import { OkResponseStrategy } from "zodex-axon/responses";
 import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { CryptoService } from "@helper/functions/crypto.helper.js";
+import { revokeAdminRefreshTokens } from "@services/redis/adminToken.service.js";
 import type { ChangePasswordRequestSchemaType } from "@schemas/admin/changePassword.schema.js";
 import type { AdminRequestWithVerifiedCreds } from "@middleware/admin/helper/types/jwt.types.js";
 
@@ -103,6 +104,12 @@ export const changePassword = catchAsync(
       where: { id: adminId },
       data: { password: hashedNewPassword },
     });
+
+    // ─────────────────────────────────────────────────────────────────
+    // Invalidate all existing admin sessions after a password change so
+    // that previously issued access/refresh tokens can no longer be used.
+    // ─────────────────────────────────────────────────────────────────
+    await revokeAdminRefreshTokens(admin.user.id);
 
     logger.info("Password changed successfully", { adminId });
 

@@ -8,6 +8,7 @@ export interface DecodedUser {
   email: string;
   phone: string | null;
   role: RoleLevel | null;
+  isSuspended: boolean;
 }
 
 /**

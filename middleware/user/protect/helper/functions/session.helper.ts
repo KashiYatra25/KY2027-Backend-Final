@@ -34,6 +34,7 @@ export async function decodeAndFindUser(
       id: true,
       email: true,
       phone: true,
+      isSuspended: true,
       role: { select: { level: true } },
     },
   });
@@ -44,6 +45,7 @@ export async function decodeAndFindUser(
     id: user.id,
     email: user.email,
     phone: user.phone,
+    isSuspended: user.isSuspended,
     role: user.role?.level ?? null,
   };
 }

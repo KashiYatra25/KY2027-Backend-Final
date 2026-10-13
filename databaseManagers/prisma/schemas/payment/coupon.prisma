@@ -14,6 +14,15 @@ enum CouponStatus {
   DISABLED
 }
 
+// Lifecycle of a single coupon claim.
+// RESERVED -> claimed at checkout (counter already incremented, holds a slot)
+// USED     -> payment succeeded, reservation finalised
+// (a released reservation is deleted, so there is no RELEASED state)
+enum CouponUsageStatus {
+  RESERVED
+  USED
+}
+
 model Coupon {
   id              String       @id @default(cuid())
   code            String       @unique  // e.g., "EARLY20", "CA100"
@@ -53,6 +62,18 @@ model CouponUsage {
   
   // Usage details
   discountAmount Int               // Actual discount applied
+
+  // Reservation lifecycle.
+  // A row is created with RESERVED at checkout time (atomically holding a
+  // slot against maxUsageCount / maxUsagePerUser). It becomes USED when the
+  // payment webhook reports PAID, or is deleted (slot released + counter
+  // decremented) when the payment fails/expires or the pending order is
+  // cleaned up.
+  status        CouponUsageStatus @default(RESERVED)
+
+  // When a RESERVED row should be considered stale and eligible for cleanup.
+  // Set to the pending-order expiry window at reservation time.
+  reservedUntil DateTime?
   
   // Payment reference (to be linked with payment/order later)
   orderId       String?  @unique   // Will be set when payment system is integrated
@@ -67,5 +88,7 @@ model CouponUsage {
   // Indexes
   @@index([couponId])
   @@index([userId])
+  @@index([status, reservedUntil]) // For cleanup of stale reservations
+  @@index([couponId, userId, status]) // Fast per-user active-usage counting
   @@unique([couponId, userId, orderId]) // Prevent duplicate usage per order
 }

@@ -6,6 +6,7 @@ import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { VerificationTokenModel } from "@root/databaseManagers/mongoose/index.js";
 import { CryptoService } from "@helper/functions/crypto.helper.js";
+import { revokeAdminRefreshTokens } from "@services/redis/adminToken.service.js";
 import type { ResetPasswordRequestSchemaType } from "@schemas/admin/forgotPassword.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════

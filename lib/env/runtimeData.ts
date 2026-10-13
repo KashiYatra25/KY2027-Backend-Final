@@ -115,6 +115,18 @@ function createRuntimeEnvironment(
       PAYMENT_SERVICE_TOKEN: z
         .string()
         .min(32, "Payment service token must be at least 32 characters"),
+      // Shared secret used to compute/verify the HMAC-SHA256 signature on the
+      // payment webhook (x-webhook-signature). Must match the Go service's
+      // WEBHOOK_SIGNING_SECRET. Falls back to PAYMENT_SERVICE_TOKEN when unset
+      // so existing deployments keep working with a single shared secret.
+      PAYMENT_WEBHOOK_SECRET: z.string().min(32).optional(),
+      // Max age (seconds) of a webhook timestamp before it is rejected as a
+      // potential replay. Default 300s (5 minutes).
+      PAYMENT_WEBHOOK_TOLERANCE_SECONDS: z
+        .string()
+        .regex(/^\d+$/, "Webhook tolerance must be a number")
+        .transform(Number)
+        .default(300),
       // Optional path to the payment service's TLS cert (used as the trusted
       // root for the gRPC client). Empty/unset → insecure channel (dev only).
       PAYMENT_GRPC_CA_CERT: z.string().optional().default(""),

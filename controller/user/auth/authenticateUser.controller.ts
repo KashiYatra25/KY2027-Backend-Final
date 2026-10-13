@@ -98,6 +98,7 @@ export const authenticateUser = catchAsync(
       info: "User authenticated successfully",
       role: user.role,
       accountStatus: progress?.accountStatus,
+      isPaidUser: user.isPaidUser,
     });
   },
 );

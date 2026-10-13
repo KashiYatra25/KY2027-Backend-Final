@@ -1,5 +1,9 @@
 import type { AdminLoginRequestSchemaType } from "@schemas/admin/admin.schema.js";
-import { generateAdminTokens } from "@controller/admin/helper/functions/index.js";
+import {
+  generateAdminTokens,
+  getAdminTokenId,
+} from "@controller/admin/helper/functions/index.js";
+import { storeAdminRefreshJti } from "@services/redis/adminToken.service.js";
 import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { CryptoService } from "@helper/functions/crypto.helper.js";
@@ -114,6 +118,15 @@ export const adminLogin = catchAsync(
       email: user.email,
       role: userRole,
     });
+
+    // ─────────────────────────────────────────────────────────────────
+    // Persist the refresh token JTI in Redis so the session can be
+    // revoked on logout / password change and validated by the guards.
+    // ─────────────────────────────────────────────────────────────────
+    const refreshJti = getAdminTokenId(tokens.refreshToken);
+    if (refreshJti) {
+      await storeAdminRefreshJti(user.id, refreshJti);
+    }
 
     res.cookie(
       ADMIN_REFRESH_TOKEN_COOKIE_NAME,

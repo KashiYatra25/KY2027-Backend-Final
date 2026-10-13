@@ -6,6 +6,16 @@ import { TeamModel } from "@root/databaseManagers/mongoose/index.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 /**
+ * Escapes RegExp metacharacters in user-supplied input so it can be safely
+ * embedded in a MongoDB `$regex` query. Prevents NoSQL regex injection and
+ * ReDoS-style abuse where crafted patterns alter query semantics or cause
+ * catastrophic backtracking.
+ */
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
  * GET /admin/teams
  * Get all teams with member details
  * 
@@ -29,9 +39,11 @@ const getAllTeams = catchAsync(
     // Build query
     const query: Record<string, any> = {};
     if (search) {
+      // Escape regex metacharacters to prevent NoSQL regex injection / ReDoS
+      const safeSearch = escapeRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { teamId: { $regex: search, $options: "i" } },
+        { name: { $regex: safeSearch, $options: "i" } },
+        { teamId: { $regex: safeSearch, $options: "i" } },
       ];
     }
 

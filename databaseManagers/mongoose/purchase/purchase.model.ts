@@ -76,6 +76,13 @@ export const PurchaseSchema = new Schema(
       type: String,
       default: null,
     },
+    // Reference to the CouponUsage reservation (Postgres) created atomically
+    // at checkout. Used to finalise (mark USED) or release the reservation
+    // when the payment resolves.
+    couponUsageId: {
+      type: String,
+      default: null,
+    },
     paymentMethod: {
       type: String,
       required: true,

@@ -6,7 +6,12 @@ import { logger } from "@logger/logger.js";
 import {
   verifyRefreshToken,
   generateAdminTokens,
+  getAdminTokenId,
 } from "@controller/admin/helper/functions/index.js";
+import {
+  isAdminRefreshJtiValid,
+  storeAdminRefreshJti,
+} from "@services/redis/adminToken.service.js";
 import {
   ADMIN_REFRESH_TOKEN_COOKIE_NAME,
   ADMIN_COOKIE_PATH,
@@ -65,7 +70,29 @@ export const refreshAdminToken = catchAsync(
       );
     }
 
-    const { userId, adminId, email, role, exp } = decoded;
+    const { userId, adminId, email, role, exp, jti } = decoded;
+
+    // ─────────────────────────────────────────────────────────────────
+    // Step 2b: Ensure this refresh token has not been revoked.
+    // The valid refresh JTI is tracked in Redis. If it is missing (logout,
+    // password change, expiry) or does not match the presented token, the
+    // session is no longer valid and we must refuse to rotate.
+    // ─────────────────────────────────────────────────────────────────
+    const isValid = await isAdminRefreshJtiValid(userId, jti);
+
+    if (!isValid) {
+      logger.warn("Admin token refresh - refresh JTI revoked or not found", {
+        adminId,
+        userId,
+      });
+      res.clearCookie(ADMIN_REFRESH_TOKEN_COOKIE_NAME, { path: ADMIN_COOKIE_PATH });
+      return next(
+        new UnauthorizedAccess().handleResponse(res, {
+          info: "Admin session has been invalidated. Please login again.",
+          code: "ADMIN_SESSION_INVALIDATED",
+        }),
+      );
+    }
 
     // ─────────────────────────────────────────────────────────────────
     // Step 3: Generate new tokens (both access and refresh)
@@ -76,6 +103,15 @@ export const refreshAdminToken = catchAsync(
       email,
       role,
     });
+
+    // ─────────────────────────────────────────────────────────────────
+    // Step 3b: Rotate the stored refresh JTI so the old refresh token can
+    // no longer be used (refresh token rotation).
+    // ─────────────────────────────────────────────────────────────────
+    const newRefreshJti = getAdminTokenId(tokens.refreshToken);
+    if (newRefreshJti) {
+      await storeAdminRefreshJti(userId, newRefreshJti);
+    }
 
     // ─────────────────────────────────────────────────────────────────
     // Step 4: Calculate remaining TTL and set new refresh token cookie
