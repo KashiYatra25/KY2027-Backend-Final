@@ -29,3 +29,9 @@ export { suspendAccount } from "./suspend/suspendAccount.controller.js";
 
 // User management
 export { getAdminUsers } from "./users/getAdminUsers.controller.js";
+
+// Team management
+export { getAllTeams } from "./teams/index.js";
+
+// Registration management
+export { getAllRegistrations } from "./registrations/index.js";

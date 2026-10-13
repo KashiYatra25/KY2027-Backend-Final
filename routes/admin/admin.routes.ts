@@ -18,8 +18,11 @@ import {
   changeCouponStatus,
   deleteCoupon,
 } from "@controller/admin/coupon/index.js";
+import { suspendAccount } from "@controller/admin/suspend/suspendAccount.controller.js";
 import { getAdminUsers } from "@controller/admin/users/getAdminUsers.controller.js";
 import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
+import { getAllTeams } from "@controller/admin/teams/index.js";
+import { getAllRegistrations } from "@controller/admin/registrations/index.js";
 import {
   getVenuesAdmin,
   getVenueByIdAdmin,
@@ -47,6 +50,7 @@ import { adminRoleCheckerMiddleware } from "@middleware/admin/protect/adminRoleC
 import {
   adminOnboardingRequestSchema,
   adminLoginRequestSchema,
+  adminSuspendRequestSchema,
 } from "@schemas/admin/admin.schema.js";
 import {
   forgotPasswordRequestSchema,
@@ -197,6 +201,22 @@ adminRouter.get(
 );
 
 /**
+ * POST /suspend-account
+ * Suspend a user or admin account
+ * Body: { targetEmail, reason? }
+ * Hierarchy:
+ * - MASTER_ADMIN can suspend: MANAGER, OPERATOR, USER
+ * - MANAGER can suspend: OPERATOR, USER
+ * Requires: MASTER_ADMIN or MANAGER role
+ */
+adminRouter.post(
+  "/suspend-account",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  RequestGuardMiddleware({ body: adminSuspendRequestSchema }),
+  suspendAccount,
+);
+
+/**
  * GET /campus-ambassador/get-applications
  * Get all CA applications (with optional status filter)
  * Requires: MASTER_ADMIN or MANAGER role
@@ -231,6 +251,38 @@ adminRouter.patch(
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
   RequestGuardMiddleware({ body: caApplicationStatusUpdateSchema }),
   updateCaApplicationStatus,
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// TEAM MANAGEMENT ROUTES
+// Requires: MASTER_ADMIN or MANAGER role
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * GET /admin/teams
+ * Get all teams with member details (paginated)
+ * Query params: page, limit, search
+ */
+adminRouter.get(
+  "/teams",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  getAllTeams,
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// EVENT REGISTRATION MANAGEMENT ROUTES
+// Requires: MASTER_ADMIN or MANAGER role
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * GET /admin/registrations
+ * Get all event registrations with details (paginated)
+ * Query params: page, limit, eventSlug, status, participationType
+ */
+adminRouter.get(
+  "/registrations",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  getAllRegistrations,
 );
 
 // ═══════════════════════════════════════════════════════════════════
