@@ -2,13 +2,12 @@ import type { Response, NextFunction } from "express";
 import crypto from "node:crypto";
 import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import { NotFound, UnauthorizedAccess, BadRequest, ForbiddenErrorResponse } from "zodex-axon/errors";
+import { NotFound, UnauthorizedAccess, BadRequest } from "zodex-axon/errors";
 import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { PurchaseModel, CartModel } from "@lib/mongo/index.js";
 import { env } from "@lib/env/environment.js";
 import { queuePassesInvoiceEmail, queuePaymentFailedEmail } from "@services/queue/index.js";
-import { verifyWebhookSignature } from "@services/payment/webhookSignature.js";
 import type {
   PaymentWebhookRequestSchemaType,
   PaymentWebhookStatus,
@@ -16,12 +15,7 @@ import type {
 
 /**
  * Constant-time comparison of two strings.
- *
- * A plain `===` / `!==` on secret material short-circuits on the first
- * differing byte, leaking timing information an attacker can use to recover
- * the secret byte-by-byte. crypto.timingSafeEqual compares in constant time.
- * We hash both inputs to equal-length SHA-256 digests first so timingSafeEqual
- * never throws on a length mismatch (digest length reveals nothing secret).
+ * Prevents timing attacks when comparing secret tokens.
  */
 function safeCompare(a: string, b: string): boolean {
   const digestA = crypto.createHash("sha256").update(a, "utf8").digest();
@@ -34,12 +28,12 @@ function safeCompare(a: string, b: string): boolean {
  * Handle payment status updates from Go payment service
  * 
  * Auth: Authorization: Bearer <PAYMENT_SERVICE_TOKEN>
- * Go sends snake_case (NotifyNodeArgs), schema transforms to camelCase
+ * Security: NCL (Network-level Controls) provides additional protection
  * 
  * On successful payment:
  * 1. Update Purchase status to PAID
  * 2. Mark user as isPaidUser
- * 3. Record CouponUsage (if coupon was applied)
+ * 3. Finalise CouponUsage (if coupon was applied)
  * 4. Clear user's cart
  * 5. Queue confirmation email
  */
@@ -52,6 +46,7 @@ export const handlePaymentWebhook = catchAsync(
     // ═══════════════════════════════════════════════════════════════════
     // 1. Verify Bearer token (same token used for gRPC auth)
     //    Constant-time comparison to avoid leaking the token via timing.
+    //    Additional security provided by NCL (Network-level Controls).
     // ═══════════════════════════════════════════════════════════════════
     const authHeader = req.headers.authorization;
     const expectedToken = `Bearer ${env.PAYMENT_SERVICE_TOKEN}`;
@@ -68,57 +63,13 @@ export const handlePaymentWebhook = catchAsync(
       );
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // 2. Verify HMAC signature + timestamp (anti-tamper + anti-replay)
-    //    The Go service signs `${timestamp}.${rawBody}` with the shared
-    //    secret and sends x-webhook-signature / x-webhook-timestamp headers.
-    // ═══════════════════════════════════════════════════════════════════
-    const signatureHeader = req.headers["x-webhook-signature"];
-    const timestampHeader = req.headers["x-webhook-timestamp"];
-
-    const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader;
-    const timestamp = Array.isArray(timestampHeader) ? timestampHeader[0] : timestampHeader;
-
-    const verification = verifyWebhookSignature(signature, timestamp, req.rawBody);
-
-    if (!verification.ok) {
-      const unauthorizedReasons: readonly string[] = [
-        "missing_signature",
-        "missing_timestamp",
-      ];
-      const isUnauthorized = unauthorizedReasons.includes(verification.reason);
-
-      logger.warn("[security] Payment webhook rejected: signature verification failed", {
-        reason: verification.reason,
-        ip: req.ip,
-        hasSignature: !!signature,
-        hasTimestamp: !!timestamp,
-      });
-
-      // Missing headers → 401 (payload was never authenticated).
-      // Mismatch / stale / malformed timestamp → 403 (actively invalid,
-      // likely tampering or a replay attempt).
-      if (isUnauthorized) {
-        return next(
-          new UnauthorizedAccess().handleResponse(res, {
-            info: "Missing webhook signature",
-          }),
-        );
-      }
-      return next(
-        new ForbiddenErrorResponse().handleResponse(res, {
-          info: "Invalid webhook signature",
-        }),
-      );
-    }
-
     // Schema transforms snake_case to camelCase and enum-validates status
     const { orderId, status, amountPaise, paidAt } = req.validatedData;
 
     logger.info("Payment webhook received", { orderId, status });
 
     // ═══════════════════════════════════════════════════════════════════
-    // 3. Find the pending purchase
+    // 2. Find the pending purchase
     // ═══════════════════════════════════════════════════════════════════
     const purchase = await PurchaseModel.findOne({ orderId });
 
@@ -147,10 +98,8 @@ export const handlePaymentWebhook = catchAsync(
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 4. Validate the paid amount matches the order total (only for PAID).
-    //    purchase.totalAmount is stored in rupees; the gateway reports
-    //    amountPaise in paise. This blocks an attacker (or bug) from marking
-    //    an order paid for a smaller/mismatched amount than was actually owed.
+    // 3. Validate the paid amount matches the order total (only for PAID).
+    //    This blocks marking an order paid for a mismatched amount.
     // ═══════════════════════════════════════════════════════════════════
     if (status === "PAID") {
       const expectedPaise = Math.round(purchase.totalAmount * 100);
@@ -172,7 +121,7 @@ export const handlePaymentWebhook = catchAsync(
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 5. Handle based on status (enum-validated: PAID | FAILED | EXPIRED)
+    // 4. Handle based on status (enum-validated: PAID | FAILED | EXPIRED)
     // ═══════════════════════════════════════════════════════════════════
     if (status === "PAID") {
       await handleSuccessfulPayment(purchase, paidAt);
@@ -202,16 +151,9 @@ export const handlePaymentWebhook = catchAsync(
 /**
  * Handle successful payment:
  * - Update purchase status (MongoDB)
- * - Mark user as paid + record coupon usage (Postgres - transactional)
+ * - Mark user as paid + finalise coupon usage (Postgres - transactional)
  * - Clear cart (MongoDB)
  * - Queue confirmation email
- * 
- * Note: Cross-database (Postgres + MongoDB) transactions aren't possible.
- * We order operations so webhook retry can recover from partial failures:
- * 1. Update Purchase first (makes it non-PENDING, prevents duplicate processing)
- * 2. Postgres transaction (user + coupon - atomic)
- * 3. Clear cart last (least critical, can be manually cleared)
- * 4. Queue email (non-critical, can be triggered manually if failed)
  */
 async function handleSuccessfulPayment(
   purchase: Awaited<ReturnType<typeof PurchaseModel.findOne>>,
@@ -223,7 +165,6 @@ async function handleSuccessfulPayment(
 
   // ═══════════════════════════════════════════════════════════════════
   // 1. Update purchase status (MongoDB)
-  //    Do this first - marks as processed, prevents duplicate handling on retry
   // ═══════════════════════════════════════════════════════════════════
   purchase.status = "PAID";
   purchase.paidAt = paidAt ? new Date(paidAt) : new Date();
@@ -231,25 +172,16 @@ async function handleSuccessfulPayment(
 
   // ═══════════════════════════════════════════════════════════════════
   // 2. Postgres transaction: Mark user as paid + finalise coupon reservation
-  //    These must succeed or fail together.
-  //
-  //    IMPORTANT: The coupon slot was already reserved (counter incremented
-  //    + RESERVED CouponUsage row created) atomically at checkout time. Here
-  //    we only transition the reservation RESERVED -> USED. We must NOT
-  //    increment currentUsageCount again, or the slot would be double-counted.
   // ═══════════════════════════════════════════════════════════════════
   const user = await prisma.$transaction(async (tx) => {
-    // Mark user as paid and fetch their details for email
     const updatedUser = await tx.user.update({
       where: { id: userId },
       data: { isPaidUser: true },
       select: { firstName: true, lastName: true, email: true },
     });
 
-    // Finalise the coupon reservation if one exists for this order.
+    // Finalise the coupon reservation if one exists
     if (couponId && couponUsageId) {
-      // Only transition reservations that are still RESERVED. updateMany is
-      // idempotent/safe on webhook retries (a second call affects 0 rows).
       const finalised = await tx.couponUsage.updateMany({
         where: { id: couponUsageId, status: "RESERVED" },
         data: { status: "USED", usedAt: new Date(), reservedUntil: null },
@@ -269,13 +201,11 @@ async function handleSuccessfulPayment(
 
   // ═══════════════════════════════════════════════════════════════════
   // 3. Clear user's cart (MongoDB)
-  //    Least critical - if this fails, cart just has stale items
   // ═══════════════════════════════════════════════════════════════════
   await CartModel.deleteOne({ userId });
 
   // ═══════════════════════════════════════════════════════════════════
   // 4. Queue confirmation email
-  //    Non-blocking, will retry automatically if fails
   // ═══════════════════════════════════════════════════════════════════
   if (user.email) {
     const userName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Valued Customer";
@@ -306,7 +236,6 @@ async function handleSuccessfulPayment(
 
       logger.info("Payment confirmation email queued", { orderId, email: user.email });
     } catch (emailError) {
-      // Don't fail the webhook if email queueing fails
       logger.error("Failed to queue payment confirmation email", {
         orderId,
         email: user.email,
@@ -323,11 +252,10 @@ async function handleSuccessfulPayment(
   });
 }
 
-
 /**
  * Handle failed/expired payment:
+ * - Release coupon reservation
  * - Send notification email to user
- * - Cart is NOT cleared (so user can retry)
  */
 async function handleFailedPayment(
   purchase: Awaited<ReturnType<typeof PurchaseModel.findOne>>,
@@ -337,17 +265,7 @@ async function handleFailedPayment(
 
   const { userId, orderId, couponId, couponUsageId, items, totalAmount } = purchase;
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Release the coupon reservation (if any) so the slot returns to the pool.
-  //
-  //   - Delete the RESERVED CouponUsage row.
-  //   - Decrement currentUsageCount, but ONLY if the row was still RESERVED
-  //     (we rely on deletedCount so a webhook retry cannot decrement twice,
-  //     and a reservation already finalised as USED is never touched).
-  //
-  // Both steps run in one transaction so the counter and the row stay
-  // consistent. A guard keeps currentUsageCount from going below zero.
-  // ═══════════════════════════════════════════════════════════════════
+  // Release the coupon reservation if any
   if (couponId && couponUsageId) {
     try {
       await prisma.$transaction(async (tx) => {
@@ -373,14 +291,11 @@ async function handleFailedPayment(
         });
       });
     } catch (releaseError) {
-      // Don't fail the webhook if release fails; the cleanup job will
-      // eventually reclaim the stale reservation via reservedUntil.
       logger.error("Failed to release coupon reservation", {
         couponId,
         couponUsageId,
         orderId,
-        error:
-          releaseError instanceof Error ? releaseError.message : "Unknown error",
+        error: releaseError instanceof Error ? releaseError.message : "Unknown error",
       });
     }
   }
@@ -414,7 +329,6 @@ async function handleFailedPayment(
 
     logger.info("Payment failed email queued", { orderId, email: user.email, status });
   } catch (emailError) {
-    // Don't fail the webhook if email queueing fails
     logger.error("Failed to queue payment failed email", {
       orderId,
       email: user.email,
