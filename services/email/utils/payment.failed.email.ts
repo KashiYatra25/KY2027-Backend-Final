@@ -8,7 +8,7 @@ export interface PaymentFailedData {
     passName: string;
     quantity: number;
   }>;
-  status: 'FAILED' | 'EXPIRED';
+  status: 'FAILED' | 'EXPIRED' | 'TIMEOUT';
   cartUrl: string;
 }
 
@@ -28,6 +28,7 @@ export class PaymentFailedEmail extends Email {
       items: this.paymentData.items,
       status: this.paymentData.status,
       isExpired: this.paymentData.status === 'EXPIRED',
+      isTimeout: this.paymentData.status === 'TIMEOUT',
       cartUrl: this.paymentData.cartUrl,
     });
   }

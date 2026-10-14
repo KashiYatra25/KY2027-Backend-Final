@@ -86,7 +86,7 @@ export interface PaymentFailedEmailJobData {
       passName: string;
       quantity: number;
     }>;
-    status: "FAILED" | "EXPIRED";
+    status: "FAILED" | "EXPIRED" | "TIMEOUT";
     cartUrl: string;
   };
 }

@@ -47,7 +47,7 @@ export const PurchaseSchema = new Schema(
     status: {
       type: String,
       required: true,
-      enum: ["PENDING", "PAID", "FAILED", "EXPIRED"],
+      enum: ["PENDING", "PAID", "FAILED", "EXPIRED", "TIMEOUT"],
       default: "PENDING",
     },
     items: {

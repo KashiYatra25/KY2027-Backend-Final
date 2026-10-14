@@ -6,7 +6,7 @@ import { z } from "zod";
  * Enum-validated so unexpected/garbage statuses are rejected at the edge
  * instead of being blindly persisted.
  */
-export const PAYMENT_WEBHOOK_STATUSES = ["PAID", "FAILED", "EXPIRED"] as const;
+export const PAYMENT_WEBHOOK_STATUSES = ["PAID", "FAILED", "EXPIRED", "TIMEOUT"] as const;
 
 export type PaymentWebhookStatus = (typeof PAYMENT_WEBHOOK_STATUSES)[number];
 

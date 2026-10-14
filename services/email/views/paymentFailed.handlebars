@@ -6,82 +6,95 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Payment Failed - Kashiyatra 2027</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0a0a15; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #0a0a15;">
+<body style="margin: 0; padding: 0; background-color: #0d1117; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #0d1117;">
         <tr>
-            <td style="padding: 20px 0;">
+            <td style="padding: 20px 10px;">
                 <!-- Main Container -->
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #1A1A2E; border-radius: 12px; overflow: hidden; border: 1px solid #ef444433;">
-                    <!-- Header -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #161b22; border-radius: 16px; overflow: hidden; border: 1px solid #30363d;">
+                    
+                    <!-- Header with deep rose/maroon -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%); padding: 40px 20px; text-align: center;">
-                            <h1 style="margin: 0; color: #FDF6E3; font-size: 28px; font-weight: 800; letter-spacing: 2px;">KASHIYATRA 2027</h1>
-                            <p style="margin: 8px 0 0 0; color: #FDF6E3; font-size: 14px; font-weight: 600; opacity: 0.9;">Payment {{status}}</p>
+                        <td style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 50%, #991b1b 100%); padding: 45px 20px; text-align: center;">
+                            <h1 style="margin: 0; color: #fecaca; font-size: 28px; font-weight: 800; letter-spacing: 3px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">KASHIYATRA 2027</h1>
+                            <p style="margin: 12px 0 0 0; color: #fca5a5; font-size: 15px; font-weight: 600; letter-spacing: 2px;">PAYMENT {{status}}</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Alert Banner -->
+                    <tr>
+                        <td style="background: linear-gradient(90deg, #1c1917 0%, #292524 50%, #1c1917 100%); padding: 28px 20px; text-align: center; border-bottom: 3px solid #ef4444;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <!-- Warning circle -->
+                                        <div style="display: inline-block; width: 70px; height: 70px; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); border-radius: 50%; line-height: 70px; margin-bottom: 16px; box-shadow: 0 0 30px rgba(220, 38, 38, 0.4);">
+                                            <span style="color: #ffffff; font-size: 36px;">✕</span>
+                                        </div>
+                                        <h2 style="margin: 0; color: #fca5a5; font-size: 24px; font-weight: 700;">
+                                            {{#if isExpired}}
+                                            Payment Session Expired
+                                            {{else}}
+                                            Payment Unsuccessful
+                                            {{/if}}
+                                        </h2>
+                                        <p style="margin: 12px 0 0 0; color: #d6d3d1; font-size: 15px; line-height: 1.6;">
+                                            Hi <strong style="color: #fbbf24;">{{userName}}</strong>, your payment for Kashiyatra 2027 passes
+                                            {{#if isExpired}}
+                                            session has expired.
+                                            {{else}}
+                                            could not be completed.
+                                            {{/if}}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
                     
                     <!-- Content -->
                     <tr>
-                        <td style="padding: 40px 30px;">
-                            <!-- Warning Icon -->
-                            <div style="text-align: center; margin-bottom: 24px;">
-                                <div style="display: inline-block; width: 64px; height: 64px; background-color: #7f1d1d; border-radius: 50%; line-height: 64px; font-size: 32px;">
-                                    ⚠️
-                                </div>
-                            </div>
-
-                            <h2 style="margin: 0 0 20px 0; color: #FDF6E3; font-size: 22px; font-weight: 600; line-height: 1.3; text-align: center;">
-                                {{#if isExpired}}
-                                    Payment Session Expired
-                                {{else}}
-                                    Payment Unsuccessful
-                                {{/if}}
-                            </h2>
-                            
-                            <p style="margin: 0 0 16px 0; color: #D4B896; font-size: 16px; line-height: 1.6; text-align: center;">
-                                Hi {{userName}}, we noticed that your payment for Kashiyatra 2027 passes 
-                                {{#if isExpired}}
-                                    session has expired.
-                                {{else}}
-                                    could not be completed.
-                                {{/if}}
-                            </p>
+                        <td style="padding: 35px 25px;">
 
                             <!-- Order Details Box -->
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0 0 28px 0; border: 1px solid #30363d; border-radius: 12px; overflow: hidden;">
+                                <!-- Order Header -->
                                 <tr>
-                                    <td style="padding: 24px; background-color: #0a0a15; border-radius: 8px; border: 1px solid #ef444430;">
-                                        <!-- Order Info -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ef444420;">
+                                    <td style="background: linear-gradient(90deg, #1c1c1c 0%, #262626 50%, #1c1c1c 100%); padding: 18px 20px; border-bottom: 1px solid #30363d;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                             <tr>
                                                 <td>
-                                                    <p style="margin: 0; color: #ef4444; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Order ID</p>
-                                                    <p style="margin: 4px 0 0 0; color: #FDF6E3; font-size: 14px; font-family: monospace;">#{{orderId}}</p>
+                                                    <p style="margin: 0; color: #ef4444; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">ORDER ID</p>
+                                                    <p style="margin: 6px 0 0 0; color: #e5e7eb; font-size: 13px; font-family: 'SF Mono', Monaco, monospace; word-break: break-all;">#{{orderId}}</p>
                                                 </td>
                                                 <td style="text-align: right;">
-                                                    <p style="margin: 0; color: #8B8B8B; font-size: 12px;">Amount</p>
-                                                    <p style="margin: 4px 0 0 0; color: #FDF6E3; font-size: 18px; font-weight: 700;">₹{{totalAmount}}</p>
+                                                    <p style="margin: 0; color: #9ca3af; font-size: 11px; text-transform: uppercase;">Amount</p>
+                                                    <p style="margin: 6px 0 0 0; color: #f3f4f6; font-size: 22px; font-weight: 700;">₹{{totalAmount}}</p>
                                                 </td>
                                             </tr>
                                         </table>
-
-                                        <!-- Items Summary -->
-                                        <p style="margin: 0 0 12px 0; color: #8B8B8B; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Items in your order</p>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Items -->
+                                <tr>
+                                    <td style="padding: 20px; background-color: #0d1117;">
+                                        <p style="margin: 0 0 14px 0; color: #9ca3af; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">Items in your order</p>
                                         
                                         {{#each items}}
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                             <tr>
-                                                <td style="padding: 8px 0; color: #FDF6E3; font-size: 14px;">{{this.passName}}</td>
-                                                <td style="padding: 8px 0; color: #D4B896; font-size: 14px; text-align: right;">× {{this.quantity}}</td>
+                                                <td style="padding: 12px 0; color: #e5e7eb; font-size: 15px; font-weight: 500; border-bottom: 1px solid #21262d;">{{this.passName}}</td>
+                                                <td style="padding: 12px 0; color: #9ca3af; font-size: 15px; text-align: right; border-bottom: 1px solid #21262d;">× {{this.quantity}}</td>
                                             </tr>
                                         </table>
                                         {{/each}}
 
-                                        <!-- Status -->
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #ef444420;">
+                                        <!-- Status Badge -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 18px;">
                                             <tr>
                                                 <td>
-                                                    <span style="display: inline-block; padding: 6px 12px; background-color: #7f1d1d; color: #fca5a5; font-size: 12px; font-weight: 600; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                    <span style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); color: #fca5a5; font-size: 13px; font-weight: 700; border-radius: 25px; text-transform: uppercase; letter-spacing: 1px; border: 1px solid #dc2626;">
                                                         {{status}}
                                                     </span>
                                                 </td>
@@ -91,17 +104,17 @@
                                 </tr>
                             </table>
 
-                            <!-- What to do next -->
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
+                            <!-- What to do next - with warm amber accent -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 28px;">
                                 <tr>
-                                    <td style="padding: 20px; background-color: #1a1a2e; border-radius: 8px; border: 1px solid #D4A85320;">
-                                        <p style="margin: 0 0 12px 0; color: #D4A853; font-size: 14px; font-weight: 700;">What can you do?</p>
-                                        <ul style="margin: 0; padding-left: 20px; color: #D4B896; font-size: 14px; line-height: 1.8;">
-                                            <li>Your items are still in your cart</li>
-                                            <li>Try completing the payment again</li>
-                                            <li>Use a different payment method if needed</li>
-                                            <li>Contact support if the issue persists</li>
-                                        </ul>
+                                    <td style="padding: 22px; background: linear-gradient(90deg, #1c1917 0%, #292524 50%, #1c1917 100%); border-radius: 12px; border-left: 4px solid #fbbf24;">
+                                        <p style="margin: 0 0 14px 0; color: #fbbf24; font-size: 16px; font-weight: 700;">💡 What can you do?</p>
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                                            <tr><td style="color: #d6d3d1; font-size: 14px; line-height: 2.2; padding-left: 4px;"><span style="color: #22c55e;">✓</span> Your items are still in your cart</td></tr>
+                                            <tr><td style="color: #d6d3d1; font-size: 14px; line-height: 2.2; padding-left: 4px;"><span style="color: #22c55e;">✓</span> Try completing the payment again</td></tr>
+                                            <tr><td style="color: #d6d3d1; font-size: 14px; line-height: 2.2; padding-left: 4px;"><span style="color: #22c55e;">✓</span> Use a different payment method</td></tr>
+                                            <tr><td style="color: #d6d3d1; font-size: 14px; line-height: 2.2; padding-left: 4px;"><span style="color: #22c55e;">✓</span> Contact support if issues persist</td></tr>
+                                        </table>
                                     </td>
                                 </tr>
                             </table>
@@ -109,35 +122,40 @@
                             <!-- CTA Button -->
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
-                                    <td style="text-align: center; padding: 10px 0;">
-                                        <a href="{{cartUrl}}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #D4A853 0%, #B8860B 100%); color: #0a0a15; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
-                                            Try Again
+                                    <td style="text-align: center; padding: 10px 0 24px 0;">
+                                        <a href="{{cartUrl}}" style="display: inline-block; padding: 18px 50px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #0d1117; text-decoration: none; border-radius: 10px; font-weight: 800; font-size: 15px; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);">
+                                            Try Again →
                                         </a>
                                     </td>
                                 </tr>
                             </table>
 
-                            <p style="margin: 24px 0 0 0; color: #6B6B6B; font-size: 13px; line-height: 1.6; text-align: center;">
-                                If your money was deducted, it will be refunded within 5-7 business days. For any queries, please contact us at 
-                                <a href="mailto:support@kashiyatra.in" style="color: #D4A853; text-decoration: none;">support@kashiyatra.in</a>
+                            <!-- Refund Notice -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 20px;">
+                                <tr>
+                                    <td style="padding: 18px 20px; background: linear-gradient(90deg, #052e16 0%, #14532d 50%, #052e16 100%); border-radius: 10px; border: 1px solid #22c55e;">
+                                        <p style="margin: 0; color: #86efac; font-size: 14px; line-height: 1.6;">
+                                            <strong style="color: #4ade80;">💰 Refund Notice:</strong> If your money was deducted, it will be automatically refunded within 5-7 business days.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.6; text-align: center;">
+                                Need help? Contact us at 
+                                <a href="mailto:support@kashiyatra.in" style="color: #fbbf24; text-decoration: none; font-weight: 600;">support@kashiyatra.in</a>
                             </p>
                         </td>
                     </tr>
                     
                     <!-- Footer -->
                     <tr>
-                        <td style="padding: 30px; background-color: #0a0a15; border-top: 1px solid #D4A85320;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                                <tr>
-                                    <td style="text-align: center;">
-                                        <p style="margin: 0 0 8px 0; color: #D4A853; font-size: 16px; font-weight: 700; letter-spacing: 1px;">KASHIYATRA 2027</p>
-                                        <p style="margin: 0 0 16px 0; color: #6B6B6B; font-size: 12px;">IIT BHU's Premier Cultural Festival</p>
-                                        <p style="margin: 0; color: #4B4B4B; font-size: 11px;">
-                                            © 2027 Kashiyatra, IIT (BHU) Varanasi. All rights reserved.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
+                        <td style="padding: 28px 20px; background: linear-gradient(180deg, #0d1117 0%, #161b22 100%); text-align: center; border-top: 1px solid #30363d;">
+                            <p style="margin: 0 0 6px 0; color: #fbbf24; font-size: 18px; font-weight: 700; letter-spacing: 3px;">KASHIYATRA 2027</p>
+                            <p style="margin: 0 0 16px 0; color: #6b7280; font-size: 13px;">IIT BHU's Premier Cultural Festival</p>
+                            <p style="margin: 0; color: #4b5563; font-size: 11px;">
+                                © 2027 Kashiyatra, IIT (BHU) Varanasi
+                            </p>
                         </td>
                     </tr>
                 </table>
