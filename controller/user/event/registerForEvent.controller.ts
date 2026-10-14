@@ -11,26 +11,6 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
 import type { RegisterForEventRequestSchemaType } from "@schemas/event/event.schema.js";
 
 /**
- * MongoDB duplicate-key error code. Raised when an insert/upsert violates a
- * unique index (e.g. two concurrent registrations for the same user+event).
- */
-const MONGO_DUPLICATE_KEY_ERROR = 11000;
-
-/**
- * Type guard for a MongoDB duplicate-key (E11000) error. This lets us treat a
- * lost race on a unique index as a clean "already registered" conflict rather
- * than an unhandled 500.
- */
-function isDuplicateKeyError(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: unknown }).code === MONGO_DUPLICATE_KEY_ERROR
-  );
-}
-
-/**
  * Get all team IDs that any of the given users belong to
  */
 async function getTeamIdsForUsers(userIds: string[]): Promise<string[]> {
@@ -89,24 +69,6 @@ const registerForEvent = catchAsync(
       );
     }
 
-    // 1.6. Check max participants capacity (if set)
-    if (event.maxParticipants !== null) {
-      const currentRegistrationCount = await EventRegistrationModel.countDocuments({
-        eventSlug: slug,
-        status: { $in: ["pending", "confirmed"] }, // Don't count cancelled
-      });
-
-      if (currentRegistrationCount >= event.maxParticipants) {
-        return next(
-          new BadRequest().handleResponse(res, {
-            info: "This event has reached maximum capacity. Registration is closed.",
-            currentCount: currentRegistrationCount,
-            maxParticipants: event.maxParticipants,
-          }),
-        );
-      }
-    }
-
     // 2. Handle based on request type (discriminated union)
     if (body.type === "individual") {
       // Validate event allows individual participation
@@ -120,49 +82,13 @@ const registerForEvent = catchAsync(
 
       // Note: isPaidUser check is handled by checkUserHasPaidMiddleware
 
-      // Atomic duplicate-registration guard.
-      //
-      // Instead of find-then-create (which races: two concurrent requests can
-      // both pass the `findOne` check and then both insert), we upsert on the
-      // unique (eventSlug, userId) key. `$setOnInsert` only writes fields when
-      // a new document is created; if the registration already exists the
-      // document is returned unchanged. The unique partial index is the source
-      // of truth, so even racing upserts resolve to exactly one document.
-      let registration;
-      let wasNewlyCreated = false;
-      try {
-        const result = await EventRegistrationModel.findOneAndUpdate(
-          { eventSlug: slug, userId },
-          {
-            $setOnInsert: {
-              eventSlug: slug,
-              userId,
-              participationType: "individual",
-              status: "confirmed",
-            },
-          },
-          { upsert: true, new: true, includeResultMetadata: true },
-        );
+      // Check if already registered
+      const existingRegistration = await EventRegistrationModel.findOne({
+        eventSlug: slug,
+        userId,
+      });
 
-        registration = result.value;
-        // `updatedExisting` is false only when the upsert performed an insert.
-        wasNewlyCreated = result.lastErrorObject?.updatedExisting === false;
-      } catch (err) {
-        // Lost the race on the unique index: another request inserted the same
-        // (eventSlug, userId) between our upsert's find and modify phases.
-        if (isDuplicateKeyError(err)) {
-          return next(
-            new BadRequest().handleResponse(res, {
-              info: "You are already registered for this event",
-            }),
-          );
-        }
-        throw err;
-      }
-
-      if (!wasNewlyCreated || !registration) {
-        // Document already existed before this request (or, defensively, the
-        // upsert returned no document).
+      if (existingRegistration) {
         return next(
           new BadRequest().handleResponse(res, {
             info: "You are already registered for this event",
@@ -170,28 +96,13 @@ const registerForEvent = catchAsync(
         );
       }
 
-      // Atomic capacity enforcement.
-      //
-      // The pre-insert count check above is only a fast-path rejection; under
-      // concurrency several requests can pass it simultaneously. After we have
-      // committed our own insert, re-count and if we overshot capacity, roll
-      // back this registration so capacity is never exceeded.
-      if (event.maxParticipants !== null) {
-        const confirmedCount = await EventRegistrationModel.countDocuments({
-          eventSlug: slug,
-          status: { $in: ["pending", "confirmed"] },
-        });
-
-        if (confirmedCount > event.maxParticipants) {
-          await EventRegistrationModel.deleteOne({ _id: registration._id });
-          return next(
-            new BadRequest().handleResponse(res, {
-              info: "This event has reached maximum capacity. Registration is closed.",
-              maxParticipants: event.maxParticipants,
-            }),
-          );
-        }
-      }
+      // Create registration
+      const registration = await EventRegistrationModel.create({
+        eventSlug: slug,
+        participationType: "individual",
+        userId,
+        status: "confirmed",
+      });
 
       new OkResponseStrategy().handleResponse(res, {
         info: "Successfully registered for event",
@@ -261,7 +172,7 @@ const registerForEvent = catchAsync(
       // 3.5. Check all team members have paid passes
       const memberIds = team.members.map((m) => m.userId);
       const paidMembers = await prisma.user.findMany({
-        where: { 
+        where: {
           id: { in: memberIds },
           isPaidUser: true,
         },
@@ -294,9 +205,6 @@ const registerForEvent = catchAsync(
       }
 
       // 5. Check no team member is already registered (individually or via another team)
-      // Note: memberIds was already extracted in step 3.5
-
-      // Get all team IDs that these members belong to
       const memberTeamIds = await getTeamIdsForUsers(memberIds);
 
       const existingMemberRegs = await EventRegistrationModel.find({
@@ -337,72 +245,16 @@ const registerForEvent = catchAsync(
         );
       }
 
-      // 6. Create registration.
-      //
-      // Steps 4 and 5 above check for duplicate-team and cross-team member
-      // conflicts, but find-then-create still races under concurrency. The
-      // upsert on the unique (eventSlug, teamId) partial index makes the
-      // team-duplicate case atomic: concurrent requests for the same team
-      // converge on one document, and a lost race surfaces as E11000 which we
-      // translate into a clean 409-style 400 response.
+      // 6. Create registration
       const participationType =
         event.participationType === "DUO" ? "duo" : "team";
 
-      let registration;
-      let wasNewlyCreated = false;
-      try {
-        const result = await EventRegistrationModel.findOneAndUpdate(
-          { eventSlug: slug, teamId },
-          {
-            $setOnInsert: {
-              eventSlug: slug,
-              participationType,
-              teamId,
-              status: "confirmed",
-            },
-          },
-          { upsert: true, new: true, includeResultMetadata: true },
-        );
-
-        registration = result.value;
-        wasNewlyCreated = result.lastErrorObject?.updatedExisting === false;
-      } catch (err) {
-        if (isDuplicateKeyError(err)) {
-          return next(
-            new BadRequest().handleResponse(res, {
-              info: "This team is already registered for this event",
-            }),
-          );
-        }
-        throw err;
-      }
-
-      if (!wasNewlyCreated || !registration) {
-        return next(
-          new BadRequest().handleResponse(res, {
-            info: "This team is already registered for this event",
-          }),
-        );
-      }
-
-      // Atomic capacity enforcement: re-count after our insert and roll back
-      // if we pushed the event past capacity (see individual path for rationale).
-      if (event.maxParticipants !== null) {
-        const confirmedCount = await EventRegistrationModel.countDocuments({
-          eventSlug: slug,
-          status: { $in: ["pending", "confirmed"] },
-        });
-
-        if (confirmedCount > event.maxParticipants) {
-          await EventRegistrationModel.deleteOne({ _id: registration._id });
-          return next(
-            new BadRequest().handleResponse(res, {
-              info: "This event has reached maximum capacity. Registration is closed.",
-              maxParticipants: event.maxParticipants,
-            }),
-          );
-        }
-      }
+      const registration = await EventRegistrationModel.create({
+        eventSlug: slug,
+        participationType,
+        teamId,
+        status: "confirmed",
+      });
 
       new OkResponseStrategy().handleResponse(res, {
         info: "Team successfully registered for event",
