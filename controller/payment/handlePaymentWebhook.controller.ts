@@ -64,7 +64,7 @@ export const handlePaymentWebhook = catchAsync(
     }
 
     // Schema transforms snake_case to camelCase and enum-validates status
-    const { orderId, status, amountPaise, paidAt } = req.validatedData;
+    const { orderId, status, paidAt } = req.validatedData;
 
     logger.info("Payment webhook received", { orderId, status });
 
@@ -98,30 +98,8 @@ export const handlePaymentWebhook = catchAsync(
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 3. Validate the paid amount matches the order total (only for PAID).
-    //    This blocks marking an order paid for a mismatched amount.
-    // ═══════════════════════════════════════════════════════════════════
-    if (status === "PAID") {
-      const expectedPaise = Math.round(purchase.totalAmount * 100);
-      if (amountPaise !== expectedPaise) {
-        logger.error("[security] Payment webhook amount mismatch", {
-          orderId,
-          expectedPaise,
-          receivedPaise: amountPaise,
-          userId: purchase.userId,
-          ip: req.ip,
-        });
-        return next(
-          new BadRequest().handleResponse(res, {
-            info: "Paid amount does not match order total",
-            orderId,
-          }),
-        );
-      }
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // 4. Handle based on status (enum-validated: PAID | FAILED | EXPIRED)
+    // 3. Handle based on status (enum-validated: PAID | FAILED | EXPIRED)
+    //    Amount validation is done in Go service when receiving from Cashfree
     // ═══════════════════════════════════════════════════════════════════
     if (status === "PAID") {
       await handleSuccessfulPayment(purchase, paidAt);
