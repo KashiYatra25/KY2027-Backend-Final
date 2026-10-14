@@ -48,7 +48,49 @@ export const checkoutCart = catchAsync(
     const { couponCode } = req.validatedData;
 
     // ═══════════════════════════════════════════════════════════════════
-    // 1. Fetch user's cart
+    // 1. Check for existing PENDING purchase that hasn't expired
+    //    If user already has a valid pending order, return it instead of
+    //    creating a new one. This prevents duplicate orders when user
+    //    clicks checkout multiple times or returns from Cashfree.
+    // ═══════════════════════════════════════════════════════════════════
+    const existingPending = await PurchaseModel.findOne({
+      userId,
+      status: "PENDING",
+      createdAt: { $gt: new Date(Date.now() - PENDING_ORDER_TTL_MS) },
+    }).lean();
+
+    if (existingPending) {
+      logger.info("Returning existing pending purchase", {
+        userId,
+        orderId: existingPending.orderId,
+        createdAt: existingPending.createdAt,
+      });
+
+      // Return the existing payment session
+      new OkResponseStrategy().handleResponse(res, {
+        info: "Returning existing pending order",
+        orderId: existingPending.orderId,
+        paymentSessionId: existingPending.paymentSessionId,
+        summary: {
+          items: existingPending.items,
+          subtotal: existingPending.subtotal,
+          discount: existingPending.discount,
+          total: existingPending.totalAmount,
+          currency: "INR",
+        },
+        coupon: existingPending.couponCode
+          ? {
+              id: existingPending.couponId!,
+              code: existingPending.couponCode,
+              discountAmount: existingPending.discount,
+            }
+          : null,
+      });
+      return;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 2. Fetch user's cart
     // ═══════════════════════════════════════════════════════════════════
     const cart = await CartModel.findOne({ userId }).lean();
 
@@ -61,7 +103,7 @@ export const checkoutCart = catchAsync(
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 2. Fetch pass details and calculate subtotal
+    // 3. Fetch pass details and calculate subtotal
     // ═══════════════════════════════════════════════════════════════════
     const passIds = cart.items.map((item) => item.passId);
     const passes = await PassModel.find({
@@ -105,10 +147,10 @@ export const checkoutCart = catchAsync(
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 3. Validate coupon (read-only fast-fail checks) and compute discount
+    // 4. Validate coupon (read-only fast-fail checks) and compute discount
     //
     //    NOTE: The checks below are a best-effort UX fast-fail. The real,
-    //    race-safe enforcement of usage limits happens in step 7 via an
+    //    race-safe enforcement of usage limits happens in step 8 via an
     //    atomic conditional UPDATE + reservation inside a transaction. Do
     //    NOT rely on these reads alone to gate usage.
     // ═══════════════════════════════════════════════════════════════════
@@ -201,7 +243,7 @@ export const checkoutCart = catchAsync(
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 4. Calculate final total
+    // 5. Calculate final total
     // ═══════════════════════════════════════════════════════════════════
     const totalPaise = subtotalPaise - discountPaise;
 
@@ -214,7 +256,7 @@ export const checkoutCart = catchAsync(
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 5. Fetch user details for payment
+    // 6. Fetch user details for payment
     //    User must exist (authenticated via middleware), use OrThrow for safety
     // ═══════════════════════════════════════════════════════════════════
     const user = await prisma.user.findUniqueOrThrow({
@@ -230,7 +272,7 @@ export const checkoutCart = catchAsync(
     const buyerName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Kashiyatra User";
 
     // ═══════════════════════════════════════════════════════════════════
-    // 6. Create payment order via gRPC
+    // 7. Create payment order via gRPC
     // ═══════════════════════════════════════════════════════════════════
     const idempotencyKey = `checkout_${userId}_${Date.now()}_${randomUUID().slice(0, 8)}`;
 
@@ -250,7 +292,7 @@ export const checkoutCart = catchAsync(
     });
 
     // ═══════════════════════════════════════════════════════════════════
-    // 7. Atomically reserve the coupon (race-safe) if one was applied
+    // 8. Atomically reserve the coupon (race-safe) if one was applied
     //
     //    This is the authoritative usage-limit enforcement. We:
     //      a) Conditionally increment currentUsageCount only while the global
@@ -352,7 +394,7 @@ export const checkoutCart = catchAsync(
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // 8. Create pending Purchase record (stores the reservation id)
+    // 9. Create pending Purchase record (stores the reservation id)
     // ═══════════════════════════════════════════════════════════════════
     await PurchaseModel.create({
       userId,
@@ -378,7 +420,7 @@ export const checkoutCart = catchAsync(
     });
 
     // ═══════════════════════════════════════════════════════════════════
-    // 8. Return payment session for frontend redirect
+    // 10. Return payment session for frontend redirect
     // ═══════════════════════════════════════════════════════════════════
     new OkResponseStrategy().handleResponse(res, {
       info: "Checkout initiated successfully",
