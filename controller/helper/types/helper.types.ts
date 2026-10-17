@@ -13,10 +13,9 @@ export type UserLookupParams =
 
 export type ProfileCompletionStep =
   | "accountProgress"
-  | "phoneVerification"
   | "collegeDetails"
-  | "aadhaarUpload"
-  | "aadhaarVerification";
+  | "identityVerification"
+  | "phoneVerification";
 
 // Single user profile check result
 export interface SingleProfileResult {

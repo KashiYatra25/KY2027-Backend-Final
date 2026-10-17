@@ -18,8 +18,7 @@ const isProfileComplete = (doc: AccountProgressDoc): boolean => {
   return Boolean(
     v?.hasVerifiedPhoneNumber &&
     v?.hasSelectedCollegeDetails &&
-    v?.hasAadhaarBeenUploaded &&
-    v?.hasAadhaarBeenVerified
+    v?.hasIdentityBeenVerified
   );
 };
 

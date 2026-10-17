@@ -4,17 +4,6 @@ export {
 } from "./caApplication.schema.js";
 
 export {
-  addToCartRequestSchema,
-  updateCartQuantityRequestSchema,
-  removeFromCartRequestSchema,
-  checkoutCartRequestSchema,
-  type AddToCartRequestSchemaType,
-  type UpdateCartQuantityRequestSchemaType,
-  type RemoveFromCartRequestSchemaType,
-  type CheckoutCartRequestSchemaType,
-} from "./cart.schema.js";
-
-export {
   contactUsRequestSchema,
   type ContactUsRequestSchemaType,
 } from "./contact.schema.js";
@@ -22,6 +11,8 @@ export {
 export {
   profileUpdationRequestSchema,
   type ProfileUpdationRequestSchemaType,
+  manualIdentityVerificationSchema,
+  type ManualIdentityVerificationSchemaType,
 } from "./profile.schema.js";
 
 export {

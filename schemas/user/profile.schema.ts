@@ -96,3 +96,29 @@ export const profileUpdationRequestSchema = z.object({
 });
 
 export type ProfileUpdationRequestSchemaType = z.infer<typeof profileUpdationRequestSchema>;
+
+// ═══════════════════════════════════════════════════════════════════
+// MANUAL IDENTITY VERIFICATION SCHEMA
+// For users who choose not to use Aadhaar
+// ═══════════════════════════════════════════════════════════════════
+
+export const manualIdentityVerificationSchema = z.object({
+  firstName: z
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be at most 100 characters"),
+  dateOfBirth: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+    .refine((val) => {
+      const date = new Date(val);
+      const now = new Date();
+      const minAge = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
+      const maxAge = new Date(now.getFullYear() - 100, now.getMonth(), now.getDate());
+      return date <= minAge && date >= maxAge;
+    }, "You must be between 10 and 100 years old"),
+  gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]),
+});
+
+export type ManualIdentityVerificationSchemaType = z.infer<typeof manualIdentityVerificationSchema>;

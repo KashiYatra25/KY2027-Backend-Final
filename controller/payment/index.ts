@@ -1,1 +1,1 @@
-export { handlePaymentWebhook } from "./handlePaymentWebhook.controller.js";
+export { handleKonfhubWebhook } from "./handleKonfhubWebhook.controller.js";

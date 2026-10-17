@@ -49,13 +49,6 @@ export {
 } from "./purchase/purchase.model.js";
 
 export {
-  CartModel,
-  CartSchema,
-  type CartDoc,
-  type CartSchemaType,
-} from "./cart/cart.model.js";
-
-export {
   VenueModel,
   VenueSchema,
   type VenueDoc,

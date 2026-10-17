@@ -26,6 +26,14 @@ enum RoleLevel {
   USER
 }
 
+"""
+Identity verification method
+"""
+enum IdentityVerificationMethod {
+  aadhaar
+  manual
+}
+
 # ═══════════════════════════════════════════════════════════════════
 # TYPES - User Profile (Prisma/PostgreSQL)
 # ═══════════════════════════════════════════════════════════════════
@@ -66,12 +74,14 @@ type Role {
 # ═══════════════════════════════════════════════════════════════════
 
 """
-Profile completion verification steps
+Profile completion verification steps (3-step system)
+Step 1: College
+Step 2: Identity (Aadhaar OR Manual)
+Step 3: Phone
 """
 type VerificationSteps {
-  aadhaarUploaded: Boolean!
-  aadhaarVerified: Boolean!
   college: Boolean!
+  identity: Boolean!
   phone: Boolean!
 }
 
@@ -85,6 +95,7 @@ type AccountProgress {
   completionPercentage: Int!
   currentStep: Int!
   isProfileComplete: Boolean!
+  identityVerificationMethod: IdentityVerificationMethod
   accountStatus: AccountStatus!
 }
 

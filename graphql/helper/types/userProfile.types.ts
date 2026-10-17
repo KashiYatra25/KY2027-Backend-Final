@@ -29,12 +29,14 @@ export type UserProfileData = {
 };
 
 /**
- * Verification steps for profile completion
+ * Verification steps for profile completion (3-step system)
+ * Step 1: College
+ * Step 2: Identity (Aadhaar OR Manual)
+ * Step 3: Phone
  */
 export type VerificationSteps = {
-  aadhaarUploaded: boolean;
-  aadhaarVerified: boolean;
   college: boolean;
+  identity: boolean;
   phone: boolean;
 };
 
@@ -48,6 +50,7 @@ export type AccountProgressData = {
   totalSteps: number;
   completionPercentage: number;
   isProfileComplete: boolean;
+  identityVerificationMethod: "aadhaar" | "manual" | null;
   accountStatus: "ACTIVE" | "SUSPENDED";
 };
 

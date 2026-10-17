@@ -4,7 +4,6 @@ import { BadRequest } from "zodex-axon/errors";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
-import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 
 const getAadhaarUploadConfirmation = catchAsync(
@@ -34,12 +33,10 @@ const getAadhaarUploadConfirmation = catchAsync(
       );
     }
 
-    const progress = await AccountProgressModel.findOne({ userId });
-    if (progress) {
-      progress.profileCompletionAndVerification!.hasAadhaarBeenUploaded = true;
-      await progress.save();
-      logger.info("Aadhaar upload confirmed", { userId, s3Key });
-    }
+    // S3 key already stored in user record by getUploadUrl endpoint
+    // This confirmation just validates the upload completed
+    // The actual identity verification flag is set when Textract processes the image
+    logger.info("Aadhaar upload confirmed", { userId, s3Key });
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Aadhaar image upload confirmed successfully",

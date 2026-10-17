@@ -10,7 +10,8 @@ import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 // GET MY ACCOUNT RESOLVER
 // Returns combined user profile (Prisma) + account progress (MongoDB)
 //
-// Step Order: College (1) → Aadhaar Upload (2) → Aadhaar Verify (3) → Phone (4)
+// Step Order: College (1) → Identity (2) → Phone (3)
+// Identity can be completed via Aadhaar OR Manual entry
 // ═══════════════════════════════════════════════════════════════════
 
 export const getMyAccountResolver = new MiddlewareChainPipeline()
@@ -54,46 +55,44 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
       // Fetch account progress from MongoDB
       const accountProgress = await AccountProgressModel.findOne({ userId });
 
-      // Calculate progress
-      // Step completion flags
+      // Step completion flags (new 3-step system)
       const steps = {
-        aadhaarUploaded:
-          accountProgress?.profileCompletionAndVerification
-            ?.hasAadhaarBeenUploaded ?? false,
-        aadhaarVerified:
-          accountProgress?.profileCompletionAndVerification
-            ?.hasAadhaarBeenVerified ?? false,
         college:
           accountProgress?.profileCompletionAndVerification
             ?.hasSelectedCollegeDetails ?? false,
+        identity:
+          accountProgress?.profileCompletionAndVerification
+            ?.hasIdentityBeenVerified ?? false,
         phone:
           accountProgress?.profileCompletionAndVerification
             ?.hasVerifiedPhoneNumber ?? false,
       };
 
+      // Track identity verification method (aadhaar or manual)
+      const identityVerificationMethod =
+        accountProgress?.profileCompletionAndVerification
+          ?.identityVerificationMethod ?? null;
+
       // ─────────────────────────────────────────────────────────────────
-      // Calculate currentStep based on NEW order:
+      // Calculate currentStep based on 3-step order:
       // Step 1: College
-      // Step 2: Aadhaar Upload
-      // Step 3: Aadhaar Verify
-      // Step 4: Phone
-      // Step 5: All complete (redirect to profile)
+      // Step 2: Identity (Aadhaar OR Manual)
+      // Step 3: Phone
+      // Step 4: All complete (redirect to profile)
       // ─────────────────────────────────────────────────────────────────
       let currentStep: number;
       if (!steps.college) {
         currentStep = 1; // College step
-      } else if (!steps.aadhaarUploaded) {
-        currentStep = 2; // Aadhaar upload step
-      } else if (!steps.aadhaarVerified) {
-        currentStep = 3; // Aadhaar verify step
+      } else if (!steps.identity) {
+        currentStep = 2; // Identity verification step
       } else if (!steps.phone) {
-        currentStep = 4; // Phone step
+        currentStep = 3; // Phone step
       } else {
-        currentStep = 5; // All complete
+        currentStep = 4; // All complete
       }
 
       const completedSteps = Object.values(steps).filter(Boolean).length;
-      const totalSteps = 4;
+      const totalSteps = 3;
       const completionPercentage = Math.round(
         (completedSteps / totalSteps) * 100
       );
@@ -112,6 +111,7 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
           totalSteps,
           completionPercentage,
           isProfileComplete,
+          identityVerificationMethod,
           accountStatus:
             (accountProgress?.accountStatus as "ACTIVE" | "SUSPENDED") ??
             "ACTIVE",

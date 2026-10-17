@@ -103,21 +103,9 @@ function createRuntimeEnvironment(
         .string()
         .default("7d"),
 
-      // gRPC Payment Service Configuration
-      PAYMENT_GRPC_HOST: z
-        .string()
-        .min(1, "Payment gRPC host is required")
-        .default("localhost"),
-      PAYMENT_GRPC_PORT: z
-        .string()
-        .regex(/^\d+$/, "Payment gRPC port must be a number")
-        .default("50051"),
-      PAYMENT_SERVICE_TOKEN: z
-        .string()
-        .min(32, "Payment service token must be at least 32 characters"),
-      // Optional path to the payment service's TLS cert (used as the trusted
-      // root for the gRPC client). Empty/unset → insecure channel (dev only).
-      PAYMENT_GRPC_CA_CERT: z.string().optional().default(""),
+      // KonfHub Webhook Configuration (optional - for signature verification)
+      // If set, webhook requests will be verified using this secret
+      KONFHUB_WEBHOOK_SECRET: z.string().optional().default(""),
     },
     clientPrefix: "CLIENT",
     client: {

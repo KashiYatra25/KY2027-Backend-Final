@@ -44,10 +44,11 @@ const updateUserInfoBasedOnAadhaarData = catchAsync(
       },
     });
 
-    // Update MongoDB - mark Aadhaar as verified (post-save hooks will handle the rest)
+    // Update MongoDB - mark identity as verified via Aadhaar (post-save hooks will handle the rest)
     const progress = await AccountProgressModel.findOne({ userId });
     if (progress) {
-      progress.profileCompletionAndVerification!.hasAadhaarBeenVerified = true;
+      progress.profileCompletionAndVerification!.hasIdentityBeenVerified = true;
+      progress.profileCompletionAndVerification!.identityVerificationMethod = "aadhaar";
       await progress.save();
       logger.info("Aadhaar verified and profile updated", { userId, aadhaarLast4: aadhaarNumber.slice(-4), gender, dob });
     }

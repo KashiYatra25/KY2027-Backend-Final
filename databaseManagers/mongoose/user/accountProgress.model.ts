@@ -23,13 +23,16 @@ export const AccountProgressSchema = new Schema(
         type: Boolean,
         default: false,
       },
-      hasAadhaarBeenUploaded: {
+      // Identity verification (Aadhaar OR manual entry)
+      hasIdentityBeenVerified: {
         type: Boolean,
         default: false,
       },
-      hasAadhaarBeenVerified: {
-        type: Boolean,
-        default: false,
+      // Track how user verified their identity
+      identityVerificationMethod: {
+        type: String,
+        enum: ["aadhaar", "manual", null],
+        default: null,
       },
     },
   },

@@ -24,7 +24,6 @@ export {
   caApplicationRateLimiterMiddleware,
   referralRateLimiterMiddleware,
   caPublicRateLimiterMiddleware,
-  cartRateLimiterMiddleware,
   searchRateLimiterMiddleware,
   profileRateLimiterMiddleware,
   contactRateLimiterMiddleware,

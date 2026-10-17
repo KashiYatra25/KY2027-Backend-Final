@@ -61,8 +61,7 @@ const sendMasterAdminCredentials = async () => {
     if (
       !progress ||
       !progress.profileCompletionAndVerification?.hasSelectedCollegeDetails ||
-      !progress.profileCompletionAndVerification?.hasAadhaarBeenUploaded ||
-      !progress.profileCompletionAndVerification?.hasAadhaarBeenVerified ||
+      !progress.profileCompletionAndVerification?.hasIdentityBeenVerified ||
       !progress.profileCompletionAndVerification?.hasVerifiedPhoneNumber
     ) {
       throw new Error("Master admin profile is not complete or verified.");

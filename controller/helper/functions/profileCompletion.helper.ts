@@ -9,26 +9,23 @@ import type {
 
 /**
  * Extract missing steps from profile verification data
+ * New 3-step system: College → Identity → Phone
  */
 const getMissingSteps = (verification: {
   hasVerifiedPhoneNumber?: boolean;
   hasSelectedCollegeDetails?: boolean;
-  hasAadhaarBeenUploaded?: boolean;
-  hasAadhaarBeenVerified?: boolean;
+  hasIdentityBeenVerified?: boolean;
 } | null | undefined): ProfileCompletionStep[] => {
   const missingSteps: ProfileCompletionStep[] = [];
 
-  if (!verification?.hasVerifiedPhoneNumber) {
-    missingSteps.push("phoneVerification");
-  }
   if (!verification?.hasSelectedCollegeDetails) {
     missingSteps.push("collegeDetails");
   }
-  if (!verification?.hasAadhaarBeenUploaded) {
-    missingSteps.push("aadhaarUpload");
+  if (!verification?.hasIdentityBeenVerified) {
+    missingSteps.push("identityVerification");
   }
-  if (!verification?.hasAadhaarBeenVerified) {
-    missingSteps.push("aadhaarVerification");
+  if (!verification?.hasVerifiedPhoneNumber) {
+    missingSteps.push("phoneVerification");
   }
 
   return missingSteps;
