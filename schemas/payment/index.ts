@@ -1,7 +1,5 @@
 export {
-  konfhubWebhookRequestSchema,
   KONFHUB_EVENT_TYPES,
-  type KonfHubWebhookRequestSchemaType,
   type KonfHubEventType,
-  type KonfHubAttendee,
+  type KonfHubWebhookPayload,
 } from "./konfhub.webhook.schema.js";

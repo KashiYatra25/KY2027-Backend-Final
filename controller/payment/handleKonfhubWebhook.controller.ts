@@ -240,21 +240,34 @@ async function handleRegistration(
     data: { isPaidUser: true },
   });
 
-  // Queue confirmation email
+  // Queue confirmation email with data matching the template
   const userName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || attendee.name;
+  const registeredDate = eventAt.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  
   await queuePassesInvoiceEmail({
     userName,
     email: user.email,
     invoiceUrl: attendee.invoiceUrl || "",
     orderDetails: {
-      passType,
-      ticketName: attendee.ticketName,
-      ticketPrice: attendee.ticketPrice,
-      amountPaid: attendee.amountPaid,
-      attendeeName: attendee.name,
-      registeredAt: eventAt.toISOString(),
-      bookingId: attendee.bookingId,
-      ticketUrl: attendee.ticketUrl,
+      // Template expects these exact field names
+      orderId: attendee.bookingId,
+      paidAt: registeredDate,
+      items: [
+        {
+          passName: passType,
+          quantity: 1,
+          unitPrice: attendee.ticketPrice,
+        },
+      ],
+      subtotal: attendee.ticketPrice,
+      discount: attendee.couponCode ? attendee.ticketPrice - attendee.amountPaid : 0,
+      couponCode: attendee.couponCode,
+      totalAmount: attendee.amountPaid,
+      viewPassUrl: attendee.ticketUrl || "https://kashiyatra.in/profile",
     },
   });
 
@@ -394,6 +407,11 @@ export const handleKonfhubWebhook = async (
   req: Request,
   res: Response
 ) => {
+  logger.info({ 
+    msg: "KonfHub webhook received - raw body",
+    body: JSON.stringify(req.body, null, 2),
+  });
+  
   try {
     // Parse raw body
     const rawBody = req.body as Record<string, unknown>;
