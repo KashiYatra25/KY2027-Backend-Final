@@ -25,11 +25,15 @@ const cancelRegistration = catchAsync(
     const slug = req.params.slug as string;
     const { id: userId } = authReq.user;
 
+    console.log("Cancel registration request:", { slug, userId });
+
     // 1. Find user's individual registration for this event
     let registration = await EventRegistrationModel.findOne({
       eventSlug: slug,
       userId,
     });
+
+    console.log("Found individual registration:", registration?._id);
 
     if (registration) {
       // Individual registration - user can cancel
@@ -62,6 +66,8 @@ const cancelRegistration = catchAsync(
       .select("teamId createdBy")
       .lean();
 
+    console.log("User teams:", userTeams);
+
     const userTeamIds = userTeams.map((t) => t.teamId);
 
     // Find team registration for this event
@@ -70,7 +76,13 @@ const cancelRegistration = catchAsync(
       teamId: { $in: userTeamIds },
     });
 
+    console.log("Found team registration:", registration?._id);
+
     if (!registration) {
+      // Debug: Find any registration for this slug
+      const anyReg = await EventRegistrationModel.findOne({ eventSlug: slug });
+      console.log("Any registration for this slug:", anyReg ? { userId: anyReg.userId, teamId: anyReg.teamId } : null);
+      
       return next(
         new NotFound().handleResponse(res, {
           info: "You are not registered for this event",
