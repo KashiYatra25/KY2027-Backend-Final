@@ -41,7 +41,6 @@ model User {
   admin         Admin?
   caApplication CaApplication?
   caProfile     CaProfile?
-  couponUsages  CouponUsage[]
   referredByCa  CaProfile?           @relation("ReferredUsers", fields: [referredByCaId], references: [id])
   suspensions   AccountSuspension[]  // Suspension records for this user
 }

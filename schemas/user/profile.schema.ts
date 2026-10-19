@@ -108,6 +108,15 @@ export const manualIdentityVerificationSchema = z.object({
     .trim()
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name must be at most 100 characters"),
+  aadhaarNumber: z
+    .string()
+    .trim()
+    .transform((val) => val.replace(/\s/g, "")) // strip spaces (users often type 1234 5678 9012)
+    .pipe(
+      z
+        .string()
+        .regex(/^\d{12}$/, "Aadhaar number must be exactly 12 digits"),
+    ),
   dateOfBirth: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
@@ -122,3 +131,14 @@ export const manualIdentityVerificationSchema = z.object({
 });
 
 export type ManualIdentityVerificationSchemaType = z.infer<typeof manualIdentityVerificationSchema>;
+
+// ═══════════════════════════════════════════════════════════════════
+// SELECT IDENTITY METHOD SCHEMA
+// Commits the user's choice (aadhaar | manual) so it can be locked.
+// ═══════════════════════════════════════════════════════════════════
+
+export const selectIdentityMethodSchema = z.object({
+  method: z.enum(["aadhaar", "manual"]),
+});
+
+export type SelectIdentityMethodSchemaType = z.infer<typeof selectIdentityMethodSchema>;

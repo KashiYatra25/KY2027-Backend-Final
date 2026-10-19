@@ -6,6 +6,7 @@ import { S3Manager } from "@services/s3/index.js";
 import { logger } from "@logger/logger.js";
 import { prisma } from "@root/prisma.js";
 import { env } from "@lib/env/environment.js";
+import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 
 /**
@@ -49,6 +50,30 @@ const getUploadUrl = catchAsync(
       where: { id: userId },
       data: { aadhaarS3Key: s3Key },
     });
+
+    // Commit the identity method to "aadhaar" the moment the upload starts,
+    // locking out the manual path (unless already set / already verified).
+    // This is defense-in-depth alongside the explicit select-method endpoint.
+    try {
+      const progress = await AccountProgressModel.findOne({ userId });
+      const verification = progress?.profileCompletionAndVerification;
+      if (
+        progress &&
+        verification &&
+        !verification.hasIdentityBeenVerified &&
+        !verification.identityVerificationMethod
+      ) {
+        verification.identityVerificationMethod = "aadhaar";
+        await progress.save();
+        logger.info("Identity method locked to aadhaar on upload start", { userId });
+      }
+    } catch (err) {
+      // Non-fatal: never block the upload-url flow on method-locking.
+      logger.warn("Failed to lock identity method on upload start", {
+        userId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
 
     const data = {
       uploadUrl,

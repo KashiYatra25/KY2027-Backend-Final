@@ -112,15 +112,13 @@ function createRuntimeEnvironment(
       // configured on the KonfHub event form (e.g. "KY_ID" or "KY-2027-ID").
       KONFHUB_KY_ID_FIELD: z.string().min(1).default("KY_ID"),
 
-      // KonfHub ticket-name keyword mappings (comma-separated, case-insensitive).
-      // Used to map a KonfHub ticket name to our internal pass tier.
-      // Anything not matching Darbar/Swarnim falls back to the Yatri (default) tier.
-      KONFHUB_DARBAR_KEYWORDS: z
+      // KonfHub ticket-name -> pass tier mapping.
+      // Format: "Ticket Name=tier;Other Ticket=tier"  (tier = darbar|swarnim|yatri)
+      // Matching is case-insensitive on the full ticket name, with a
+      // contains-match fallback; anything unmatched defaults to Yatri.
+      KONFHUB_TICKET_TIER_MAP: z
         .string()
-        .default("darbar,vip,platinum"),
-      KONFHUB_SWARNIM_KEYWORDS: z
-        .string()
-        .default("swarnim,gold"),
+        .default("Darbar Pass=darbar;Swarnim Pass=swarnim;Yatri Pass=yatri"),
     },
     clientPrefix: "CLIENT",
     client: {

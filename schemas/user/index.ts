@@ -13,6 +13,8 @@ export {
   type ProfileUpdationRequestSchemaType,
   manualIdentityVerificationSchema,
   type ManualIdentityVerificationSchemaType,
+  selectIdentityMethodSchema,
+  type SelectIdentityMethodSchemaType,
 } from "./profile.schema.js";
 
 export {

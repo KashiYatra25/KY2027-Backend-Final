@@ -24,10 +24,11 @@ import {
   addReferralIdRequestSchema,
   userAuthenticationRequestSchema,
   manualIdentityVerificationSchema,
+  selectIdentityMethodSchema,
 } from "@schemas/user/index.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
-import { updateProfile, submitManualIdentity } from "@controller/user/profile/index.js";
+import { updateProfile, submitManualIdentity, selectIdentityMethod } from "@controller/user/profile/index.js";
 
 export const userRouter: ExpressRouter = Router();
 
@@ -101,6 +102,15 @@ userRouter.post(
   RequestGuardMiddleware({ body: manualIdentityVerificationSchema }),
   blockIfIdentityAlreadyVerifiedMiddleware,
   submitManualIdentity,
+);
+
+// Commit + lock the chosen identity verification method (aadhaar | manual)
+userRouter.post(
+  "/profile/identity-method",
+  profileRateLimiterMiddleware,
+  RequestGuardMiddleware({ body: selectIdentityMethodSchema }),
+  blockIfIdentityAlreadyVerifiedMiddleware,
+  selectIdentityMethod,
 );
 
 // ═══════════════════════════════════════════════════════════════════
