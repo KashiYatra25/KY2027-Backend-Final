@@ -121,6 +121,22 @@ function createRuntimeEnvironment(
       KONFHUB_SWARNIM_KEYWORDS: z
         .string()
         .default("swarnim,gold"),
+
+      // KonfHub Zonals ticket-name keyword mappings (comma-separated, case-insensitive).
+      // Each college has SINGLE and MULTI keywords - ticket name is matched against these.
+      // Same pattern as KONFHUB_DARBAR_KEYWORDS / KONFHUB_SWARNIM_KEYWORDS for main fest.
+      
+      // RGIPT Zonals
+      KONFHUB_ZONALS_RGIPT_SINGLE_KEYWORDS: z
+        .string()
+        .default("rgipt single"),
+      KONFHUB_ZONALS_RGIPT_MULTI_KEYWORDS: z
+        .string()
+        .default("rgipt multi,rgipt all"),
+      
+      // Add more colleges as needed:
+      // KONFHUB_ZONALS_NITP_SINGLE_KEYWORDS: z.string().default("nit patna single,nitp single"),
+      // KONFHUB_ZONALS_NITP_MULTI_KEYWORDS: z.string().default("nit patna multi,nitp multi"),
     },
     clientPrefix: "CLIENT",
     client: {

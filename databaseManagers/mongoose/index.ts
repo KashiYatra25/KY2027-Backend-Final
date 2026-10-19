@@ -63,4 +63,11 @@ export {
   type ScheduleEntrySchemaType,
 } from "./schedule/index.js";
 
+export {
+  ZonalUserCollegeModel,
+  ZonalUserCollegeSchema,
+  type ZonalUserCollegeDoc,
+  type ZonalUserCollegeSchemaType,
+} from "./zonals/index.js";
+
 export { connInstance, MongoDbConnection } from "./connection.js";
