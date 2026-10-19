@@ -106,6 +106,21 @@ function createRuntimeEnvironment(
       // KonfHub Webhook Configuration (optional - for signature verification)
       // If set, webhook requests will be verified using this secret
       KONFHUB_WEBHOOK_SECRET: z.string().optional().default(""),
+
+      // KonfHub custom-field key that carries our Kashiyatra ID in the
+      // webhook payload (attendee details). Must match the field name
+      // configured on the KonfHub event form (e.g. "KY_ID" or "KY-2027-ID").
+      KONFHUB_KY_ID_FIELD: z.string().min(1).default("KY_ID"),
+
+      // KonfHub ticket-name keyword mappings (comma-separated, case-insensitive).
+      // Used to map a KonfHub ticket name to our internal pass tier.
+      // Anything not matching Darbar/Swarnim falls back to the Yatri (default) tier.
+      KONFHUB_DARBAR_KEYWORDS: z
+        .string()
+        .default("darbar,vip,platinum"),
+      KONFHUB_SWARNIM_KEYWORDS: z
+        .string()
+        .default("swarnim,gold"),
     },
     clientPrefix: "CLIENT",
     client: {

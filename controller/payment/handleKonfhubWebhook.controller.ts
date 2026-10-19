@@ -2,7 +2,19 @@ import type { Request, Response } from "express";
 import { prisma } from "@root/prisma.js";
 import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
+import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
+
+// Parse a comma-separated keyword env var into a lowercased string[]
+function parseKeywords(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((k) => k.trim().toLowerCase())
+    .filter((k) => k.length > 0);
+}
+
+const DARBAR_KEYWORDS = parseKeywords(env.KONFHUB_DARBAR_KEYWORDS);
+const SWARNIM_KEYWORDS = parseKeywords(env.KONFHUB_SWARNIM_KEYWORDS);
 
 // ═══════════════════════════════════════════════════════════════════
 // KONFHUB WEBHOOK HANDLER
@@ -36,9 +48,9 @@ export interface KonfHubAttendee {
  */
 function mapTicketToPassDetails(ticketName: string) {
   const ticketLower = ticketName.toLowerCase();
-  
-  // Map based on ticket name patterns
-  if (ticketLower.includes("darbar") || ticketLower.includes("vip") || ticketLower.includes("platinum")) {
+
+  // Map based on ticket name patterns (keywords sourced from env)
+  if (DARBAR_KEYWORDS.some((kw) => ticketLower.includes(kw))) {
     return {
       passType: "Darbar Pass",
       benefits: {
@@ -56,7 +68,7 @@ function mapTicketToPassDetails(ticketName: string) {
         meetAndGreet: true,
       },
     };
-  } else if (ticketLower.includes("swarnim") || ticketLower.includes("gold")) {
+  } else if (SWARNIM_KEYWORDS.some((kw) => ticketLower.includes(kw))) {
     return {
       passType: "Swarnim Pass",
       benefits: {
@@ -439,7 +451,10 @@ export const handleKonfhubWebhook = async (
       name: String(details["Name"] || ""),
       email: String(details["Email Address"] || ""),
       phone: details["Phone Number"] ? String(details["Phone Number"]) : null,
-      kyId: details["KY_ID"] && String(details["KY_ID"]).trim() ? String(details["KY_ID"]).trim() : null,
+      kyId: (() => {
+        const raw = details[env.KONFHUB_KY_ID_FIELD];
+        return raw && String(raw).trim() ? String(raw).trim() : null;
+      })(),
       ticketName: String(ticketDetails["Ticket Name"] || ""),
       ticketPrice: Number(ticketDetails["Ticket Price"] || 0),
       amountPaid: Number(amountDetails["Amount Paid"] || 0),
