@@ -64,6 +64,16 @@ CREATE TABLE "Event" (
 );
 
 -- CreateTable
+CREATE TABLE "Partner" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Partner_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "CaApplication" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -146,6 +156,9 @@ CREATE UNIQUE INDEX "Admin_userId_key" ON "Admin"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Event_slug_key" ON "Event"("slug");
+
+-- CreateIndex
+CREATE INDEX "Partner_createdAt_idx" ON "Partner"("createdAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "CaApplication_userId_key" ON "CaApplication"("userId");

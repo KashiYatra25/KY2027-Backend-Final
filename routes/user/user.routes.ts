@@ -1,5 +1,6 @@
 import { authenticateUser } from "@controller/user/auth/index.js";
 import { submitContact } from "@controller/user/contact/index.js";
+import { becomePartner } from "@controller/user/partner/index.js";
 import { searchUsers } from "@controller/user/search/searchUsers.controller.js";
 import { getMyRegistrations } from "@controller/user/event/index.js";
 import { getPaymentStatus } from "@controller/user/payment/getPaymentStatus.controller.js";
@@ -20,6 +21,7 @@ import {
 import {
   profileUpdationRequestSchema,
   contactUsRequestSchema,
+  becomePartnerRequestSchema,
   searchUsersRequestSchema,
   addReferralIdRequestSchema,
   userAuthenticationRequestSchema,
@@ -49,6 +51,13 @@ userRouter.post(
   contactRateLimiterMiddleware,
   RequestGuardMiddleware({ body: contactUsRequestSchema }),
   submitContact,
+);
+
+userRouter.post(
+  "/become-partner",
+  contactRateLimiterMiddleware,
+  RequestGuardMiddleware({ body: becomePartnerRequestSchema }),
+  becomePartner,
 );
 
 // ═══════════════════════════════════════════════════════════════════

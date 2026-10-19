@@ -5,4 +5,5 @@ export type {
   Gender,
   Admin,
   CAApplicationStatus,
+  Partner,
 } from "@prisma/client";

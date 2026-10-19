@@ -1,0 +1,16 @@
+// ═══════════════════════════════════════════════════════════════════
+// PARTNER (Sponsorship Inquiry) MODEL
+//
+// Stores submissions from the sponsors page "Partner With Us" / LET'S TALK
+// form. Created via POST /user/become-partner (public); listed by admins
+// via GET /admin/partners (MANAGER / MASTER_ADMIN only).
+// ═══════════════════════════════════════════════════════════════════
+
+model Partner {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

@@ -9,6 +9,11 @@ export {
 } from "./contact.schema.js";
 
 export {
+  becomePartnerRequestSchema,
+  type BecomePartnerRequestSchemaType,
+} from "./partner.schema.js";
+
+export {
   profileUpdationRequestSchema,
   type ProfileUpdationRequestSchemaType,
   manualIdentityVerificationSchema,
