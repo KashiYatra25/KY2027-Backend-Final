@@ -113,32 +113,26 @@ export interface KonfHubAttendee {
  * Map a KonfHub ticket name to our pass tier + benefits.
  *
  * Resolution order:
- *   1. Exact ticket-name match (KONFHUB_TICKET_TIER_MAP) — preferred.
- *   2. Keyword substring match (KONFHUB_*_KEYWORDS) — fallback.
- *   3. Yatri tier — final default.
+ *   1. EXACT ticket-name match (KONFHUB_TICKET_TIER_MAP) — the only match.
+ *   2. Yatri tier — final default when there is no exact match.
+ *
+ * NOTE: matching is EXACT only (after case/whitespace normalization).
+ * No partial/substring matching — a ticket name must match a mapped name
+ * exactly, otherwise it falls through to the Yatri default.
  */
 function mapTicketToPassDetails(ticketName: string) {
   const normalized = normalizeTicketName(ticketName);
 
-  // 1. Exact normalized name match (preferred)
+  // Exact normalized name match — the ONLY way to resolve a specific tier.
   const exactTier = TICKET_TIER_MAP.get(normalized);
   if (exactTier) {
     logger.debug({ msg: "Ticket tier resolved", ticketName, via: "exact", tier: exactTier });
     return PASS_TIERS[exactTier];
   }
 
-  // 2. Contains match — handles names with extra suffixes/variants,
-  //    e.g. "Darbar Pass (Early Bird)" still resolves to darbar.
-  for (const [mappedName, tier] of TICKET_TIER_MAP.entries()) {
-    if (normalized.includes(mappedName)) {
-      logger.debug({ msg: "Ticket tier resolved", ticketName, via: "contains", tier });
-      return PASS_TIERS[tier];
-    }
-  }
-
-  // 3. Default
+  // No exact match → default (logged so unmapped names are visible).
   logger.warn({
-    msg: "Ticket tier unresolved — defaulting to Yatri",
+    msg: "Ticket tier unresolved (no exact match) — defaulting to Yatri",
     ticketName,
     normalized,
   });
