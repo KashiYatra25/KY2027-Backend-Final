@@ -46,7 +46,6 @@ const submitManualIdentity = catchAsync(
     const progress = await AccountProgressModel.findOne({ userId });
     if (progress) {
       progress.profileCompletionAndVerification!.hasIdentityBeenVerified = true;
-      progress.profileCompletionAndVerification!.identityVerificationMethod = "manual";
       await progress.save();
       logger.info("Manual identity verification completed", { userId, firstName, gender });
     }
