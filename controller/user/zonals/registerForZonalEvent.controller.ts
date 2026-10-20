@@ -3,11 +3,7 @@ import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { ZonalUserCollegeModel } from "@root/databaseManagers/mongoose/zonals/index.js";
-<<<<<<< HEAD
-import type { ZonalEligibilityRequest } from "@root/middleware/user/zonals/checkZonalEventRegistrationEligibility.middleware.js";
-=======
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
->>>>>>> ebd066fe0c2260b0696ce34c79f747c9fa416805
 
 // ═══════════════════════════════════════════════════════════════════
 // REGISTER FOR ZONAL EVENT - ATOMIC VERSION
