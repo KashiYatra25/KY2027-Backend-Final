@@ -296,42 +296,43 @@ const FEST_DAYS_DATA = [
 // Format: [categorySlug, eventSlug, venueSlug, day]
 // ═══════════════════════════════════════════════════════════════════
 
+// Reconciled to the real event slugs in scripts/data/events.data.ts.
+// Every entry references an existing Prisma Event slug (no orphans).
 const SCHEDULE_DATA: [string, string, string, number][] = [
-  ["NATRAJ", "nritya", "sb", 1],
-  ["NATRAJ", "cut-a-rug", "sac", 1],
-  ["NATRAJ", "ecstasy", "sac", 2],
-  ["NATRAJ", "cypher-of-mobs", "gymkhana-ground", 2],
-  ["NATRAJ", "synchronicity", "rajputana-ground", 3],
-  ["CROSSWINDZ", "sur", "sb", 2],
-  ["CROSSWINDZ", "band-of-bands", "rajputana-ground", 2],
-  ["CROSSWINDZ", "jugalbandi", "sb", 3],
-  ["CROSSWINDZ", "unplugged", "sac", 3],
+  // NATRAJ (dance)
+  ["NATRAJ", "cut-a-rug", "sb", 1],
+  ["NATRAJ", "sync-or-sink", "sac", 2],
+  ["NATRAJ", "footloose", "gymkhana-ground", 3],
+  // CROSSWINDZ (music)
+  ["CROSSWINDZ", "sur-sangam", "sb", 2],
+  ["CROSSWINDZ", "battle-of-bands", "rajputana-ground", 2],
+  ["CROSSWINDZ", "instrumental-solo", "sac", 3],
+  // BANDISH (classical)
   ["BANDISH", "raag-rang", "sb", 1],
-  ["BANDISH", "tantrang", "sb", 2],
-  ["BANDISH", "fusion-fiesta", "sb", 4],
+  ["BANDISH", "taal-vadya", "sb", 2],
+  ["BANDISH", "nritya-natya", "sb", 4],
+  // ABHINAY (theatre)
   ["ABHINAY", "mono-act", "lt-1", 1],
-  ["ABHINAY", "nukkad", "adv-ground", 2],
+  ["ABHINAY", "nukkad-natak", "adv-ground", 2],
   ["ABHINAY", "stage-play", "sb", 3],
-  ["ABHINAY", "mimicry", "lt-1", 3],
-  ["MIRAGE", "themed-fashion", "rajputana-ground", 1],
-  ["MIRAGE", "couture", "sac", 4],
-  ["MIRAGE", "runway", "rajputana-ground", 4],
-  ["TOOLIKA", "canvas", "main-building", 1],
-  ["TOOLIKA", "sketch-it", "main-building", 2],
-  ["TOOLIKA", "digital-art", "lt-3", 2],
-  ["TOOLIKA", "mural", "main-building", 3],
+  // MIRAGE (fashion/personality)
+  ["MIRAGE", "runway-revolution", "rajputana-ground", 1],
+  ["MIRAGE", "mr-and-ms-ky", "sac", 4],
+  // TOOLIKA (art)
+  ["TOOLIKA", "canvas-clash", "main-building", 1],
+  ["TOOLIKA", "sketch-storm", "main-building", 2],
+  ["TOOLIKA", "digital-dreams", "lt-3", 2],
+  // ENQUIZTA (quiz)
   ["ENQUIZTA", "general-quiz", "lt-2", 1],
   ["ENQUIZTA", "biz-quiz", "lt-2", 2],
-  ["ENQUIZTA", "sci-tech", "lt-4", 3],
-  ["ENQUIZTA", "entertainment", "lt-4", 4],
+  ["ENQUIZTA", "tech-trivia", "lt-4", 3],
+  // SAMWAAD (literary)
   ["SAMWAAD", "debate", "lt-3", 1],
   ["SAMWAAD", "poetry-slam", "lt-1", 2],
-  ["SAMWAAD", "extempore", "lt-4", 2],
   ["SAMWAAD", "creative-writing", "lt-3", 3],
-  ["SAMWAAD", "mun", "lt-2", 3],
-  ["ZAIKA", "masterchef", "adv-ground", 1],
-  ["ZAIKA", "bake-off", "adv-ground", 3],
-  ["ZAIKA", "mocktail", "adv-ground", 4],
+  // ZAIKA (culinary)
+  ["ZAIKA", "masterchef-ky", "adv-ground", 1],
+  ["ZAIKA", "mocktail-madness", "adv-ground", 4],
 ];
 
 // ═══════════════════════════════════════════════════════════════════
