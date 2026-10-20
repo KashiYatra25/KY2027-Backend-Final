@@ -4,7 +4,8 @@
   "description": "Kashi Yatra 2027 Backend - Standalone Express Server",
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && pnpm dlx tsc-alias -p tsconfig.build.json && shx cp -r services/email/views JS/services/email/",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && tsc -p tsconfig.build.json && pnpm dlx tsc-alias -p tsconfig.build.json && shx cp -r services/email/views JS/services/email/",
     "dev": "pnpm run build && cross-env NODE_ENV=development nodemon ./JS/server/server.js",
     "start:prod": "pnpm run build && cross-env NODE_ENV=production node ./JS/server/clusterManager/clusterManager.js",
     "start:test": "pnpm run build && cross-env NODE_ENV=testing node ./JS/server/server.js",
