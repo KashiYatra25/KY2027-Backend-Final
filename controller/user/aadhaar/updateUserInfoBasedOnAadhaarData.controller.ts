@@ -48,7 +48,6 @@ const updateUserInfoBasedOnAadhaarData = catchAsync(
     const progress = await AccountProgressModel.findOne({ userId });
     if (progress) {
       progress.profileCompletionAndVerification!.hasIdentityBeenVerified = true;
-      progress.profileCompletionAndVerification!.identityVerificationMethod = "aadhaar";
       await progress.save();
       logger.info("Aadhaar verified and profile updated", { userId, aadhaarLast4: aadhaarNumber.slice(-4), gender, dob });
     }

@@ -156,7 +156,6 @@ export const PurchaseSchema = new Schema(
       invoiceUrl: { type: String },              // PDF invoice URL
       
       // Optional fields
-      couponCode: { type: String },
       teamName: { type: String },
       
       // Timestamps

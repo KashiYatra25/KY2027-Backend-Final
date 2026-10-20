@@ -5,16 +5,83 @@ import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
 
-// Parse a comma-separated keyword env var into a lowercased string[]
-function parseKeywords(raw: string): string[] {
-  return raw
-    .split(",")
-    .map((k) => k.trim().toLowerCase())
-    .filter((k) => k.length > 0);
+/**
+ * Normalize a ticket name for robust comparison:
+ * lowercase, trim, and collapse all internal whitespace to single spaces.
+ * e.g. "  Darbar   Pass " -> "darbar pass"
+ */
+function normalizeTicketName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-const DARBAR_KEYWORDS = parseKeywords(env.KONFHUB_DARBAR_KEYWORDS);
-const SWARNIM_KEYWORDS = parseKeywords(env.KONFHUB_SWARNIM_KEYWORDS);
+// ─────────────────────────────────────────────────────────────────────
+// PASS TIERS — the three internal tiers and their benefit bundles.
+// ─────────────────────────────────────────────────────────────────────
+type PassTier = "darbar" | "swarnim" | "yatri";
+
+const PASS_TIERS = {
+  darbar: {
+    passType: "Darbar Pass",
+    benefits: {
+      festivalEntry: true,
+      allDaysAccess: true,
+      proNiteAccess: true,
+      proNiteSeating: "vip" as const,
+      welcomeKit: true,
+      tshirt: true,
+      merchandise: true,
+      mealsIncluded: 6,
+      refreshments: true,
+      backstageAccess: true,
+      workshopAccess: true,
+      meetAndGreet: true,
+    },
+  },
+  swarnim: {
+    passType: "Swarnim Pass",
+    benefits: {
+      festivalEntry: true,
+      allDaysAccess: true,
+      proNiteAccess: true,
+      proNiteSeating: "priority" as const,
+      welcomeKit: true,
+      tshirt: true,
+      mealsIncluded: 3,
+      refreshments: true,
+      workshopAccess: true,
+    },
+  },
+  yatri: {
+    passType: "Yatri Pass",
+    benefits: {
+      festivalEntry: true,
+      allDaysAccess: true,
+      proNiteAccess: true,
+      proNiteSeating: "general" as const,
+      welcomeKit: true,
+    },
+  },
+} as const;
+
+/**
+ * Build an exact ticket-name -> tier map from env.
+ * Format: "Darbar Pass=darbar;Swarnim Pass=swarnim;Yatri Pass=yatri"
+ * Keys are stored lowercased/trimmed for case-insensitive exact matching.
+ */
+function parseTierMap(raw: string): Map<string, PassTier> {
+  const map = new Map<string, PassTier>();
+  for (const entry of raw.split(";")) {
+    const [name, tier] = entry.split("=");
+    const key = name ? normalizeTicketName(name) : "";
+    const value = tier?.trim().toLowerCase();
+    if (key && (value === "darbar" || value === "swarnim" || value === "yatri")) {
+      map.set(key, value);
+    }
+  }
+  return map;
+}
+
+const TICKET_TIER_MAP = parseTierMap(env.KONFHUB_TICKET_TIER_MAP);
 
 // ═══════════════════════════════════════════════════════════════════
 // KONFHUB WEBHOOK HANDLER
@@ -37,65 +104,39 @@ export interface KonfHubAttendee {
   paymentId: string | null;
   ticketUrl: string | null;
   invoiceUrl: string | null;
-  couponCode: string | null;
   teamName: string | null;
   parentBookingId: string | null;
   buyerEmail: string | null;
 }
 
 /**
- * Map KonfHub ticket name to our pass type and benefits
+ * Map a KonfHub ticket name to our pass tier + benefits.
+ *
+ * Resolution order:
+ *   1. EXACT ticket-name match (KONFHUB_TICKET_TIER_MAP) — the only match.
+ *   2. Yatri tier — final default when there is no exact match.
+ *
+ * NOTE: matching is EXACT only (after case/whitespace normalization).
+ * No partial/substring matching — a ticket name must match a mapped name
+ * exactly, otherwise it falls through to the Yatri default.
  */
 function mapTicketToPassDetails(ticketName: string) {
-  const ticketLower = ticketName.toLowerCase();
+  const normalized = normalizeTicketName(ticketName);
 
-  // Map based on ticket name patterns (keywords sourced from env)
-  if (DARBAR_KEYWORDS.some((kw) => ticketLower.includes(kw))) {
-    return {
-      passType: "Darbar Pass",
-      benefits: {
-        festivalEntry: true,
-        allDaysAccess: true,
-        proNiteAccess: true,
-        proNiteSeating: "vip" as const,
-        welcomeKit: true,
-        tshirt: true,
-        merchandise: true,
-        mealsIncluded: 6,
-        refreshments: true,
-        backstageAccess: true,
-        workshopAccess: true,
-        meetAndGreet: true,
-      },
-    };
-  } else if (SWARNIM_KEYWORDS.some((kw) => ticketLower.includes(kw))) {
-    return {
-      passType: "Swarnim Pass",
-      benefits: {
-        festivalEntry: true,
-        allDaysAccess: true,
-        proNiteAccess: true,
-        proNiteSeating: "priority" as const,
-        welcomeKit: true,
-        tshirt: true,
-        mealsIncluded: 3,
-        refreshments: true,
-        workshopAccess: true,
-      },
-    };
-  } else {
-    // Default: Yatri Pass (includes "regular", "basic", "yatri", etc.)
-    return {
-      passType: "Yatri Pass",
-      benefits: {
-        festivalEntry: true,
-        allDaysAccess: true,
-        proNiteAccess: true,
-        proNiteSeating: "general" as const,
-        welcomeKit: true,
-      },
-    };
+  // Exact normalized name match — the ONLY way to resolve a specific tier.
+  const exactTier = TICKET_TIER_MAP.get(normalized);
+  if (exactTier) {
+    logger.debug({ msg: "Ticket tier resolved", ticketName, via: "exact", tier: exactTier });
+    return PASS_TIERS[exactTier];
   }
+
+  // No exact match → default (logged so unmapped names are visible).
+  logger.warn({
+    msg: "Ticket tier unresolved (no exact match) — defaulting to Yatri",
+    ticketName,
+    normalized,
+  });
+  return PASS_TIERS.yatri;
 }
 
 /**
@@ -193,7 +234,6 @@ async function handleRegistration(
         paymentId: attendee.paymentId,
         ticketUrl: attendee.ticketUrl,
         invoiceUrl: attendee.invoiceUrl,
-        couponCode: attendee.couponCode,
         teamName: attendee.teamName,
         registeredAt: eventAt,
         matchedBy: "unmatched",
@@ -231,7 +271,6 @@ async function handleRegistration(
       paymentId: attendee.paymentId,
       ticketUrl: attendee.ticketUrl,
       invoiceUrl: attendee.invoiceUrl,
-      couponCode: attendee.couponCode,
       teamName: attendee.teamName,
       registeredAt: eventAt,
       matchedBy,
@@ -276,8 +315,6 @@ async function handleRegistration(
         },
       ],
       subtotal: attendee.ticketPrice,
-      discount: attendee.couponCode ? attendee.ticketPrice - attendee.amountPaid : 0,
-      couponCode: attendee.couponCode,
       totalAmount: attendee.amountPaid,
       viewPassUrl: attendee.ticketUrl || "https://kashiyatra.in/profile",
     },
@@ -444,7 +481,6 @@ export const handleKonfhubWebhook = async (
     const details = (data?.["Attendee Details"] || {}) as Record<string, unknown>;
     const ticketDetails = (details["Ticket Details"] || {}) as Record<string, unknown>;
     const amountDetails = (details["Amount Details"] || {}) as Record<string, unknown>;
-    const couponDetails = (details["Coupon Details"] || {}) as Record<string, unknown>;
     
     const attendee: KonfHubAttendee = {
       bookingId: String(details["Booking Id"] || ""),
@@ -462,7 +498,6 @@ export const handleKonfhubWebhook = async (
       paymentId: String(details["payment_id"] || amountDetails["Payment ID"] || "") || null,
       ticketUrl: details["Ticket URL"] ? String(details["Ticket URL"]) : null,
       invoiceUrl: details["Invoice URL"] ? String(details["Invoice URL"]) : null,
-      couponCode: couponDetails["Coupon Code"] ? String(couponDetails["Coupon Code"]) : null,
       teamName: details["Team Name"] ? String(details["Team Name"]) : null,
       parentBookingId: details["Parent Booking Id"] ? String(details["Parent Booking Id"]) : null,
       buyerEmail: details["Buyer Email"] ? String(details["Buyer Email"]) : null,

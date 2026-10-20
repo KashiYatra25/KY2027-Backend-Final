@@ -15,7 +15,6 @@ import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/typ
 // CONVERT USER TO ADMIN
 // 
 // Promotes a regular user to admin role (MANAGER or OPERATOR).
-// Only IIT BHU users can be promoted to admin.
 // Sends invite email with temporary password via BullMQ.
 //
 // Hierarchy:
@@ -53,7 +52,6 @@ export const makeUserAdminOrPromoteAdmin = catchAsync(
         firstName: true,
         lastName: true,
         slugName: true,
-        isFromIITBhu: true,
         isSuspended: true,
         role: {
           select: { level: true },
@@ -72,16 +70,7 @@ export const makeUserAdminOrPromoteAdmin = catchAsync(
       );
     }
 
-    // 3. Check if user is from IIT BHU
-    if (!targetUser.isFromIITBhu) {
-      return next(
-        new BadRequest().handleResponse(res, {
-          info: "Only IIT BHU users can be promoted to admin",
-        }),
-      );
-    }
-
-    // 4. Check if user is suspended
+    // 3. Check if user is suspended
     if (targetUser.isSuspended) {
       return next(
         new BadRequest().handleResponse(res, {

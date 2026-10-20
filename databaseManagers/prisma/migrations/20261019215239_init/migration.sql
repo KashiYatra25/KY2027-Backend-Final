@@ -1,8 +1,8 @@
 -- CreateEnum
-CREATE TYPE "CouponType" AS ENUM ('PERCENTAGE', 'FIXED');
+CREATE TYPE "EventCategory" AS ENUM ('NATRAJ', 'CROSSWINDZ', 'BANDISH', 'ABHINAY', 'MIRAGE', 'TOOLIKA', 'ENQUIZTA', 'SAMWAAD', 'ZAIKA');
 
 -- CreateEnum
-CREATE TYPE "CouponStatus" AS ENUM ('ACTIVE', 'EXPIRED', 'DISABLED');
+CREATE TYPE "ParticipationType" AS ENUM ('INDIVIDUAL', 'DUO', 'TEAM');
 
 -- CreateEnum
 CREATE TYPE "CAApplicationStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED');
@@ -12,6 +12,19 @@ CREATE TYPE "RoleLevel" AS ENUM ('MASTER_ADMIN', 'MANAGER', 'OPERATOR', 'USER');
 
 -- CreateEnum
 CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY');
+
+-- CreateTable
+CREATE TABLE "AccountSuspension" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "suspendedBy" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "suspendedOn" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AccountSuspension_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "Admin" (
@@ -25,38 +38,39 @@ CREATE TABLE "Admin" (
 );
 
 -- CreateTable
-CREATE TABLE "Coupon" (
+CREATE TABLE "Event" (
     "id" TEXT NOT NULL,
-    "code" TEXT NOT NULL,
-    "description" TEXT,
-    "type" "CouponType" NOT NULL,
-    "value" INTEGER NOT NULL,
-    "maxUsageCount" INTEGER,
-    "maxUsagePerUser" INTEGER NOT NULL DEFAULT 1,
-    "currentUsageCount" INTEGER NOT NULL DEFAULT 0,
-    "validFrom" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "validUntil" TIMESTAMP(3),
-    "status" "CouponStatus" NOT NULL DEFAULT 'ACTIVE',
-    "applicablePassIds" TEXT[] DEFAULT ARRAY[]::TEXT[],
-    "createdBy" TEXT,
+    "slug" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "tagline" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "category" "EventCategory" NOT NULL,
+    "participationType" "ParticipationType" NOT NULL,
+    "minTeamSize" INTEGER,
+    "maxTeamSize" INTEGER,
+    "registrationOpen" BOOLEAN NOT NULL DEFAULT true,
+    "imageUrl" TEXT,
+    "rules" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "prizePool" TEXT,
+    "venue" TEXT,
+    "startsAt" TIMESTAMP(3),
+    "endsAt" TIMESTAMP(3),
+    "registrationDeadline" TIMESTAMP(3),
+    "maxParticipants" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Coupon_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Event_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "CouponUsage" (
+CREATE TABLE "Partner" (
     "id" TEXT NOT NULL,
-    "couponId" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "discountAmount" INTEGER NOT NULL,
-    "originalAmount" INTEGER NOT NULL,
-    "finalAmount" INTEGER NOT NULL,
-    "orderId" TEXT,
-    "usedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "CouponUsage_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Partner_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -64,6 +78,7 @@ CREATE TABLE "CaApplication" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "status" "CAApplicationStatus" NOT NULL DEFAULT 'PENDING',
+    "rejectionReason" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -118,30 +133,32 @@ CREATE TABLE "User" (
     "dob" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "isSuspended" BOOLEAN NOT NULL DEFAULT false,
+    "kyId" TEXT,
     "aadhaarNumber" TEXT,
     "aadhaarS3Key" TEXT,
     "isFromIITBhu" BOOLEAN NOT NULL DEFAULT false,
+    "isPaidUser" BOOLEAN NOT NULL DEFAULT false,
+    "referredByCaId" TEXT,
+    "referredAt" TIMESTAMP(3),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
+CREATE INDEX "AccountSuspension_userId_idx" ON "AccountSuspension"("userId");
+
+-- CreateIndex
+CREATE INDEX "AccountSuspension_suspendedBy_idx" ON "AccountSuspension"("suspendedBy");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Admin_userId_key" ON "Admin"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Coupon_code_key" ON "Coupon"("code");
+CREATE UNIQUE INDEX "Event_slug_key" ON "Event"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CouponUsage_orderId_key" ON "CouponUsage"("orderId");
-
--- CreateIndex
-CREATE INDEX "CouponUsage_couponId_idx" ON "CouponUsage"("couponId");
-
--- CreateIndex
-CREATE INDEX "CouponUsage_userId_idx" ON "CouponUsage"("userId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "CouponUsage_couponId_userId_orderId_key" ON "CouponUsage"("couponId", "userId", "orderId");
+CREATE INDEX "Partner_createdAt_idx" ON "Partner"("createdAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "CaApplication_userId_key" ON "CaApplication"("userId");
@@ -161,14 +178,17 @@ CREATE UNIQUE INDEX "Role_userId_key" ON "Role"("userId");
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "User_kyId_key" ON "User"("kyId");
+
+-- AddForeignKey
+ALTER TABLE "AccountSuspension" ADD CONSTRAINT "AccountSuspension_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AccountSuspension" ADD CONSTRAINT "AccountSuspension_suspendedBy_fkey" FOREIGN KEY ("suspendedBy") REFERENCES "Admin"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
 -- AddForeignKey
 ALTER TABLE "Admin" ADD CONSTRAINT "Admin_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CouponUsage" ADD CONSTRAINT "CouponUsage_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "Coupon"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CouponUsage" ADD CONSTRAINT "CouponUsage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CaApplication" ADD CONSTRAINT "CaApplication_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -181,3 +201,6 @@ ALTER TABLE "CaProfile" ADD CONSTRAINT "CaProfile_caApplicationId_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "Role" ADD CONSTRAINT "Role_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "User" ADD CONSTRAINT "User_referredByCaId_fkey" FOREIGN KEY ("referredByCaId") REFERENCES "CaProfile"("id") ON DELETE SET NULL ON UPDATE CASCADE;

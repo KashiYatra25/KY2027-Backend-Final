@@ -12,6 +12,9 @@ export { getCaApplications } from "./ca/getCaApplications.controller.js";
 export { approveCaApplication } from "./ca/approveCaApplication.controller.js";
 export { updateCaApplicationStatus } from "./ca/updateCaApplicationStatus.controller.js";
 
+// Partner (sponsorship inquiries) management
+export { getPartners } from "./partner/index.js";
+
 // Admin invite
 export { makeUserAdminOrPromoteAdmin } from "./promote/makeUserAdminOrPromoteAdmin.controller.js";
 

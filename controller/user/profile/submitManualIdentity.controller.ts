@@ -24,7 +24,7 @@ const submitManualIdentity = catchAsync(
     res: Response,
   ) => {
     const { id: userId } = req.user;
-    const { firstName, dateOfBirth, gender } = req.validatedData;
+    const { firstName, dateOfBirth, gender, aadhaarNumber } = req.validatedData;
 
     // Parse DOB
     const dob = new Date(dateOfBirth);
@@ -36,8 +36,8 @@ const submitManualIdentity = catchAsync(
         firstName,
         gender,
         dob,
-        // No Aadhaar number for manual verification
-        aadhaarNumber: null,
+        // Manually-entered Aadhaar number (no S3 image for manual flow)
+        aadhaarNumber,
         aadhaarS3Key: null,
       },
     });
@@ -46,7 +46,6 @@ const submitManualIdentity = catchAsync(
     const progress = await AccountProgressModel.findOne({ userId });
     if (progress) {
       progress.profileCompletionAndVerification!.hasIdentityBeenVerified = true;
-      progress.profileCompletionAndVerification!.identityVerificationMethod = "manual";
       await progress.save();
       logger.info("Manual identity verification completed", { userId, firstName, gender });
     }
@@ -56,6 +55,7 @@ const submitManualIdentity = catchAsync(
       firstName,
       gender,
       dateOfBirth,
+      aadhaarNumber,
     });
   },
 );

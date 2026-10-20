@@ -1,5 +1,6 @@
 import { authenticateUser } from "@controller/user/auth/index.js";
 import { submitContact } from "@controller/user/contact/index.js";
+import { becomePartner } from "@controller/user/partner/index.js";
 import { searchUsers } from "@controller/user/search/searchUsers.controller.js";
 import { getMyRegistrations } from "@controller/user/event/index.js";
 import { getPaymentStatus } from "@controller/user/payment/getPaymentStatus.controller.js";
@@ -20,14 +21,16 @@ import {
 import {
   profileUpdationRequestSchema,
   contactUsRequestSchema,
+  becomePartnerRequestSchema,
   searchUsersRequestSchema,
   addReferralIdRequestSchema,
   userAuthenticationRequestSchema,
   manualIdentityVerificationSchema,
+  selectIdentityMethodSchema,
 } from "@schemas/user/index.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
-import { updateProfile, submitManualIdentity } from "@controller/user/profile/index.js";
+import { updateProfile, submitManualIdentity, selectIdentityMethod } from "@controller/user/profile/index.js";
 
 export const userRouter: ExpressRouter = Router();
 
@@ -48,6 +51,13 @@ userRouter.post(
   contactRateLimiterMiddleware,
   RequestGuardMiddleware({ body: contactUsRequestSchema }),
   submitContact,
+);
+
+userRouter.post(
+  "/become-partner",
+  contactRateLimiterMiddleware,
+  RequestGuardMiddleware({ body: becomePartnerRequestSchema }),
+  becomePartner,
 );
 
 // ═══════════════════════════════════════════════════════════════════
@@ -101,6 +111,15 @@ userRouter.post(
   RequestGuardMiddleware({ body: manualIdentityVerificationSchema }),
   blockIfIdentityAlreadyVerifiedMiddleware,
   submitManualIdentity,
+);
+
+// Commit + lock the chosen identity verification method (aadhaar | manual)
+userRouter.post(
+  "/profile/identity-method",
+  profileRateLimiterMiddleware,
+  RequestGuardMiddleware({ body: selectIdentityMethodSchema }),
+  blockIfIdentityAlreadyVerifiedMiddleware,
+  selectIdentityMethod,
 );
 
 // ═══════════════════════════════════════════════════════════════════
