@@ -23,6 +23,7 @@ function createRuntimeEnvironment(
         .regex(/^\d+$/, "Port must be a number")
         .transform(Number)
         .default(6379),
+      REDIS_USERNAME: z.string().min(1).default("default"),
       REDIS_PASSWORD: z.string().min(5, "Redis password is required"),
       DATABASE_URL: z.string().min(10, "Postgres Database URL is required"),
       Mongodb_Database_URL: z
