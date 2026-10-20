@@ -137,6 +137,20 @@ function createRuntimeEnvironment(
       // Add more colleges as needed:
       // KONFHUB_ZONALS_NITP_SINGLE_KEYWORDS: z.string().default("nit patna single,nitp single"),
       // KONFHUB_ZONALS_NITP_MULTI_KEYWORDS: z.string().default("nit patna multi,nitp multi"),
+
+      // ═══════════════════════════════════════════════════════════════════
+      // OBSERVABILITY - Loki / Grafana Cloud
+      // ═══════════════════════════════════════════════════════════════════
+      
+      // Loki endpoint - local or Grafana Cloud
+      // Local: http://localhost:3100
+      // Grafana Cloud: https://logs-prod-xxx.grafana.net
+      LOKI_HOST: z.string().url().default("http://localhost:3100"),
+      
+      // Grafana Cloud auth (optional - only needed for Grafana Cloud)
+      // Get these from: Grafana Cloud → Your Stack → Loki → Details
+      LOKI_USER: z.string().optional(),
+      LOKI_API_KEY: z.string().optional(),
     },
     clientPrefix: "CLIENT",
     client: {

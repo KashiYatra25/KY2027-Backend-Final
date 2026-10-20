@@ -30,3 +30,7 @@ coverage
 
 # Seeder (contains event data - temporary)
 data/seeder.ts
+
+# k6 temp test files
+observability/k6/debug-test.js
+observability/k6/simple-test.js

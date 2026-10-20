@@ -1,0 +1,115 @@
+# ═══════════════════════════════════════════════════════════════════
+# LOCAL OBSERVABILITY STACK
+# 
+# For development: Alloy + Loki + Prometheus + Grafana
+# For production: Just Alloy (forwards to Grafana Cloud)
+#
+# Usage:
+#   Development: docker-compose up -d
+#   Production:  docker-compose up -d alloy
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  # ─────────────────────────────────────────────────────────────────
+  # ALLOY - Collector agent (always needed)
+  # ─────────────────────────────────────────────────────────────────
+  alloy:
+    image: grafana/alloy:latest
+    container_name: ky-alloy
+    restart: unless-stopped
+    ports:
+      - "3100:3100"   # Loki push endpoint (app sends logs here)
+      - "12345:12345" # Alloy UI
+    volumes:
+      - ./alloy.config:/etc/alloy/config.alloy:ro
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - HOSTNAME=${HOSTNAME:-localhost}
+      - APP_HOST=host.docker.internal:8000
+      # Grafana Cloud credentials
+      - GRAFANA_CLOUD_LOKI_URL=${GRAFANA_CLOUD_LOKI_URL:-https://logs-prod-028.grafana.net/loki/api/v1/push}
+      - GRAFANA_CLOUD_LOKI_USER=${GRAFANA_CLOUD_LOKI_USER:-1814024}
+      - GRAFANA_CLOUD_PROMETHEUS_URL=${GRAFANA_CLOUD_PROMETHEUS_URL:-https://prometheus-prod-43-prod-ap-south-1.grafana.net/api/prom/push}
+      - GRAFANA_CLOUD_PROMETHEUS_USER=${GRAFANA_CLOUD_PROMETHEUS_USER:-3636715}
+      - GRAFANA_CLOUD_API_KEY=${GRAFANA_CLOUD_API_KEY}
+    networks:
+      - observability
+    # For production, only alloy is needed
+    profiles:
+      - production
+      - development
+
+  # ─────────────────────────────────────────────────────────────────
+  # LOKI - Log aggregation (development only)
+  # ─────────────────────────────────────────────────────────────────
+  loki:
+    image: grafana/loki:latest
+    container_name: ky-loki
+    restart: unless-stopped
+    ports:
+      - "3101:3100"
+    volumes:
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - observability
+    profiles:
+      - development
+
+  # ─────────────────────────────────────────────────────────────────
+  # PROMETHEUS - Metrics storage (development only)
+  # ─────────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ky-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver
+    networks:
+      - observability
+    profiles:
+      - development
+
+  # ─────────────────────────────────────────────────────────────────
+  # GRAFANA - Dashboards (development only)
+  # ─────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ky-grafana
+    restart: unless-stopped
+    ports:
+      - "3200:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - observability
+    depends_on:
+      - loki
+      - prometheus
+    profiles:
+      - development
+
+networks:
+  observability:
+    driver: bridge
+
+volumes:
+  loki-data:
+  prometheus-data:
+  grafana-data:

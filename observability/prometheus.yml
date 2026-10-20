@@ -1,0 +1,21 @@
+# Prometheus config for local development
+# In production, Alloy forwards metrics to Grafana Cloud instead
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Scrape the Node.js backend
+  - job_name: 'ky-backend'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+    metrics_path: '/metrics'
+
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+# Enable remote write receiver (for Alloy)
+remote_write: []
