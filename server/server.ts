@@ -17,6 +17,14 @@ import {
 // Create HTTP server from Express app (required for Apollo drain plugin)
 const httpServer = http.createServer(app);
 
+// ═══════════════════════════════════════════════════════════════════
+// HTTP SERVER TIMEOUTS
+// Prevents slowloris attacks and socket exhaustion under load.
+// keepAliveTimeout should be slightly higher than NLB/proxy idle timeout (60s).
+// ═══════════════════════════════════════════════════════════════════
+httpServer.keepAliveTimeout = 65000; // 65s - above NLB's 60s idle timeout
+httpServer.headersTimeout = 66000;   // Must be > keepAliveTimeout
+
 /**
  * Starts the HTTP server with proper Apollo integration
  */

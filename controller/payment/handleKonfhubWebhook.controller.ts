@@ -285,11 +285,25 @@ async function handleRegistration(
     },
   });
 
-  // Mark user as paid
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { isPaidUser: true },
-  });
+  // Mark user as paid (best-effort - Purchase is source of truth)
+  // If this fails, the purchase is still recorded and reconciliation will fix it
+  try {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { isPaidUser: true },
+    });
+  } catch (prismaError) {
+    // CRITICAL: Log for reconciliation - purchase exists but isPaidUser not set
+    logger.error({
+      msg: "RECONCILE_NEEDED: Purchase created but isPaidUser update failed",
+      userId: user.id,
+      userEmail: user.email,
+      passType,
+      error: prismaError instanceof Error ? prismaError.message : String(prismaError),
+      ...logContext,
+    });
+    // Don't throw - the purchase is recorded, reconciliation script will fix this
+  }
 
   // Queue confirmation email with data matching the template
   const userName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || attendee.name;
@@ -456,9 +470,15 @@ export const handleKonfhubWebhook = async (
   req: Request,
   res: Response
 ) => {
+  // Extract basic info for logging (no PII)
+  const rawBody = req.body as Record<string, unknown>;
+  const webhookId = String(rawBody.Id || "");
+  const rawEventType = String(rawBody["Event Type"] || "").toLowerCase().trim();
+  
   logger.info({ 
-    msg: "KonfHub webhook received - raw body",
-    body: JSON.stringify(req.body, null, 2),
+    msg: "KonfHub webhook received",
+    webhookId,
+    eventType: rawEventType,
   });
   
   try {
@@ -544,16 +564,21 @@ export const handleKonfhubWebhook = async (
       ...result,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    
     logger.error({
       msg: "KonfHub webhook: error processing",
-      error: error instanceof Error ? error.message : String(error),
+      webhookId,
+      error: errorMsg,
       stack: error instanceof Error ? error.stack : undefined,
     });
 
-    // Return 200 to prevent KonfHub from retrying (we logged the error)
-    res.status(200).json({
+    // Return 500 for transient errors so KonfHub retries
+    // The idempotency check (unique bookingId) prevents duplicate processing
+    res.status(500).json({
+      webhookId,
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "Internal server error - please retry",
     });
   }
 };

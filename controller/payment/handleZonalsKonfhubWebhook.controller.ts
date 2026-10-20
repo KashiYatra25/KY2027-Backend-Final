@@ -103,7 +103,8 @@ async function findUserByAttendee(attendee: ZonalAttendee) {
 }
 
 /**
- * Handle registration event
+ * Handle registration event - ATOMIC VERSION
+ * Uses findOneAndUpdate to prevent duplicate passes from concurrent webhooks.
  */
 async function handleRegistration(
   attendee: ZonalAttendee,
@@ -121,17 +122,19 @@ async function handleRegistration(
     passType,
   };
 
-  // Check for duplicate
-  const existingPass = await ZonalUserCollegeModel.findOne({
-    "passes.paymentId": attendee.bookingId,
-  });
-
-  if (existingPass) {
-    logger.info({ msg: "Zonals webhook: booking already processed", ...logContext });
-    return { success: true, skipped: true, reason: "already_processed" };
-  }
-
   const eventLimit = getEventLimit(passType);
+
+  // Build the pass object
+  const newPass = {
+    passType,
+    amount: attendee.amountPaid,
+    paymentStatus: "completed" as const,
+    paymentId: attendee.bookingId,
+    paymentSource: "konfhub" as const,
+    ticketUrl: attendee.ticketUrl,
+    invoiceUrl: attendee.invoiceUrl,
+    purchasedAt: eventAt,
+  };
 
   // Find user
   const matchResult = await findUserByAttendee(attendee);
@@ -144,96 +147,105 @@ async function handleRegistration(
     });
     
     // Store with unmatched prefix for manual review
+    // Use atomic update to prevent duplicates even for unmatched users
     const userId = `unmatched:${attendee.email}`;
     
-    await ZonalUserCollegeModel.findOneAndUpdate(
-      { userId, collegeSlug: college },
+    const result = await ZonalUserCollegeModel.findOneAndUpdate(
+      { 
+        userId, 
+        collegeSlug: college,
+        "passes.paymentId": { $ne: attendee.bookingId } // Only if this payment not already recorded
+      },
       {
-        $push: {
-          passes: {
-            passType,
-            amount: attendee.amountPaid,
-            paymentStatus: "completed",
-            paymentId: attendee.bookingId,
-            paymentSource: "konfhub",
-            ticketUrl: attendee.ticketUrl,
-            invoiceUrl: attendee.invoiceUrl,
-            purchasedAt: eventAt,
-          },
-        },
+        $push: { passes: newPass },
         $max: { eventLimit: eventLimit },
       },
       { upsert: true, new: true }
     );
+
+    // Check if pass was actually added (idempotency check)
+    const passWasAdded = result.passes.some(p => p.paymentId === attendee.bookingId);
+    if (!passWasAdded) {
+      // Document existed but our pass wasn't added - must be a duplicate
+      // Try to find if it already exists
+      const existingDoc = await ZonalUserCollegeModel.findOne({
+        "passes.paymentId": attendee.bookingId
+      });
+      if (existingDoc) {
+        logger.info({ msg: "Zonals webhook: booking already processed (unmatched)", ...logContext });
+        return { success: true, skipped: true, reason: "already_processed" };
+      }
+    }
     
     return { success: true, matched: false, passType };
   }
 
   const { user, matchedBy } = matchResult;
 
-  // Upsert the zonal user college document
-  const existingDoc = await ZonalUserCollegeModel.findOne({ 
-    userId: user.id, 
-    collegeSlug: college 
-  });
-
-  if (existingDoc) {
-    // Add new pass to existing document
-    existingDoc.passes.push({
-      passType,
-      amount: attendee.amountPaid,
-      paymentStatus: "completed",
-      paymentId: attendee.bookingId,
-      paymentSource: "konfhub",
-      ticketUrl: attendee.ticketUrl,
-      invoiceUrl: attendee.invoiceUrl,
-      purchasedAt: eventAt,
-    });
-
-    // Update event limit (multi takes precedence)
-    if (passType === "MULTI_EVENT" || existingDoc.eventLimit === -1) {
-      existingDoc.eventLimit = -1;
-    } else if (existingDoc.eventLimit === 0) {
-      existingDoc.eventLimit = 1;
-    }
-
-    await existingDoc.save();
-
-    logger.info({
-      msg: "Zonals webhook: updated existing document",
-      userId: user.id,
-      matchedBy,
-      newEventLimit: existingDoc.eventLimit,
-      totalPasses: existingDoc.passes.length,
-      ...logContext,
-    });
-  } else {
-    // Create new document
-    await ZonalUserCollegeModel.create({
-      userId: user.id,
+  // ATOMIC upsert - prevents duplicate passes from concurrent webhooks
+  // The filter includes a check that this paymentId doesn't already exist
+  const result = await ZonalUserCollegeModel.findOneAndUpdate(
+    { 
+      userId: user.id, 
       collegeSlug: college,
-      passes: [{
-        passType,
-        amount: attendee.amountPaid,
-        paymentStatus: "completed",
-        paymentId: attendee.bookingId,
-        paymentSource: "konfhub",
-        ticketUrl: attendee.ticketUrl,
-        invoiceUrl: attendee.invoiceUrl,
-        purchasedAt: eventAt,
-      }],
-      eventLimit,
-      registeredEvents: [],
-    });
+      "passes.paymentId": { $ne: attendee.bookingId } // Only if this payment not already recorded
+    },
+    {
+      $push: { passes: newPass },
+      // Set event limit - use $max so MULTI (-1) always wins, but don't downgrade
+      // If currently -1 (unlimited), keep it. If currently 0, set to eventLimit.
+      // If currently 1 and new is -1, set to -1.
+      $max: { eventLimit: eventLimit },
+      $setOnInsert: {
+        registeredEvents: [],
+        userSnapshot: {
+          email: user.email,
+          name: attendee.name,
+          phone: attendee.phone,
+          kyId: attendee.kyId,
+        },
+      },
+    },
+    { 
+      upsert: true, 
+      new: true,
+    }
+  );
 
-    logger.info({
-      msg: "Zonals webhook: created new document",
-      userId: user.id,
-      matchedBy,
-      eventLimit,
-      ...logContext,
+  // Check if pass was actually added by looking for our paymentId
+  const passWasAdded = result.passes.some(p => p.paymentId === attendee.bookingId);
+  
+  if (!passWasAdded) {
+    // Our pass wasn't in the result - it was already there (idempotent)
+    // This happens when: doc exists, already has this paymentId, so filter didn't match
+    // and upsert created nothing (no match + upsert with $ne doesn't insert)
+    
+    // Actually check if it exists elsewhere
+    const existingDoc = await ZonalUserCollegeModel.findOne({
+      "passes.paymentId": attendee.bookingId
+    });
+    
+    if (existingDoc) {
+      logger.info({ msg: "Zonals webhook: booking already processed", ...logContext });
+      return { success: true, skipped: true, reason: "already_processed" };
+    }
+    
+    // Edge case: filter didn't match but pass also doesn't exist anywhere
+    // This shouldn't happen with correct logic, but handle it
+    logger.warn({ 
+      msg: "Zonals webhook: unexpected state - pass not added but not found", 
+      ...logContext 
     });
   }
+
+  logger.info({
+    msg: "Zonals webhook: pass added successfully",
+    userId: user.id,
+    matchedBy,
+    eventLimit: result.eventLimit,
+    totalPasses: result.passes.length,
+    ...logContext,
+  });
 
   return { success: true, matched: true, userId: user.id, matchedBy, passType };
 }
@@ -245,17 +257,18 @@ export const handleZonalsKonfhubWebhook = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  // Extract basic info for logging (no PII)
+  const rawBody = req.body as Record<string, unknown>;
+  const webhookId = String(rawBody.Id || "");
+  const rawEventType = String(rawBody["Event Type"] || "").toLowerCase().trim();
+  
   logger.info({ 
-    msg: "Zonals KonfHub webhook received - raw body",
-    body: JSON.stringify(req.body, null, 2),
+    msg: "Zonals KonfHub webhook received",
+    webhookId,
+    eventType: rawEventType,
   });
   
   try {
-    // Parse raw body - same structure as main KonfHub webhook
-    const rawBody = req.body as Record<string, unknown>;
-    
-    const webhookId = String(rawBody.Id || "");
-    const rawEventType = String(rawBody["Event Type"] || "").toLowerCase().trim();
     const eventAt = new Date(Number(rawBody["Event At"]) || Date.now());
     
     // Extract attendee details - same structure as main webhook
@@ -283,11 +296,10 @@ export const handleZonalsKonfhubWebhook = async (
     };
 
     logger.info({
-      msg: "Zonals KonfHub webhook received",
+      msg: "Zonals webhook processing",
       webhookId,
-      rawEventType,
+      eventType: rawEventType,
       bookingId: attendee.bookingId,
-      attendeeEmail: attendee.email,
       ticketName: attendee.ticketName,
     });
 
@@ -336,16 +348,21 @@ export const handleZonalsKonfhubWebhook = async (
       ...result,
     });
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    
     logger.error({
       msg: "Zonals KonfHub webhook: error processing",
-      error: error instanceof Error ? error.message : String(error),
+      webhookId,
+      error: errorMsg,
       stack: error instanceof Error ? error.stack : undefined,
     });
 
-    // Return 200 to prevent KonfHub from retrying (we logged the error)
-    res.status(200).json({
+    // Return 500 for transient errors so KonfHub retries
+    // The atomic update prevents duplicate processing
+    res.status(500).json({
+      webhookId,
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "Internal server error - please retry",
     });
   }
 };
