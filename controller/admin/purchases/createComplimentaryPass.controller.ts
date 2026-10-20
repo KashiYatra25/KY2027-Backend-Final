@@ -1,4 +1,7 @@
-import type { Response } from "express";
+import type { Response, NextFunction } from "express";
+import { catchAsync } from "zodex-axon/core";
+import { OkResponseStrategy } from "zodex-axon/responses";
+import { BadRequest, NotFound } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
 import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
@@ -39,28 +42,27 @@ interface CreateComplimentaryPassBody {
   reason: string;           // Why the pass is being given
 }
 
-export const createComplimentaryPass = async (
-  req: AdminRequestWithVerifiedCreds & { body: CreateComplimentaryPassBody },
-  res: Response
-) => {
-  const { userId, passType, benefits, reason } = req.body;
-  const adminId = req.admin?.adminId;
+export const createComplimentaryPass = catchAsync(
+  async (
+    req: AdminRequestWithVerifiedCreds & { body: CreateComplimentaryPassBody },
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const { userId, passType, benefits, reason } = req.body;
+    const adminId = req.admin?.adminId;
 
-  if (!adminId) {
-    return res.status(401).json({
-      statusCode: 401,
-      message: "Unauthorized",
-    });
-  }
+    if (!adminId) {
+      return next(new BadRequest().handleResponse(res, { info: "Unauthorized" }));
+    }
 
-  if (!reason || reason.trim().length === 0) {
-    return res.status(400).json({
-      statusCode: 400,
-      message: "Reason for complimentary pass is required",
-    });
-  }
+    if (!reason || reason.trim().length === 0) {
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Reason for complimentary pass is required",
+        }),
+      );
+    }
 
-  try {
     // Find the user
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -76,10 +78,7 @@ export const createComplimentaryPass = async (
     });
 
     if (!user) {
-      return res.status(404).json({
-        statusCode: 404,
-        message: "User not found",
-      });
+      return next(new NotFound().handleResponse(res, { info: "User not found" }));
     }
 
     // Create the complimentary purchase
@@ -133,20 +132,9 @@ export const createComplimentaryPass = async (
       approvedBy: adminId,
     });
 
-    res.status(201).json({
-      statusCode: 201,
-      message: "Complimentary pass created successfully",
-      data: { purchase },
+    new OkResponseStrategy().handleResponse(res, {
+      info: "Complimentary pass created successfully",
+      purchase,
     });
-  } catch (error) {
-    logger.error({
-      msg: "Failed to create complimentary pass",
-      userId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    res.status(500).json({
-      statusCode: 500,
-      message: "Failed to create complimentary pass",
-    });
-  }
-};
+  },
+);

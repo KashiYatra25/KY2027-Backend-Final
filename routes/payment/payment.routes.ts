@@ -1,6 +1,7 @@
 import { Router, type Router as ExpressRouter } from "express";
-import { handleKonfhubWebhook, handleZonalsKonfhubWebhook } from "@controller/payment/index.js";
-import { verifyKonfhubWebhook } from "@middleware/payment/index.js";
+import { handleKonfhubWebhook } from "@controller/payment/handleKonfhubWebhook.controller.js";
+import { handleZonalsKonfhubWebhook } from "@controller/payment/handleZonalsKonfhubWebhook.controller.js";
+import { verifyKonfhubWebhookMiddleware } from "@middleware/payment/verifyKonfhubWebhook.middleware.js";
 
 export const paymentRouter: ExpressRouter = Router();
 
@@ -19,13 +20,13 @@ export const paymentRouter: ExpressRouter = Router();
 // Main fest passes webhook
 paymentRouter.post(
   "/webhooks/konfhub",
-  verifyKonfhubWebhook,
+  verifyKonfhubWebhookMiddleware,
   handleKonfhubWebhook,
 );
 
 // Zonals passes webhook (separate KonfHub event)
 paymentRouter.post(
   "/webhooks/zonals",
-  verifyKonfhubWebhook,
+  verifyKonfhubWebhookMiddleware,
   handleZonalsKonfhubWebhook,
 );

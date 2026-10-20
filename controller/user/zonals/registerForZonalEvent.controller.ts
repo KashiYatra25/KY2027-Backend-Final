@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { ZonalUserCollegeModel } from "@root/databaseManagers/mongoose/zonals/index.js";
-import type { ZonalEligibilityRequest } from "@root/middleware/user/zonals/index.js";
+import type { ZonalEligibilityRequest } from "@root/middleware/user/zonals/checkZonalEventRegistrationEligibility.middleware.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // REGISTER FOR ZONAL EVENT

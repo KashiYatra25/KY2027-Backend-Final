@@ -11,13 +11,13 @@ import {
 import { approveCaApplication } from "@controller/admin/ca/approveCaApplication.controller.js";
 import { getCaApplications } from "@controller/admin/ca/getCaApplications.controller.js";
 import { updateCaApplicationStatus } from "@controller/admin/ca/updateCaApplicationStatus.controller.js";
-import { getPartners } from "@controller/admin/partner/index.js";
+import { getPartners } from "@controller/admin/partner/getPartners.controller.js";
 import { changeAccountStatus } from "@controller/admin/suspend/changeAccountStatus.controller.js";
 import { makeUserAdminOrPromoteAdmin } from "@controller/admin/promote/makeUserAdminOrPromoteAdmin.controller.js";
 import { getAdminUsers } from "@controller/admin/users/getAdminUsers.controller.js";
 import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
-import { getAllTeams } from "@controller/admin/teams/index.js";
-import { getAllRegistrations } from "@controller/admin/registrations/index.js";
+import { getAllTeams } from "@controller/admin/teams/getAllTeams.controller.js";
+import { getAllRegistrations } from "@controller/admin/registrations/getAllRegistrations.controller.js";
 import { getRevenueAnalytics } from "@controller/admin/purchases/index.js";
 import {
   getVenuesAdmin,

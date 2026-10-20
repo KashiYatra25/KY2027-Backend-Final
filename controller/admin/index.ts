@@ -13,7 +13,7 @@ export { approveCaApplication } from "./ca/approveCaApplication.controller.js";
 export { updateCaApplicationStatus } from "./ca/updateCaApplicationStatus.controller.js";
 
 // Partner (sponsorship inquiries) management
-export { getPartners } from "./partner/index.js";
+export { getPartners } from "./partner/getPartners.controller.js";
 
 // Admin invite
 export { makeUserAdminOrPromoteAdmin } from "./promote/makeUserAdminOrPromoteAdmin.controller.js";
@@ -25,7 +25,7 @@ export { changeAccountStatus } from "./suspend/changeAccountStatus.controller.js
 export { getAdminUsers } from "./users/getAdminUsers.controller.js";
 
 // Team management
-export { getAllTeams } from "./teams/index.js";
+export { getAllTeams } from "./teams/getAllTeams.controller.js";
 
 // Registration management
-export { getAllRegistrations } from "./registrations/index.js";
+export { getAllRegistrations } from "./registrations/getAllRegistrations.controller.js";

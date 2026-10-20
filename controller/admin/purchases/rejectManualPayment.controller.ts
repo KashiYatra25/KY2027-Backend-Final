@@ -1,4 +1,7 @@
-import type { Response } from "express";
+import type { Response, NextFunction } from "express";
+import { catchAsync } from "zodex-axon/core";
+import { OkResponseStrategy } from "zodex-axon/responses";
+import { BadRequest, NotFound } from "zodex-axon/errors";
 import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
@@ -13,42 +16,35 @@ interface RejectPaymentBody {
   rejectionReason: string;
 }
 
-export const rejectManualPayment = async (
-  req: AdminRequestWithVerifiedCreds & { body: RejectPaymentBody },
-  res: Response
-) => {
-  const { purchaseId, rejectionReason } = req.body;
-  const adminId = req.admin?.adminId;
+export const rejectManualPayment = catchAsync(
+  async (
+    req: AdminRequestWithVerifiedCreds & { body: RejectPaymentBody },
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const { purchaseId, rejectionReason } = req.body;
+    const adminId = req.admin?.adminId;
 
-  if (!adminId) {
-    return res.status(401).json({
-      statusCode: 401,
-      message: "Unauthorized",
-    });
-  }
+    if (!adminId) {
+      return next(new BadRequest().handleResponse(res, { info: "Unauthorized" }));
+    }
 
-  if (!rejectionReason || rejectionReason.trim().length === 0) {
-    return res.status(400).json({
-      statusCode: 400,
-      message: "Rejection reason is required",
-    });
-  }
+    if (!rejectionReason || rejectionReason.trim().length === 0) {
+      return next(new BadRequest().handleResponse(res, { info: "Rejection reason is required" }));
+    }
 
-  try {
     const purchase = await PurchaseModel.findById(purchaseId);
 
     if (!purchase) {
-      return res.status(404).json({
-        statusCode: 404,
-        message: "Purchase not found",
-      });
+      return next(new NotFound().handleResponse(res, { info: "Purchase not found" }));
     }
 
     if (purchase.status !== "PENDING_VERIFICATION") {
-      return res.status(400).json({
-        statusCode: 400,
-        message: `Cannot reject purchase with status: ${purchase.status}`,
-      });
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: `Cannot reject purchase with status: ${purchase.status}`,
+        }),
+      );
     }
 
     // Update purchase with rejected status
@@ -62,8 +58,6 @@ export const rejectManualPayment = async (
 
     await purchase.save();
 
-    // TODO: Optionally send rejection email to user
-
     logger.info({
       msg: "Manual payment rejected",
       purchaseId,
@@ -72,20 +66,9 @@ export const rejectManualPayment = async (
       rejectionReason,
     });
 
-    res.status(200).json({
-      statusCode: 200,
-      message: "Payment rejected",
-      data: { purchase },
+    new OkResponseStrategy().handleResponse(res, {
+      info: "Payment rejected",
+      purchase,
     });
-  } catch (error) {
-    logger.error({
-      msg: "Failed to reject payment",
-      purchaseId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    res.status(500).json({
-      statusCode: 500,
-      message: "Failed to reject payment",
-    });
-  }
-};
+  },
+);

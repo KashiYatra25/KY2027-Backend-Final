@@ -5,12 +5,12 @@
  * Seeds venues, fest days, and schedule entries from the hardcoded frontend config
  */
 
-import { connInstance } from "../databaseManagers/mongoose/connection.js";
+import { connInstance } from "@lib/mongo/connection.js";
 import {
   VenueModel,
   FestDayModel,
   ScheduleEntryModel,
-} from "../databaseManagers/mongoose/index.js";
+} from "@lib/mongo/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // VENUES DATA (from frontend campusMap.config.ts)

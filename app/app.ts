@@ -7,7 +7,7 @@ import { eventRouter } from "@api/event/event.routes.js";
 import { teamRouter } from "@api/team/team.routes.js";
 import { scheduleRouter } from "@api/schedule/schedule.routes.js";
 import { paymentRouter } from "@api/payment/payment.routes.js";
-import { zonalsRouter } from "@api/zonals/index.js";
+import { default as zonalsRouter } from "@api/zonals/zonals.routes.js";
 import { corsOptions } from "@constants/cors.options.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";

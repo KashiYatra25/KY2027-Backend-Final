@@ -5,7 +5,7 @@ import { z } from "zod";
  * Create validated environment configuration
  */
 function createRuntimeEnvironment(
-  runtimeEnv: Record<string, any> = process.env,
+  runtimeEnv: Record<string, string | undefined> = process.env,
 ) {
   return createEnv({
     server: {

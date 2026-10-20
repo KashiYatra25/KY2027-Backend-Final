@@ -12,7 +12,7 @@ import { RequestGuardMiddleware } from "zodex-axon/core";
 import {
   getAadhaarUploadUrlRequestSchema,
   confirmAadhaarUploadRequestSchema,
-} from "@schemas/aadhaar/aadhaar.pipeline.schema.js";
+} from "@schemas/aadhaar/aadhaar.schema.js";
 
 const router = Router();
 

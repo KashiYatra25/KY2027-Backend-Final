@@ -34,7 +34,7 @@ const getAllRegistrations = catchAsync(
     const participationType = (req.query.participationType as string)?.trim() || "";
 
     // Build query
-    const query: Record<string, any> = {};
+    const query: Record<string, unknown> = {};
     if (eventSlug) {
       query.eventSlug = eventSlug;
     }

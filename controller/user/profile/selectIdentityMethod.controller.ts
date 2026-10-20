@@ -5,7 +5,7 @@ import { OkResponseStrategy } from "zodex-axon/responses";
 import { logger } from "@logger/logger.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
-import type { SelectIdentityMethodSchemaType } from "@schemas/user/profile.schema.js";
+import type { SelectIdentityMethodRequestSchemaType } from "@schemas/user/profile.schema.js";
 
 /**
  * POST /user/profile/identity-method
@@ -24,7 +24,7 @@ import type { SelectIdentityMethodSchemaType } from "@schemas/user/profile.schem
 const selectIdentityMethod = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: SelectIdentityMethodSchemaType },
+      { body: SelectIdentityMethodRequestSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,

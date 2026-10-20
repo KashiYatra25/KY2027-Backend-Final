@@ -102,7 +102,7 @@ export type ProfileUpdationRequestSchemaType = z.infer<typeof profileUpdationReq
 // For users who choose not to use Aadhaar
 // ═══════════════════════════════════════════════════════════════════
 
-export const manualIdentityVerificationSchema = z.object({
+export const manualIdentityVerificationRequestSchema = z.object({
   firstName: z
     .string()
     .trim()
@@ -130,15 +130,15 @@ export const manualIdentityVerificationSchema = z.object({
   gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]),
 });
 
-export type ManualIdentityVerificationSchemaType = z.infer<typeof manualIdentityVerificationSchema>;
+export type ManualIdentityVerificationRequestSchemaType = z.infer<typeof manualIdentityVerificationRequestSchema>;
 
 // ═══════════════════════════════════════════════════════════════════
 // SELECT IDENTITY METHOD SCHEMA
 // Commits the user's choice (aadhaar | manual) so it can be locked.
 // ═══════════════════════════════════════════════════════════════════
 
-export const selectIdentityMethodSchema = z.object({
+export const selectIdentityMethodRequestSchema = z.object({
   method: z.enum(["aadhaar", "manual"]),
 });
 
-export type SelectIdentityMethodSchemaType = z.infer<typeof selectIdentityMethodSchema>;
+export type SelectIdentityMethodRequestSchemaType = z.infer<typeof selectIdentityMethodRequestSchema>;

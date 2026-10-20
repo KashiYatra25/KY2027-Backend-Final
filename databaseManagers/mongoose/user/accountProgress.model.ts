@@ -1,4 +1,4 @@
-import { connInstance } from "../connection.js";
+import { connInstance } from "@lib/mongo/connection.js";
 import { Schema, type HydratedDocument,type InferSchemaType } from "mongoose";
 import { autoSetPaidForIITBhuUserHook, assignKyIdHook } from "./hooks/index.js";
 

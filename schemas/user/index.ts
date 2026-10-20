@@ -16,10 +16,10 @@ export {
 export {
   profileUpdationRequestSchema,
   type ProfileUpdationRequestSchemaType,
-  manualIdentityVerificationSchema,
-  type ManualIdentityVerificationSchemaType,
-  selectIdentityMethodSchema,
-  type SelectIdentityMethodSchemaType,
+  manualIdentityVerificationRequestSchema,
+  type ManualIdentityVerificationRequestSchemaType,
+  selectIdentityMethodRequestSchema,
+  type SelectIdentityMethodRequestSchemaType,
 } from "./profile.schema.js";
 
 export {
@@ -37,4 +37,4 @@ export {
   gqlUserVerificationRequestSchema,
   type UserAuthenticationRequestSchemaType,
   type GqlUserVerificationRequestSchemaType,
-} from "./user.auth.schema.js";
+} from "./auth.schema.js";
