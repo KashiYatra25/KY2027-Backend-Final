@@ -74,12 +74,8 @@ function createRuntimeEnvironment(
         .regex(/^\d+$/, "Brevo SMTP port must be a number")
         .default("587")
         .transform(Number),
-      BREVO_SMTP_USER: z
-        .string()
-        .min(1, "Brevo SMTP user is required"),
-      BREVO_API_KEY: z
-        .string()
-        .min(10, "Brevo API Key is required"),
+      BREVO_SMTP_USER: z.string().min(1, "Brevo SMTP user is required"),
+      BREVO_API_KEY: z.string().min(10, "Brevo API Key is required"),
 
       // S3 Configuration
       S3_BUCKET: z.string().min(3, "S3 Bucket is required"),
@@ -96,12 +92,8 @@ function createRuntimeEnvironment(
       ADMIN_JWT_REFRESH_SECRET: z
         .string()
         .min(32, "Admin JWT Refresh Secret must be at least 32 characters"),
-      ADMIN_JWT_ACCESS_EXPIRY: z
-        .string()
-        .default("2h"),
-      ADMIN_JWT_REFRESH_EXPIRY: z
-        .string()
-        .default("7d"),
+      ADMIN_JWT_ACCESS_EXPIRY: z.string().default("2h"),
+      ADMIN_JWT_REFRESH_EXPIRY: z.string().default("7d"),
 
       // KonfHub Webhook Configuration (optional - for signature verification)
       // If set, webhook requests will be verified using this secret
@@ -115,25 +107,20 @@ function createRuntimeEnvironment(
       // KonfHub ticket-name -> pass tier mapping (keyword-based, comma-separated).
       // Matching is case-insensitive substring match on ticket name.
       // Anything unmatched defaults to Yatri.
-      KONFHUB_DARBAR_KEYWORDS: z
-        .string()
-        .default("darbar,vip,platinum"),
-      KONFHUB_SWARNIM_KEYWORDS: z
-        .string()
-        .default("swarnim,gold"),
+      KONFHUB_DARBAR_KEYWORDS: z.string().default("darbar,vip,platinum"),
+      KONFHUB_SWARNIM_KEYWORDS: z.string().default("swarnim,gold"),
 
       // KonfHub Zonals ticket-name keyword mappings (comma-separated, case-insensitive).
       // Each college has SINGLE and MULTI keywords - ticket name is matched against these.
       // Same pattern as KONFHUB_DARBAR_KEYWORDS / KONFHUB_SWARNIM_KEYWORDS for main fest.
-      
+
       // RGIPT Zonals
-      KONFHUB_ZONALS_RGIPT_SINGLE_KEYWORDS: z
-        .string()
-        .default("rgipt single"),
+      KONFHUB_ZONALS_RGIPT_SINGLE_KEYWORDS: z.string().default("rgipt single"),
       KONFHUB_ZONALS_RGIPT_MULTI_KEYWORDS: z
         .string()
         .default("rgipt multi,rgipt all"),
-      
+      KONFHUB_TICKET_TIER_MAP: z.string(),
+
       // Add more colleges as needed:
       // KONFHUB_ZONALS_NITP_SINGLE_KEYWORDS: z.string().default("nit patna single,nitp single"),
       // KONFHUB_ZONALS_NITP_MULTI_KEYWORDS: z.string().default("nit patna multi,nitp multi"),
@@ -141,12 +128,12 @@ function createRuntimeEnvironment(
       // ═══════════════════════════════════════════════════════════════════
       // OBSERVABILITY - Loki / Grafana Cloud
       // ═══════════════════════════════════════════════════════════════════
-      
+
       // Loki endpoint - local or Grafana Cloud
       // Local: http://localhost:3100
       // Grafana Cloud: https://logs-prod-xxx.grafana.net
       LOKI_HOST: z.string().url().default("http://localhost:3100"),
-      
+
       // Grafana Cloud auth (optional - only needed for Grafana Cloud)
       // Get these from: Grafana Cloud → Your Stack → Loki → Details
       LOKI_USER: z.string().optional(),
