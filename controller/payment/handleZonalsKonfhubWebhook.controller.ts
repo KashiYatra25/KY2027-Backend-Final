@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "@root/prisma.js";
-import { ZonalUserCollegeModel } from "@root/databaseManagers/mongoose/index.js";
+import { ZonalUserCollegeModel, PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
 
@@ -188,6 +188,47 @@ async function handleRegistration(
         return { success: true, skipped: true, reason: "already_processed" };
       }
     }
+
+    // Also create a Purchase record for unmatched users (for admin visibility)
+    // Use findOneAndUpdate for idempotency
+    await PurchaseModel.findOneAndUpdate(
+      { "konfhub.bookingId": attendee.bookingId },
+      {
+        $setOnInsert: {
+          userId: userId, // "unmatched:email@example.com"
+          source: "konfhub",
+          passType: `Zonals ${college.toUpperCase()} - ${passType === "MULTI_EVENT" ? "Multi Event" : "Single Event"}`,
+          amountPaid: Math.round(attendee.amountPaid * 100), // Convert to paise
+          currency: attendee.currency,
+          status: "VERIFIED",
+          benefits: {
+            festivalEntry: true,
+            allDaysAccess: passType === "MULTI_EVENT",
+          },
+          konfhub: {
+            webhookId,
+            bookingId: attendee.bookingId,
+            attendeeEmail: attendee.email,
+            attendeeName: attendee.name,
+            attendeePhone: attendee.phone,
+            ticketName: attendee.ticketName,
+            ticketPrice: attendee.ticketPrice,
+            paymentId: attendee.paymentId,
+            ticketUrl: attendee.ticketUrl,
+            invoiceUrl: attendee.invoiceUrl,
+            registeredAt: eventAt,
+            matchedBy: "unmatched",
+          },
+          userSnapshot: {
+            email: attendee.email,
+            name: attendee.name,
+            phone: attendee.phone,
+            kyId: attendee.kyId,
+          },
+        },
+      },
+      { upsert: true }
+    );
     
     return { success: true, matched: false, passType };
   }
@@ -249,6 +290,50 @@ async function handleRegistration(
       ...logContext 
     });
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // CREATE PURCHASE RECORD
+  // So zonals purchases appear in the user's purchase history alongside
+  // main KY passes. Uses findOneAndUpdate for idempotency.
+  // ═══════════════════════════════════════════════════════════════════
+  await PurchaseModel.findOneAndUpdate(
+    { "konfhub.bookingId": attendee.bookingId },
+    {
+      $setOnInsert: {
+        userId: user.id,
+        source: "konfhub",
+        passType: `Zonals ${college.toUpperCase()} - ${passType === "MULTI_EVENT" ? "Multi Event" : "Single Event"}`,
+        amountPaid: Math.round(attendee.amountPaid * 100), // Convert to paise
+        currency: attendee.currency,
+        status: "VERIFIED",
+        benefits: {
+          festivalEntry: true,
+          allDaysAccess: passType === "MULTI_EVENT",
+        },
+        konfhub: {
+          webhookId,
+          bookingId: attendee.bookingId,
+          attendeeEmail: attendee.email,
+          attendeeName: attendee.name,
+          attendeePhone: attendee.phone,
+          ticketName: attendee.ticketName,
+          ticketPrice: attendee.ticketPrice,
+          paymentId: attendee.paymentId,
+          ticketUrl: attendee.ticketUrl,
+          invoiceUrl: attendee.invoiceUrl,
+          registeredAt: eventAt,
+          matchedBy,
+        },
+        userSnapshot: {
+          email: user.email,
+          name: attendee.name,
+          phone: attendee.phone,
+          kyId: attendee.kyId,
+        },
+      },
+    },
+    { upsert: true }
+  );
 
   logger.info({
     msg: "Zonals webhook: pass added successfully",
