@@ -1,6 +1,6 @@
 import { authenticateUser } from "@controller/user/auth/index.js";
-import { submitContact } from "@controller/user/contact/index.js";
-import { becomePartner } from "@controller/user/partner/index.js";
+import { submitContact } from "@controller/user/contact/submitContact.controller.js";
+import { becomePartner } from "@controller/user/partner/becomePartner.controller.js";
 import { searchUsers } from "@controller/user/search/searchUsers.controller.js";
 import { getMyRegistrations } from "@controller/user/event/index.js";
 import { getPaymentStatus } from "@controller/user/payment/getPaymentStatus.controller.js";
@@ -25,8 +25,8 @@ import {
   searchUsersRequestSchema,
   addReferralIdRequestSchema,
   userAuthenticationRequestSchema,
-  manualIdentityVerificationSchema,
-  selectIdentityMethodSchema,
+  manualIdentityVerificationRequestSchema,
+  selectIdentityMethodRequestSchema,
 } from "@schemas/user/index.js";
 import { Router, type Router as ExpressRouter } from "express";
 import { RequestGuardMiddleware } from "zodex-axon/core";
@@ -108,7 +108,7 @@ userRouter.patch(
 userRouter.post(
   "/profile/manual-identity",
   profileRateLimiterMiddleware,
-  RequestGuardMiddleware({ body: manualIdentityVerificationSchema }),
+  RequestGuardMiddleware({ body: manualIdentityVerificationRequestSchema }),
   blockIfIdentityAlreadyVerifiedMiddleware,
   submitManualIdentity,
 );
@@ -117,7 +117,7 @@ userRouter.post(
 userRouter.post(
   "/profile/identity-method",
   profileRateLimiterMiddleware,
-  RequestGuardMiddleware({ body: selectIdentityMethodSchema }),
+  RequestGuardMiddleware({ body: selectIdentityMethodRequestSchema }),
   blockIfIdentityAlreadyVerifiedMiddleware,
   selectIdentityMethod,
 );

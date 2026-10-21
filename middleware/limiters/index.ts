@@ -35,5 +35,5 @@ export {
 // OTP Limiters
 export {
   otpRateLimitMiddleware,
-  otpThrottleMiddleware,
-} from "./otp.middleware.js";
+} from "./otpRateLimit.middleware.js";
+export { otpThrottleMiddleware } from "./otpThrottle.middleware.js";

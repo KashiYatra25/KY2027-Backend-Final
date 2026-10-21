@@ -24,10 +24,6 @@ function parseKeywords(raw: string): string[] {
 const RGIPT_SINGLE_KEYWORDS = parseKeywords(env.KONFHUB_ZONALS_RGIPT_SINGLE_KEYWORDS);
 const RGIPT_MULTI_KEYWORDS = parseKeywords(env.KONFHUB_ZONALS_RGIPT_MULTI_KEYWORDS);
 
-// Add more colleges as needed:
-// const NITP_SINGLE_KEYWORDS = parseKeywords(env.KONFHUB_ZONALS_NITP_SINGLE_KEYWORDS);
-// const NITP_MULTI_KEYWORDS = parseKeywords(env.KONFHUB_ZONALS_NITP_MULTI_KEYWORDS);
-
 /**
  * Attendee data extracted from KonfHub webhook
  */
@@ -60,14 +56,6 @@ function mapTicketToZonalDetails(ticketName: string): { college: string; passTyp
   if (RGIPT_SINGLE_KEYWORDS.some((kw) => ticketLower.includes(kw))) {
     return { college: "rgipt", passType: "SINGLE_EVENT" };
   }
-
-  // Add more colleges as needed:
-  // if (NITP_MULTI_KEYWORDS.some((kw) => ticketLower.includes(kw))) {
-  //   return { college: "nit-patna", passType: "MULTI_EVENT" };
-  // }
-  // if (NITP_SINGLE_KEYWORDS.some((kw) => ticketLower.includes(kw))) {
-  //   return { college: "nit-patna", passType: "SINGLE_EVENT" };
-  // }
 
   return null;
 }

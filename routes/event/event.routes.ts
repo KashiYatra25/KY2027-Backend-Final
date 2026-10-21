@@ -3,7 +3,7 @@ import { RequestGuardMiddleware } from "zodex-axon/core";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
 import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
 import { checkWhetherProfileIsCompleteMiddleware } from "@root/middleware/user/profile/checkWhetherProfileIsComplete.middleware.js";
-import { checkUserHasPaidMiddleware } from "@middleware/user/payment/index.js";
+import { checkUserHasPaidMiddleware } from "@middleware/user/payment/checkUserHasPaid.middleware.js";
 import {
   publicReadRateLimiterMiddleware,
   eventRegistrationRateLimiterMiddleware,

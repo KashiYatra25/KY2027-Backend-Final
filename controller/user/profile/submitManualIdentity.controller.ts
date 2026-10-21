@@ -5,7 +5,7 @@ import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
-import type { ManualIdentityVerificationSchemaType } from "@schemas/user/profile.schema.js";
+import type { ManualIdentityVerificationRequestSchemaType } from "@schemas/user/profile.schema.js";
 
 /**
  * POST /user/profile/manual-identity
@@ -18,7 +18,7 @@ import type { ManualIdentityVerificationSchemaType } from "@schemas/user/profile
 const submitManualIdentity = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: ManualIdentityVerificationSchemaType },
+      { body: ManualIdentityVerificationRequestSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,

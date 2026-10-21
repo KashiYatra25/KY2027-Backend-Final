@@ -20,7 +20,7 @@ import { logger } from "@logger/logger.js";
 // - Periodic reconciliation with KonfHub dashboard
 // ═══════════════════════════════════════════════════════════════════
 
-export const verifyKonfhubWebhook = (
+export const verifyKonfhubWebhookMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction

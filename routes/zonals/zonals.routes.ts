@@ -6,7 +6,7 @@ import {
   cancelZonalEventRegistration,
 } from "@root/controller/user/zonals/index.js";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
-import { checkZonalEventRegistrationEligibilityMiddleware } from "@root/middleware/user/zonals/index.js";
+import { checkZonalEventRegistrationEligibilityMiddleware } from "@root/middleware/user/zonals/checkZonalEventRegistrationEligibility.middleware.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // ZONALS ROUTES

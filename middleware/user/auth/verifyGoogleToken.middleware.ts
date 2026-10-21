@@ -3,7 +3,7 @@ import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { UnauthorizedAccess } from "zodex-axon/errors";
 import { logger } from "@logger/logger.js";
 import { verifyGoogleIdToken } from "@services/google/googleOAuth.service.js";
-import type { UserAuthenticationRequestSchemaType } from "@schemas/user/user.auth.schema.js";
+import type { UserAuthenticationRequestSchemaType } from "@schemas/user/auth.schema.js";
 import type { GoogleVerifiedRequest } from "./helper/types/google.types.js";
 
 /**

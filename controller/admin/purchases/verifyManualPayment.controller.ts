@@ -1,4 +1,7 @@
-import type { Response } from "express";
+import type { Response, NextFunction } from "express";
+import { catchAsync } from "zodex-axon/core";
+import { OkResponseStrategy } from "zodex-axon/responses";
+import { BadRequest, NotFound } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
 import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
@@ -53,36 +56,32 @@ interface VerifyPaymentBody {
   verificationNote?: string;
 }
 
-export const verifyManualPayment = async (
-  req: AdminRequestWithVerifiedCreds & { body: VerifyPaymentBody },
-  res: Response
-) => {
-  const { purchaseId, passType, amountPaid, benefits, verificationNote } = req.body;
-  const adminId = req.admin?.adminId;
+export const verifyManualPayment = catchAsync(
+  async (
+    req: AdminRequestWithVerifiedCreds & { body: VerifyPaymentBody },
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const { purchaseId, passType, amountPaid, benefits, verificationNote } = req.body;
+    const adminId = req.admin?.adminId;
 
-  if (!adminId) {
-    return res.status(401).json({
-      statusCode: 401,
-      message: "Unauthorized",
-    });
-  }
+    if (!adminId) {
+      return next(new BadRequest().handleResponse(res, { info: "Unauthorized" }));
+    }
 
-  try {
     // Find the purchase
     const purchase = await PurchaseModel.findById(purchaseId);
 
     if (!purchase) {
-      return res.status(404).json({
-        statusCode: 404,
-        message: "Purchase not found",
-      });
+      return next(new NotFound().handleResponse(res, { info: "Purchase not found" }));
     }
 
     if (purchase.status !== "PENDING_VERIFICATION") {
-      return res.status(400).json({
-        statusCode: 400,
-        message: `Cannot verify purchase with status: ${purchase.status}`,
-      });
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: `Cannot verify purchase with status: ${purchase.status}`,
+        }),
+      );
     }
 
     // Update purchase with verified status and custom benefits
@@ -131,20 +130,9 @@ export const verifyManualPayment = async (
       verifiedBy: adminId,
     });
 
-    res.status(200).json({
-      statusCode: 200,
-      message: "Payment verified successfully",
-      data: { purchase },
+    new OkResponseStrategy().handleResponse(res, {
+      info: "Payment verified successfully",
+      purchase,
     });
-  } catch (error) {
-    logger.error({
-      msg: "Failed to verify payment",
-      purchaseId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    res.status(500).json({
-      statusCode: 500,
-      message: "Failed to verify payment",
-    });
-  }
-};
+  },
+);

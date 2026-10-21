@@ -37,7 +37,7 @@ const getAllTeams = catchAsync(
     const search = (req.query.search as string)?.trim() || "";
 
     // Build query
-    const query: Record<string, any> = {};
+    const query: Record<string, unknown> = {};
     if (search) {
       // Escape regex metacharacters to prevent NoSQL regex injection / ReDoS
       const safeSearch = escapeRegex(search);

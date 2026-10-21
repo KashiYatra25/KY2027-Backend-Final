@@ -7,6 +7,7 @@ import { logger } from "@logger/logger.js";
 const redisService = new RedisSingleConnectionHandler({
   host: env.REDIS_HOST,
   port: env.REDIS_PORT,
+  username: env.REDIS_USERNAME,
   password: env.REDIS_PASSWORD,
   keepAlive: 10_000,
   connectTimeout: 5_000,

@@ -7,7 +7,7 @@
 
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
-import type { AccountProgressDoc } from "../accountProgress.model.js";
+import type { AccountProgressDoc } from "@lib/mongo/user/accountProgress.model.js";
 
 /**
  * Check if profile is complete based on verification flags

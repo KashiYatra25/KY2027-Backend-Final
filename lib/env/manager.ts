@@ -84,7 +84,7 @@ class RuntimeManager {
 
   async getRuntimeConfig() {
     console.log("NODE_ENV:", this.environment);
-    let runTimeEnv: Record<string, any>;
+    let runTimeEnv: Record<string, string | undefined>;
 
     switch (this.environment) {
       case "production":
