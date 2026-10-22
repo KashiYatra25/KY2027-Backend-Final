@@ -5,6 +5,7 @@ import {
   getAadhaarUploadConfirmation,
 } from "@root/controller/user/aadhaar/index.js";
 import { extractAadhaarDataMiddleware } from "@root/middleware/user/aadhaar/extractAadhaarData.middleware.js";
+import { aadhaarPipelineLockMiddleware } from "@root/middleware/user/aadhaar/aadhaarPipelineLock.middleware.js";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
 import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/checkUserStatus.middleware.js";
 import { aadhaarRateLimiterMiddleware } from "@root/middleware/limiters/index.js";
@@ -25,6 +26,12 @@ const router = Router();
 
 router.use(userRoutesRESTProtectMiddleware);
 router.use(checkUserAccountStatusMiddleware); // SEC-006: Block suspended users
+
+// Aadhaar auto-upload (S3 + Textract) is disabled while AWS is unavailable.
+// This lock blocks ALL upload/confirm/extract endpoints below with a clear
+// error so the broken pipeline can never be reached. Users use manual entry.
+// To re-enable: flip AADHAAR_PIPELINE_ENABLED in the lock middleware.
+router.use(aadhaarPipelineLockMiddleware);
 
 /**
  * POST /aadhaar/upload-url

@@ -70,17 +70,28 @@ const selectIdentityMethod = catchAsync(
         return;
       }
 
-      // Different method requested → the choice is final, reject.
-      return next(
-        new ForbiddenErrorResponse().handleResponse(res, {
-          info: "You have already chosen a verification method and it cannot be changed.",
-          method: existingMethod,
-          locked: true,
-        }),
-      );
+      // EXCEPTION: Aadhaar auto-upload is disabled (AWS/Textract unavailable),
+      // so an unverified user previously committed to "aadhaar" MUST be allowed
+      // to switch to "manual" to finish verification. Any other switch stays
+      // final. (hasIdentityBeenVerified is already handled above.)
+      const switchingAadhaarToManual =
+        existingMethod === "aadhaar" && method === "manual";
+
+      if (!switchingAadhaarToManual) {
+        // The choice is final for every other transition → reject.
+        return next(
+          new ForbiddenErrorResponse().handleResponse(res, {
+            info: "You have already chosen a verification method and it cannot be changed.",
+            method: existingMethod,
+            locked: true,
+          }),
+        );
+      }
+
+      // Fall through: migrate aadhaar → manual below.
     }
 
-    // First-time selection → commit + lock.
+    // First-time selection (or the allowed aadhaar→manual migration) → commit.
     verification!.identityVerificationMethod = method;
     await progress.save();
 
