@@ -4,6 +4,7 @@ import { CreateResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { VenueModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
+import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
 import type { CreateVenueRequestSchemaType } from "@schemas/admin/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -32,6 +33,9 @@ export const bulkCreateVenues = catchAsync(
     }
 
     const createdVenues = await VenueModel.insertMany(venues);
+    // Invalidate all schedule caches (version bump).
+    await bumpScheduleCacheVersion();
+
 
     logger.info("Bulk venues created", { count: createdVenues.length });
 

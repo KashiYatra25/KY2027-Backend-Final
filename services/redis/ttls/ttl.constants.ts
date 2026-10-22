@@ -2,6 +2,15 @@
 const ACCOUNT_PROGRESS_TTL = 60 * 60; // 1 hour
 const PROFILE_COMPLETION_TTL = 60 * 60; // 1 hour
 
+// Read-through entity caches (profile / teams / registrations).
+// Kept fresh primarily by explicit invalidation on writes; this TTL is a
+// safety backstop against any missed invalidation path.
+const ENTITY_CACHE_TTL = 3 * 60 * 60; // 3 hours
+
+// Schedule cache — global, rarely changes, version-counter invalidated.
+// Longer backstop TTL since writes bump the version (instant invalidation).
+const SCHEDULE_CACHE_TTL = 6 * 60 * 60; // 6 hours
+
 // ═══════════════════════════════════════════════════════════════════
 // RATE LIMITER TTLs (Window sizes in seconds)
 // ═══════════════════════════════════════════════════════════════════
@@ -103,6 +112,8 @@ const ADMIN_SESSION_TTL = 7 * 24 * 60 * 60; // 7 days
 export {
   ACCOUNT_PROGRESS_TTL,
   PROFILE_COMPLETION_TTL,
+  ENTITY_CACHE_TTL,
+  SCHEDULE_CACHE_TTL,
   // Rate limiter windows and limits
   GLOBAL_RATE_LIMIT_WINDOW,
   GLOBAL_RATE_LIMIT_MAX,

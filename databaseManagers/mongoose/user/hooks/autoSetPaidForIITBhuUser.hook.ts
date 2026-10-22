@@ -56,6 +56,12 @@ export async function autoSetPaidForIITBhuUserHook(doc: AccountProgressDoc): Pro
     });
 
     logger.info("Auto-set isPaidUser for IIT BHU user on profile completion", { userId });
+
+    // Invalidate the cached profile so isPaidUser is reflected on next read.
+    const { invalidateProfileCache } = await import(
+      "@root/services/redis/entityCache.service.js"
+    );
+    await invalidateProfileCache(userId);
   } catch (error) {
     logger.error("Error in autoSetPaidForIITBhuUser hook", {
       userId: doc.userId,

@@ -5,6 +5,8 @@ import { type GqlGlobalContext } from "@gql/engine/engine.js";
 import { type MyAccountResponse, type UserValidatedContextType } from "@gql/helper/types/index.js";
 import { myProfileGuard, isAuthenticatedGuard } from "@gql/middleware/index.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
+import { getCached, setCached, logCacheHit } from "@redis/entityCache.service.js";
+import { getMyAccountCacheKey } from "@redis/keys/redis.keys.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // GET MY ACCOUNT RESOLVER
@@ -20,6 +22,14 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
   .execute<UserValidatedContextType, GqlGlobalContext, MyAccountResponse>(
     catchGqlAsync(async (_parent, _args: unknown, context, _info) => {
       const userId = context.validatedContext.user!.id;
+
+      // ── Read-through cache: return the cached response on hit ──
+      const cacheKey = getMyAccountCacheKey(userId);
+      const cached = await getCached<MyAccountResponse>(cacheKey);
+      if (cached) {
+        logCacheHit("profile");
+        return cached;
+      }
 
       // Fetch user profile from PostgreSQL (Prisma)
       const user = await prisma.user.findUnique({
@@ -98,7 +108,7 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
       );
       const isProfileComplete = completedSteps === totalSteps;
 
-      return {
+      const response: MyAccountResponse = {
         profile: {
           ...user,
           dob: user.dob?.toISOString() ?? null,
@@ -117,5 +127,10 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
             "ACTIVE",
         },
       };
+
+      // Populate cache (fire-and-forget; safe on Redis failure).
+      await setCached(cacheKey, response);
+
+      return response;
     })
   );

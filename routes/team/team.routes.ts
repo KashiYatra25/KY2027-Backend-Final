@@ -8,6 +8,8 @@ import { teamRateLimiterMiddleware } from "@root/middleware/limiters/index.js";
 import { createTeam } from "@controller/user/team/createTeam.controller.js";
 import { getMyTeams } from "@controller/user/team/getMyTeams.controller.js";
 import { createTeamRequestSchema } from "@schemas/team/team.schema.js";
+import { cacheReadMiddleware } from "@middleware/user/cache/cacheRead.middleware.js";
+import { getMyTeamsCacheKey } from "@redis/keys/redis.keys.js";
 
 export const teamRouter: ExpressRouter = Router();
 
@@ -34,4 +36,4 @@ teamRouter.post(
 );
 
 // Get my teams
-teamRouter.get("/my", getMyTeams);
+teamRouter.get("/my", cacheReadMiddleware(getMyTeamsCacheKey, "teams"), getMyTeams);

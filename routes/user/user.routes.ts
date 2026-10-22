@@ -11,6 +11,8 @@ import { checkUserAccountStatusMiddleware } from "@middleware/user/protect/check
 import { blockIfProfileAlreadyCompletedMiddleware } from "@root/middleware/user/profile/checkCollegeNotAlreadyCompleted.middleware.js";
 import { blockIfIdentityAlreadyVerifiedMiddleware } from "@root/middleware/user/profile/blockIfIdentityAlreadyVerified.middleware.js";
 import { verifyGoogleTokenMiddleware } from "@root/middleware/user/auth/index.js";
+import { cacheReadMiddleware } from "@middleware/user/cache/cacheRead.middleware.js";
+import { getMyRegistrationsCacheKey } from "@redis/keys/redis.keys.js";
 import {
   authRateLimiterMiddleware,
   contactRateLimiterMiddleware,
@@ -79,7 +81,11 @@ userRouter.get(
 );
 
 // Get user's event registrations
-userRouter.get("/registrations", getMyRegistrations);
+userRouter.get(
+  "/registrations",
+  cacheReadMiddleware(getMyRegistrationsCacheKey, "registrations"),
+  getMyRegistrations,
+);
 
 // Get user's payment status
 userRouter.get("/payment-status", getPaymentStatus);

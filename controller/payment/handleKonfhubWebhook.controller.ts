@@ -4,6 +4,7 @@ import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
+import { invalidateProfileCache } from "@root/services/redis/entityCache.service.js";
 
 /**
  * Normalize a ticket name for robust comparison:
@@ -292,6 +293,7 @@ async function handleRegistration(
       where: { id: user.id },
       data: { isPaidUser: true },
     });
+    await invalidateProfileCache(user.id);
   } catch (prismaError) {
     // CRITICAL: Log for reconciliation - purchase exists but isPaidUser not set
     logger.error({
@@ -385,6 +387,7 @@ async function handleCancellation(attendee: KonfHubAttendee, webhookId: string, 
         where: { id: purchase.userId },
         data: { isPaidUser: false },
       });
+      await invalidateProfileCache(purchase.userId);
       logger.info({
         msg: "KonfHub webhook: revoked paid status (no active purchases)",
         userId: purchase.userId,

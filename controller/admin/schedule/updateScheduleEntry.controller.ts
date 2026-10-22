@@ -5,6 +5,7 @@ import { BadRequest, NotFound } from "zodex-axon/errors";
 import { ScheduleEntryModel, VenueModel } from "@root/databaseManagers/mongoose/index.js";
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
+import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
 import type { UpdateScheduleEntryRequestSchemaType } from "@schemas/admin/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -67,6 +68,9 @@ export const updateScheduleEntry = catchAsync(
       { $set: updateData },
       { new: true, runValidators: true },
     ).populate("venueId");
+    // Invalidate all schedule caches (version bump).
+    await bumpScheduleCacheVersion();
+
 
     logger.info("Schedule entry updated", { entryId: entry?._id });
 

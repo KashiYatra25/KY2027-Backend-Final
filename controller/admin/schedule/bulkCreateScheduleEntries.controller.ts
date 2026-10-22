@@ -5,6 +5,7 @@ import { BadRequest } from "zodex-axon/errors";
 import { ScheduleEntryModel, VenueModel } from "@root/databaseManagers/mongoose/index.js";
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
+import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
 import type { CreateScheduleEntryRequestSchemaType } from "@schemas/admin/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -66,6 +67,9 @@ export const bulkCreateScheduleEntries = catchAsync(
     }));
 
     const createdEntries = await ScheduleEntryModel.insertMany(entriesToCreate);
+    // Invalidate all schedule caches (version bump).
+    await bumpScheduleCacheVersion();
+
 
     logger.info("Bulk schedule entries created", { count: createdEntries.length });
 

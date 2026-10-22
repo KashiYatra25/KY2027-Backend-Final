@@ -6,6 +6,7 @@ import { prisma } from "@root/prisma.js";
 import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
 import { logger } from "@logger/logger.js";
+import { invalidateProfileCache } from "@root/services/redis/entityCache.service.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -109,6 +110,8 @@ export const createComplimentaryPass = catchAsync(
       where: { id: user.id },
       data: { isPaidUser: true },
     });
+
+    await invalidateProfileCache(user.id);
 
     // Queue confirmation email
     await queuePassesInvoiceEmail({

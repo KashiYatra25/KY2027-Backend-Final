@@ -4,6 +4,7 @@ import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound } from "zodex-axon/errors";
 import { FestDayModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
+import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // DELETE FEST DAY (Soft Delete - sets active to false)
@@ -18,6 +19,9 @@ export const deleteFestDay = catchAsync(
       { active: false },
       { new: true }
     );
+    // Invalidate all schedule caches (version bump).
+    await bumpScheduleCacheVersion();
+
 
     if (!festDay) {
       return next(new NotFound().handleResponse(res, { info: "Fest day not found" }));

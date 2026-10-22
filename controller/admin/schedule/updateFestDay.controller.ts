@@ -4,6 +4,7 @@ import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest, NotFound } from "zodex-axon/errors";
 import { FestDayModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
+import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
 import type { UpdateFestDayRequestSchemaType } from "@schemas/admin/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -38,6 +39,9 @@ export const updateFestDay = catchAsync(
       { $set: updateData },
       { new: true, runValidators: true },
     );
+    // Invalidate all schedule caches (version bump).
+    await bumpScheduleCacheVersion();
+
 
     if (!festDay) {
       return next(new NotFound().handleResponse(res, { info: "Fest day not found" }));

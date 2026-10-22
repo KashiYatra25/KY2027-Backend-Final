@@ -4,6 +4,7 @@ import { catchAsync } from "zodex-axon/core";
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
 import { AccountProgressModel, IpSecurityModel } from "@lib/mongo/index.js";
+import { invalidateProfileCache } from "@root/services/redis/entityCache.service.js";
 import type { GoogleVerifiedRequest } from "@root/middleware/user/auth/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -85,6 +86,11 @@ export const authenticateUser = catchAsync(
         userAgent: req.headers["user-agent"] || "unknown",
       }),
     ]);
+
+    // AccountProgress was written via findOneAndUpdate (upsert), which does
+    // NOT trigger the post-save invalidation hook — invalidate explicitly so
+    // a returning user never sees a stale cached profile.
+    await invalidateProfileCache(googleUserId);
 
     logger.info("User authenticated via Google OAuth", {
       userId: user.id,

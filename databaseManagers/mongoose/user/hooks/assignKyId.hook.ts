@@ -59,6 +59,12 @@ export async function assignKyIdHook(doc: AccountProgressDoc): Promise<void> {
     });
 
     logger.info("Assigned kyId on profile completion", { userId, kyId });
+
+    // Invalidate the cached profile so the new kyId is reflected on next read.
+    const { invalidateProfileCache } = await import(
+      "@root/services/redis/entityCache.service.js"
+    );
+    await invalidateProfileCache(userId);
   } catch (error) {
     logger.error("Error in assignKyId hook", {
       userId: doc.userId,

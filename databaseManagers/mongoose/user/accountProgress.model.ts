@@ -1,6 +1,6 @@
 import { connInstance } from "@lib/mongo/connection.js";
 import { Schema, type HydratedDocument,type InferSchemaType } from "mongoose";
-import { autoSetPaidForIITBhuUserHook, assignKyIdHook } from "./hooks/index.js";
+import { autoSetPaidForIITBhuUserHook, assignKyIdHook, invalidateProfileCacheHook } from "./hooks/index.js";
 
 export const AccountProgressSchema = new Schema(
   {
@@ -68,6 +68,15 @@ AccountProgressSchema.post("save", async function (doc: AccountProgressDoc) {
  */
 AccountProgressSchema.post("save", async function (doc: AccountProgressDoc) {
   await assignKyIdHook(doc);
+});
+
+/**
+ * Hook 3: Invalidate the cached profile. Registered LAST so it runs after
+ * the kyId / isPaidUser hooks have committed their Prisma writes, ensuring
+ * the next read recomputes with fully up-to-date data.
+ */
+AccountProgressSchema.post("save", async function (doc: AccountProgressDoc) {
+  await invalidateProfileCacheHook(doc);
 });
 
 // ═══════════════════════════════════════════════════════════════════

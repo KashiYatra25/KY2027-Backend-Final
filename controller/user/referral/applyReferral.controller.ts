@@ -4,6 +4,7 @@ import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
+import { invalidateProfileCache } from "@root/services/redis/entityCache.service.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
 import type { AddReferralIdRequestSchemaType } from "@schemas/user/referral.schema.js";
 
@@ -96,6 +97,8 @@ export const applyReferral = catchAsync(
       caProfileId: caProfile.id,
       referralId: referralId.toUpperCase(),
     });
+
+    await invalidateProfileCache(userId);
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Referral applied successfully",

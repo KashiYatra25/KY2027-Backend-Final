@@ -6,6 +6,7 @@ import { prisma } from "@root/prisma.js";
 import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
 import { logger } from "@logger/logger.js";
+import { invalidateProfileCache } from "@root/services/redis/entityCache.service.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -104,6 +105,8 @@ export const verifyManualPayment = catchAsync(
         where: { id: purchase.userId },
         data: { isPaidUser: true },
       });
+
+      await invalidateProfileCache(purchase.userId);
 
       // Queue confirmation email
       if (purchase.userSnapshot?.email) {

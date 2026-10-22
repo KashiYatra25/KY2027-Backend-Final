@@ -7,6 +7,51 @@ const getAccountProgressKey = (userId: string) => `accountProgress:${userId}`;
 const getProfileCompletionKey = (userId: string) =>
   `profileCompletion:${userId}`;
 
+// ═══════════════════════════════════════════════════════════════════
+// ENTITY CACHE KEYS (read-through caches)
+// Versioned ("v1") so the shape can be invalidated globally on changes.
+// One key per user holds the full JSON response for that endpoint.
+// ═══════════════════════════════════════════════════════════════════
+const CACHE_VERSION = "v1";
+
+/** Cached GraphQL `myAccount` response (profile + progress). */
+const getMyAccountCacheKey = (userId: string) =>
+  `cache:${CACHE_VERSION}:myAccount:${userId}`;
+
+/** Cached `GET /teams/my` response. */
+const getMyTeamsCacheKey = (userId: string) =>
+  `cache:${CACHE_VERSION}:teams:${userId}`;
+
+/** Cached `GET /user/registrations` response. */
+const getMyRegistrationsCacheKey = (userId: string) =>
+  `cache:${CACHE_VERSION}:registrations:${userId}`;
+
+// ── Schedule cache (GLOBAL, shared across all users) ──────────────────
+// Schedule data is global and rarely changes but is read on every
+// schedule-page load. Because the read endpoints vary by query/slug, we
+// use a version counter: each variant key embeds the current version, and
+// any admin write bumps the version — instantly orphaning every old
+// variant (they then expire via TTL). No key enumeration needed.
+
+/** Holds the current schedule cache version integer. */
+const SCHEDULE_CACHE_VERSION_KEY = `cache:${CACHE_VERSION}:schedule:ver`;
+
+/** Full schedule response; `variant` encodes the day/venue/category filters. */
+const getScheduleCacheKey = (version: number, variant: string) =>
+  `cache:${CACHE_VERSION}:schedule:full:${version}:${variant}`;
+
+/** All venues response. */
+const getScheduleVenuesCacheKey = (version: number) =>
+  `cache:${CACHE_VERSION}:schedule:venues:${version}`;
+
+/** All fest days response. */
+const getScheduleFestDaysCacheKey = (version: number) =>
+  `cache:${CACHE_VERSION}:schedule:days:${version}`;
+
+/** Per-venue schedule response. */
+const getVenueScheduleCacheKey = (version: number, venueSlug: string) =>
+  `cache:${CACHE_VERSION}:schedule:venue:${version}:${venueSlug}`;
+
 // CA Referral ID generation keys
 const CA_REFERRAL_RANGE_CURSOR_KEY = "ca:referral:range:cursor";
 
@@ -115,6 +160,14 @@ export {
   getOtpThrottleKey,
   getAccountProgressKey,
   getProfileCompletionKey,
+  getMyAccountCacheKey,
+  getMyTeamsCacheKey,
+  getMyRegistrationsCacheKey,
+  SCHEDULE_CACHE_VERSION_KEY,
+  getScheduleCacheKey,
+  getScheduleVenuesCacheKey,
+  getScheduleFestDaysCacheKey,
+  getVenueScheduleCacheKey,
   CA_REFERRAL_RANGE_CURSOR_KEY,
   // Rate limiter keys
   getGlobalRateLimitKey,

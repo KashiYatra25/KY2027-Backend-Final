@@ -4,6 +4,7 @@ import { CreateResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { FestDayModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
+import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
 import type { CreateFestDayRequestSchemaType } from "@schemas/admin/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -40,6 +41,9 @@ export const bulkCreateFestDays = catchAsync(
     }));
 
     const createdFestDays = await FestDayModel.insertMany(festDaysWithDates);
+    // Invalidate all schedule caches (version bump).
+    await bumpScheduleCacheVersion();
+
 
     logger.info("Bulk fest days created", { count: createdFestDays.length });
 

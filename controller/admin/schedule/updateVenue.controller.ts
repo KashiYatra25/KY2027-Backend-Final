@@ -4,6 +4,7 @@ import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound } from "zodex-axon/errors";
 import { VenueModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
+import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
 import type { UpdateVenueRequestSchemaType } from "@schemas/admin/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -20,6 +21,9 @@ export const updateVenue = catchAsync(
       { $set: data },
       { new: true, runValidators: true },
     );
+    // Invalidate all schedule caches (version bump).
+    await bumpScheduleCacheVersion();
+
 
     if (!venue) {
       return next(new NotFound().handleResponse(res, { info: "Venue not found" }));

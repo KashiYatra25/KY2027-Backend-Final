@@ -92,6 +92,13 @@ export type EventRegistrationSchemaType = InferSchemaType<
 
 export type EventRegistrationDoc = HydratedDocument<EventRegistrationSchemaType>;
 
+// ── Cache invalidation on create / status change ──
+import { invalidateRegistrationCacheHook } from "./hooks/invalidateRegistrationCache.hook.js";
+
+EventRegistrationSchema.post("save", async function (doc: EventRegistrationDoc) {
+  await invalidateRegistrationCacheHook(doc);
+});
+
 export const EventRegistrationModel = connInstance.getModel<EventRegistrationDoc>(
   "EventRegistration",
   EventRegistrationSchema

@@ -69,4 +69,11 @@ export type TeamSchemaType = InferSchemaType<typeof TeamSchema> & {
 
 export type TeamDoc = HydratedDocument<TeamSchemaType>;
 
+// ── Cache invalidation (registered after type export to avoid circular import timing) ──
+import { invalidateTeamCacheHook } from "./hooks/invalidateTeamCache.hook.js";
+
+TeamSchema.post("save", async function (doc: TeamDoc) {
+  await invalidateTeamCacheHook(doc);
+});
+
 export const TeamModel = connInstance.getModel<TeamDoc>("Team", TeamSchema);
