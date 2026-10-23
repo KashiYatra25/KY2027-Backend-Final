@@ -19,7 +19,7 @@ import type { Application } from "express";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
-import { globalErrorHandler } from "zodex-axon/errors";
+import { globalErrorHandler } from "@root/middleware/errorHandler.middleware.js";
 
 const app: Application = express();
 

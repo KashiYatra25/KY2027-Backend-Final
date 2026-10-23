@@ -17,7 +17,7 @@ const RESET = "\x1b[0m";
  *   ✓ Cache Hit → profile
  */
 export function logCacheHit(name: string): void {
-  logger.info(`${GREEN}✓ Cache Hit → ${name}${RESET}`);
+  logger.debug(`${GREEN}✓ Cache Hit → ${name}${RESET}`);
 }
 
 // ═══════════════════════════════════════════════════════════════════
