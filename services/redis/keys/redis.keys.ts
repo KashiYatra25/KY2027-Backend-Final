@@ -52,6 +52,15 @@ const getScheduleFestDaysCacheKey = (version: number) =>
 const getVenueScheduleCacheKey = (version: number, venueSlug: string) =>
   `cache:${CACHE_VERSION}:schedule:venue:${version}:${venueSlug}`;
 
+// ── Passes cache (GLOBAL, shared across all users) ────────────────────
+// `GET /pass` returns the same active-passes list for everyone and is only
+// ever written by the offline seed script (no runtime admin endpoint). So a
+// single global key with a TTL backstop is sufficient — no per-user keys and
+// no version counter needed. A re-seed is picked up once the TTL lapses.
+
+/** Cached `GET /pass` response (all active passes). */
+const PASSES_CACHE_KEY = `cache:${CACHE_VERSION}:passes`;
+
 // CA Referral ID generation keys
 const CA_REFERRAL_RANGE_CURSOR_KEY = "ca:referral:range:cursor";
 
@@ -168,6 +177,7 @@ export {
   getScheduleVenuesCacheKey,
   getScheduleFestDaysCacheKey,
   getVenueScheduleCacheKey,
+  PASSES_CACHE_KEY,
   CA_REFERRAL_RANGE_CURSOR_KEY,
   // Rate limiter keys
   getGlobalRateLimitKey,
