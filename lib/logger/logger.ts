@@ -1,5 +1,30 @@
 import winston from "winston";
 import LokiTransport from "winston-loki";
+import dotenv from "dotenv";
+import { existsSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+// ═══════════════════════════════════════════════════════════════════
+// EARLY ENV LOADING
+// Load .env.development BEFORE logger is created so LOKI_* vars are available.
+// The logger is imported very early (before env/environment.ts), so we
+// must load dotenv here to ensure Grafana Cloud credentials are set.
+// ═══════════════════════════════════════════════════════════════════
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function findEnvFile(): string | undefined {
+  const candidates = [
+    join(__dirname, "../../secrets/.env.development"),      // from lib/logger
+    join(__dirname, "../../../secrets/.env.development"),   // from JS/lib/logger
+  ];
+  return candidates.find(p => existsSync(p));
+}
+
+const envPath = findEnvFile();
+if (envPath) {
+  dotenv.config({ path: envPath });
+}
 
 type Environments = "development" | "test" | "production";
 
@@ -99,32 +124,24 @@ class WinstonLogger {
       /**
        * DEVELOPMENT
        * ─────────────────────────────────────────────────────────────────────
-       * Single transport: Console.
+       * Console + Loki (if Grafana Cloud configured).
        *
-       * Why Console only?
-       *   During local development you want instant, colourised, human-readable
-       *   output directly in your terminal without any network round-trips.
-       *   Sending logs to Loki locally would add latency and require the Docker
-       *   stack to be running just to start the server.
-       *
-       * Format used: devFormat
-       *   - colorize({ all: true })  — colours the entire line (level + message)
-       *     so different severity levels are visually distinct at a glance.
-       *   - timestamp({ format: "HH:mm:ss" })  — short time-only stamp; the date
-       *     is irrelevant during a local session.
-       *   - printf(...)  — custom single-line template:
-       *       [HH:mm:ss] level: message { ...meta }
-       *     Meta is JSON-stringified inline so it stays on one line and is easy
-       *     to scan without a log viewer.
-       *
-       * Log level: "debug" (set in createLogger)
-       *   Every log level (error → warn → info → http → verbose → debug) is
-       *   emitted so nothing is hidden during development.
+       * Console gives instant, colourised, human-readable output.
+       * Loki (optional) allows testing Grafana Cloud integration locally.
        */
-      case "development":
-        return [
+      case "development": {
+        const transports: winston.transport[] = [
           new winston.transports.Console({ format: WinstonLogger.devFormat }),
         ];
+        
+        // Also push to Loki if Grafana Cloud is configured
+        const lokiConfig = getLokiConfig();
+        if (lokiConfig.isGrafanaCloud) {
+          transports.push(WinstonLogger.createLokiTransport("development"));
+        }
+        
+        return transports;
+      }
 
       /**
        * TEST

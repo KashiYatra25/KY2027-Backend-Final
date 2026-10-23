@@ -84,6 +84,9 @@ const getEventBySlugCacheKey = (version: number, slug: string) =>
 // CA Referral ID generation keys
 const CA_REFERRAL_RANGE_CURSOR_KEY = "ca:referral:range:cursor";
 
+// KY ID generation key (simple counter for sequential IDs)
+const KY_ID_RANGE_CURSOR_KEY = "ky:id:counter";
+
 // ═══════════════════════════════════════════════════════════════════
 // RATE LIMITER KEYS
 // Format: rl:<scope>:<identifier>:<route-name>
@@ -202,6 +205,7 @@ export {
   getEventsListCacheKey,
   getEventBySlugCacheKey,
   CA_REFERRAL_RANGE_CURSOR_KEY,
+  KY_ID_RANGE_CURSOR_KEY,
   // Rate limiter keys
   getGlobalRateLimitKey,
   getRouteRateLimitKey,
