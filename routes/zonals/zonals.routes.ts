@@ -7,6 +7,10 @@ import {
 } from "@root/controller/user/zonals/index.js";
 import { userRoutesRESTProtectMiddleware } from "@root/middleware/user/protect/index.js";
 import { checkZonalEventRegistrationEligibilityMiddleware } from "@root/middleware/user/zonals/checkZonalEventRegistrationEligibility.middleware.js";
+import {
+  publicReadRateLimiterMiddleware,
+  eventRegistrationRateLimiterMiddleware,
+} from "@root/middleware/limiters/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // ZONALS ROUTES
@@ -19,7 +23,7 @@ const zonalsRouter = Router();
 // ─────────────────────────────────────────────────────────────────────
 
 // Get all zonal colleges with events and pass info
-zonalsRouter.get("/colleges", getZonalColleges);
+zonalsRouter.get("/colleges", publicReadRateLimiterMiddleware, getZonalColleges);
 
 // ─────────────────────────────────────────────────────────────────────
 // PROTECTED ROUTES (require auth)
@@ -28,6 +32,7 @@ zonalsRouter.get("/colleges", getZonalColleges);
 // Get user's zonal passes
 zonalsRouter.get(
   "/my-passes",
+  publicReadRateLimiterMiddleware,
   userRoutesRESTProtectMiddleware,
   getMyZonalPasses
 );
@@ -35,6 +40,7 @@ zonalsRouter.get(
 // Register for a zonal event (with eligibility check)
 zonalsRouter.post(
   "/:collegeSlug/events/:eventSlug/register",
+  eventRegistrationRateLimiterMiddleware,
   userRoutesRESTProtectMiddleware,
   checkZonalEventRegistrationEligibilityMiddleware,
   registerForZonalEvent
@@ -43,6 +49,7 @@ zonalsRouter.post(
 // Cancel zonal event registration
 zonalsRouter.delete(
   "/:collegeSlug/events/:eventSlug/registration",
+  eventRegistrationRateLimiterMiddleware,
   userRoutesRESTProtectMiddleware,
   cancelZonalEventRegistration
 );
