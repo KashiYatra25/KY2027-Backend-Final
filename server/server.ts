@@ -13,6 +13,7 @@ import {
   stopEmailWorker,
   closeEmailQueue,
 } from "@services/queue/index.js";
+import { clearAllCachesOnStartup } from "@services/redis/clearCacheOnStartup.service.js";
 
 // Create HTTP server from Express app (required for Apollo drain plugin)
 const httpServer = http.createServer(app);
@@ -63,6 +64,9 @@ export async function startServer() {
     // Initialize ReferralIdService (allocates ID range from Redis)
     await referralIdService.initialize();
     logger.info("ReferralIdService initialized", referralIdService.getRangeInfo());
+
+    // Clear all application caches on startup (ensures fresh data after deploy)
+    await clearAllCachesOnStartup();
 
     // SEC-001 FIX: Initialize Google OAuth client for server-side token verification
     initializeGoogleOAuthClient(env.GOOGLE_CLIENT_ID);

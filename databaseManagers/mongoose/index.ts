@@ -35,13 +35,6 @@ export {
 } from "./team/team.model.js";
 
 export {
-  PassModel,
-  PassSchema,
-  type PassDoc,
-  type PassSchemaType,
-} from "./passes/pass.model.js";
-
-export {
   PurchaseModel,
   PurchaseSchema,
   type PurchaseDoc,

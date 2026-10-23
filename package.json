@@ -13,8 +13,8 @@
     "lint": "eslint .",
     "watch": "tsc --watch",
     "check-types": "tsc --noEmit",
-    "seed:passes": "pnpm run build && node ./JS/scripts/seedPasses.script.js",
     "seed:schedule": "pnpm run build && node ./JS/scripts/seedSchedule.script.js",
+    "clear-cache": "node ./JS/scripts/clear-cache.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

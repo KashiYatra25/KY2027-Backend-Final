@@ -1,7 +1,6 @@
 import { aadhaarRouter } from "@api/aadhaar/aadhaar.routes.js";
 import { adminRouter } from "@api/admin/admin.routes.js";
 import { caRouter } from "@api/ca/ca.routes.js";
-import { passRouter } from "@api/pass/pass.routes.js";
 import { userRouter } from "@api/user/user.routes.js";
 import { eventRouter } from "@api/event/event.routes.js";
 import { teamRouter } from "@api/team/team.routes.js";
@@ -45,7 +44,6 @@ app.use(`${env.BASE_API_ENDPOINT}/aadhaar`, aadhaarRouter);
 app.use(`${env.BASE_API_ENDPOINT}/events`, eventRouter);
 app.use(`${env.BASE_API_ENDPOINT}/teams`, teamRouter);
 app.use(`${env.BASE_API_ENDPOINT}/campus-ambassador`, caRouter);
-app.use(`${env.BASE_API_ENDPOINT}/pass`, passRouter);
 app.use(`${env.BASE_API_ENDPOINT}/schedule`, scheduleRouter);
 app.use(`${env.BASE_API_ENDPOINT}/payment`, paymentRouter);
 app.use(`${env.BASE_API_ENDPOINT}/zonals`, zonalsRouter);

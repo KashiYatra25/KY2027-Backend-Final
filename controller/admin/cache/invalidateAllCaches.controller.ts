@@ -5,7 +5,6 @@ import { logger } from "@logger/logger.js";
 import { redisService } from "@redis/index.js";
 import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
 import { bumpEventsCacheVersion } from "@redis/eventsCache.service.js";
-import { PASSES_CACHE_KEY } from "@redis/keys/redis.keys.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // INVALIDATE ALL CACHES
@@ -41,15 +40,7 @@ export const invalidateAllCaches = catchAsync(
       results.events = `failed: ${(err as Error).message}`;
     }
 
-    // 3. Delete the global passes cache key directly
-    try {
-      await redisService.delete(PASSES_CACHE_KEY);
-      results.passes = "deleted";
-    } catch (err) {
-      results.passes = `failed: ${(err as Error).message}`;
-    }
-
-    // 4. SCAN + delete all remaining cache:* keys (per-user caches, etc.).
+    // 3. SCAN + delete all remaining cache:* keys (per-user caches, etc.).
     //    redisConnection is an ioredis client: scan returns [nextCursor, keys].
     try {
       const client = redisService.redisConnection;
