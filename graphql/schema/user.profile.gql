@@ -60,6 +60,8 @@ type UserProfile {
   kyId: String
   "Name of the Campus Ambassador who referred this user (null if none applied)"
   referredBy: String
+  "Whether this user is a Campus Ambassador"
+  isCa: Boolean!
   role: Role
 }
 
