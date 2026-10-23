@@ -3,8 +3,45 @@ import type { ErrorRequestHandler } from "express";
 import { globalErrorHandler as zodexErrorHandler } from "zodex-axon/errors";
 
 /**
- * Custom error handler that logs errors before delegating to zodex-axon.
- * zodex-axon's handler does NOT log - this ensures errors reach Loki.
+ * Patterns that indicate an internal error message that should not be exposed.
+ * These are logged but sanitized before sending to the client.
+ */
+const SENSITIVE_ERROR_PATTERNS = [
+  /prisma/i,
+  /mongo/i,
+  /redis/i,
+  /econnrefused/i,
+  /etimedout/i,
+  /enotfound/i,
+  /socket/i,
+  /tcp/i,
+  /connection/i,
+  /database/i,
+  /query/i,
+  /constraint/i,
+  /foreign key/i,
+  /unique constraint/i,
+  /duplicate key/i,
+  /aws/i,
+  /s3/i,
+  /textract/i,
+  /secret/i,
+  /credential/i,
+  /password/i,
+  /token/i,
+];
+
+/**
+ * Check if an error message contains sensitive internal details
+ */
+function isSensitiveError(message: string): boolean {
+  return SENSITIVE_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+/**
+ * Custom error handler that:
+ * 1. Logs all errors to Loki (zodex-axon doesn't log)
+ * 2. Sanitizes sensitive error messages before sending to client
  */
 export const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || err.status || 500;
@@ -23,7 +60,7 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => 
     referer: req.headers["referer"],
   };
 
-  // Add error details
+  // Add error details for logging (full details - internal only)
   if (err.message) logContext.message = err.message;
   if (err.name) logContext.errorName = err.name;
   if (err.code) logContext.errorCode = err.code;
@@ -46,6 +83,15 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => 
     }
 
     logger.error("Internal server error", logContext);
+
+    // SANITIZE: Don't expose internal error details to client
+    // Only sanitize non-operational errors (operational errors are intentional user-facing messages)
+    if (!err.isOperational && err.message && isSensitiveError(err.message)) {
+      err.message = "An internal error occurred. Please try again later.";
+      // Clear any sensitive data that might leak
+      delete err.stack;
+      delete err.cause;
+    }
   } else if (statusCode === 429) {
     logger.debug("Rate limit exceeded", logContext);
   } else if (statusCode === 401) {
