@@ -13,14 +13,11 @@
     "lint": "eslint .",
     "watch": "tsc --watch",
     "check-types": "tsc --noEmit",
-    "seed-prisma": "npx tsx data/seeder.ts",
-    "seed-mongo": "npx tsx data/mongo.seeder.ts",
     "seed:passes": "pnpm run build && node ./JS/scripts/seedPasses.script.js",
+    "seed:schedule": "pnpm run build && node ./JS/scripts/seedSchedule.script.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "proto:gen": "buf generate",
-    "proto:lint": "buf lint proto"
+    "prisma:studio": "prisma studio"
   },
   "keywords": [
     "express",
