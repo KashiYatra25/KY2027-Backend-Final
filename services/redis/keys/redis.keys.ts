@@ -61,6 +61,26 @@ const getVenueScheduleCacheKey = (version: number, venueSlug: string) =>
 /** Cached `GET /pass` response (all active passes). */
 const PASSES_CACHE_KEY = `cache:${CACHE_VERSION}:passes`;
 
+// ── Events cache (GLOBAL, shared across all users) ────────────────────
+// `GET /events` (filterable) and `GET /events/:slug` return the same data for
+// everyone and change only via the seed script (no runtime event-edit endpoint
+// yet). Reads have many variants (category / participationType / registrationOpen
+// / slug), so we use a version counter like schedule: each variant key embeds
+// the current version, and any write bumps the version — instantly orphaning
+// every old variant (they then expire via the long TTL). If a runtime event
+// mutation endpoint is ever added, it MUST call bumpEventsCacheVersion().
+
+/** Holds the current events cache version integer. */
+const EVENTS_CACHE_VERSION_KEY = `cache:${CACHE_VERSION}:events:ver`;
+
+/** Cached `GET /events` list response; `variant` encodes the query filters. */
+const getEventsListCacheKey = (version: number, variant: string) =>
+  `cache:${CACHE_VERSION}:events:list:${version}:${variant}`;
+
+/** Cached `GET /events/:slug` response. */
+const getEventBySlugCacheKey = (version: number, slug: string) =>
+  `cache:${CACHE_VERSION}:events:slug:${version}:${slug}`;
+
 // CA Referral ID generation keys
 const CA_REFERRAL_RANGE_CURSOR_KEY = "ca:referral:range:cursor";
 
@@ -178,6 +198,9 @@ export {
   getScheduleFestDaysCacheKey,
   getVenueScheduleCacheKey,
   PASSES_CACHE_KEY,
+  EVENTS_CACHE_VERSION_KEY,
+  getEventsListCacheKey,
+  getEventBySlugCacheKey,
   CA_REFERRAL_RANGE_CURSOR_KEY,
   // Rate limiter keys
   getGlobalRateLimitKey,
