@@ -4,12 +4,15 @@ const PROFILE_COMPLETION_TTL = 60 * 60; // 1 hour
 
 // Read-through entity caches (profile / teams / registrations).
 // Kept fresh primarily by explicit invalidation on writes; this TTL is a
-// safety backstop against any missed invalidation path.
-const ENTITY_CACHE_TTL = 3 * 60 * 60; // 3 hours
+// safety backstop against any missed invalidation path. Raised to 12h since
+// every mutation path invalidates its key, so the TTL rarely governs freshness.
+const ENTITY_CACHE_TTL = 12 * 60 * 60; // 12 hours
 
-// Schedule cache — global, rarely changes, version-counter invalidated.
-// Longer backstop TTL since writes bump the version (instant invalidation).
-const SCHEDULE_CACHE_TTL = 6 * 60 * 60; // 6 hours
+// Schedule + passes cache — global, near-static, version-counter / seed
+// invalidated (admin writes bump the version → instant invalidation; passes
+// change only via the seed script). The TTL is purely a backstop, so it can be
+// long. Raised to 24h.
+const SCHEDULE_CACHE_TTL = 24 * 60 * 60; // 24 hours
 
 // ═══════════════════════════════════════════════════════════════════
 // RATE LIMITER TTLs (Window sizes in seconds)
