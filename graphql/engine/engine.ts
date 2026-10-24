@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ApolloServer } from "@apollo/server";
+import type { ApolloServerPlugin, GraphQLRequestListener, GraphQLRequestContext } from "@apollo/server";
 import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
 import { ApolloServerPluginLandingPageDisabled } from "@apollo/server/plugin/disabled";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
@@ -11,6 +12,7 @@ import type { Request } from "express";
 import { resolvers } from "@gql/resolver/main.resolver.js";
 import { type RoleLevel } from "@lib/prisma/index.js";
 import type { Server } from "http";
+import { logger } from "@root/lib/logger/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -71,6 +73,49 @@ const typeDefs = fs
   .map((file) => fs.readFileSync(path.join(schemaPath, file), "utf8"));
 
 export function createApolloServer(server: Server) {
+  /**
+   * Apollo plugin to log GraphQL errors to Loki.
+   * Catches validation errors, resolver errors, and other GraphQL-level errors.
+   */
+  const errorLoggingPlugin: ApolloServerPlugin<GqlGlobalContext> = {
+    async requestDidStart(): Promise<GraphQLRequestListener<GqlGlobalContext>> {
+      return {
+        async didEncounterErrors(requestContext: GraphQLRequestContext<GqlGlobalContext>) {
+          if (!requestContext.errors) return;
+          
+          for (const error of requestContext.errors) {
+            const code = error.extensions?.code as string | undefined;
+            
+            // Build log context
+            const logContext: Record<string, unknown> = {
+              message: error.message,
+              code,
+              path: error.path,
+              locations: error.locations,
+              operationName: requestContext.request.operationName,
+            };
+
+            // Include stack trace for server errors (not validation errors)
+            if (code !== "GRAPHQL_VALIDATION_FAILED" && error.extensions?.stacktrace) {
+              logContext.stack = error.extensions.stacktrace;
+            }
+
+            // Log level based on error type
+            if (code === "GRAPHQL_VALIDATION_FAILED") {
+              // Schema mismatch - usually frontend needs update
+              logger.warn("GraphQL validation error", logContext);
+            } else if (code === "INTERNAL_SERVER_ERROR") {
+              logger.error("GraphQL internal error", logContext);
+            } else {
+              // Other errors (auth, forbidden, bad request)
+              logger.warn("GraphQL error", logContext);
+            }
+          }
+        },
+      };
+    },
+  };
+
   return new ApolloServer({
     typeDefs,
     resolvers,
@@ -79,6 +124,7 @@ export function createApolloServer(server: Server) {
     // H5 FIX: enforce query depth + alias/complexity limits
     validationRules: [depthLimit(MAX_QUERY_DEPTH), maxAliasesRule(MAX_ALIASES)],
     plugins: [
+      errorLoggingPlugin,
       ApolloServerPluginDrainHttpServer({ httpServer: server }),
       // SEC-009: Disable landing page in production
       isProduction
