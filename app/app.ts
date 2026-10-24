@@ -42,6 +42,11 @@ app.use(cors(corsOptions));
 // Global rate limiter - 100 requests/minute per IP across all endpoints
 app.use(globalRateLimiterMiddleware);
 
+// Health check endpoint (no auth, no rate limit)
+app.get("/health", (_req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 app.use(`${env.BASE_API_ENDPOINT}/user`, userRouter);
 app.use(`${env.BASE_API_ENDPOINT}/admin`, adminRouter);
 app.use(`${env.BASE_API_ENDPOINT}/aadhaar`, aadhaarRouter);
