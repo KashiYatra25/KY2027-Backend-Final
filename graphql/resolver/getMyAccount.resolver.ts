@@ -7,6 +7,7 @@ import { myProfileGuard, isAuthenticatedGuard } from "@gql/middleware/index.js";
 import { AccountProgressModel } from "@lib/mongo/user/accountProgress.model.js";
 import { getCached, setCached, logCacheHit } from "@redis/entityCache.service.js";
 import { getMyAccountCacheKey } from "@redis/keys/redis.keys.js";
+import { logger } from "@logger/logger.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // GET MY ACCOUNT RESOLVER
@@ -76,14 +77,6 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
 
       // Fetch account progress from MongoDB
       const accountProgress = await AccountProgressModel.findOne({ userId });
-      
-      // DEBUG: Log what we got from MongoDB
-      const { logger } = await import("@logger/logger.js");
-      logger.debug("getMyAccount: MongoDB data", {
-        userId,
-        hasAccountProgress: !!accountProgress,
-        rawVerification: accountProgress?.profileCompletionAndVerification,
-      });
 
       // Step completion flags (new 3-step system)
       const steps = {

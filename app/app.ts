@@ -12,6 +12,7 @@ import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
 import { globalRateLimiterMiddleware } from "@root/middleware/limiters/index.js";
 import { httpMetricsMiddleware } from "@root/middleware/httpMetrics.middleware.js";
+import { requestContextMiddleware } from "@root/middleware/requestContext.middleware.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
@@ -31,6 +32,7 @@ app.set("trust proxy", "loopback");
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+app.use(requestContextMiddleware); // Generate requestId first
 app.use(httpMetricsMiddleware); // Must be after body parsing for GraphQL operation extraction
 app.use(morgan("dev"));
 app.use(cookieParser());

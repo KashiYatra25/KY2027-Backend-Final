@@ -76,6 +76,7 @@ export function createApolloServer(server: Server) {
   /**
    * Apollo plugin to log GraphQL errors to Loki.
    * Catches validation errors, resolver errors, and other GraphQL-level errors.
+   * Includes safe debugging context without PII.
    */
   const errorLoggingPlugin: ApolloServerPlugin<GqlGlobalContext> = {
     async requestDidStart(): Promise<GraphQLRequestListener<GqlGlobalContext>> {
@@ -83,16 +84,26 @@ export function createApolloServer(server: Server) {
         async didEncounterErrors(requestContext: GraphQLRequestContext<GqlGlobalContext>) {
           if (!requestContext.errors) return;
           
+          const req = requestContext.contextValue?.req;
+          const user = requestContext.contextValue?.user;
+          
+          // Extract variable names (not values) for debugging
+          const variableNames = requestContext.request.variables 
+            ? Object.keys(requestContext.request.variables)
+            : [];
+          
           for (const error of requestContext.errors) {
             const code = error.extensions?.code as string | undefined;
             
-            // Build log context
+            // Build log context - safe info only, no PII
             const logContext: Record<string, unknown> = {
-              message: error.message,
+              requestId: req?.requestId || "none",
+              userId: user?.id || "anonymous",
+              operationName: requestContext.request.operationName,
               code,
               path: error.path,
-              locations: error.locations,
-              operationName: requestContext.request.operationName,
+              error: error.message,
+              variableNames, // Shows WHAT was passed, not the values
             };
 
             // Include stack trace for server errors (not validation errors)

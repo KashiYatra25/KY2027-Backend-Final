@@ -2,7 +2,6 @@ import type { Request } from "express";
 import { GraphQLError } from "graphql";
 import type { GqlGlobalContext } from "@gql/engine/engine.js";
 import { extractSessionToken, decodeAndFindUser } from "./helper/functions/session.helper.js";
-import { logger } from "@root/lib/logger/logger.js";
 
 /**
  * GraphQL context factory
@@ -14,14 +13,6 @@ export async function userRoutesGQLProtectMiddleware({
   req: Request;
 }): Promise<GqlGlobalContext> {
   const sessionToken = extractSessionToken(req);
-
-  // Debug: Log what cookies we're receiving
-  logger.debug("GraphQL auth: cookies received", {
-    hasCookies: !!req.cookies,
-    cookieKeys: req.cookies ? Object.keys(req.cookies) : [],
-    hasSessionToken: !!sessionToken,
-    path: req.path,
-  });
 
   if (!sessionToken) {
     return { user: null, req };

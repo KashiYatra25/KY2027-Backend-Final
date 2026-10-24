@@ -50,20 +50,17 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => 
 
   // Build detailed context for tracing
   const logContext: Record<string, unknown> = {
+    requestId: req.requestId || "none",
     statusCode,
     method: req.method,
     path: req.path,
-    url: req.originalUrl,
-    requestId: req.headers["x-request-id"] || "none",
     ip: req.ip,
     userAgent: req.headers["user-agent"],
-    origin: req.headers["origin"],
-    referer: req.headers["referer"],
   };
 
   // Add error details for logging (full details - internal only)
-  if (err.message) logContext.message = err.message;
-  if (err.name) logContext.errorName = err.name;
+  if (err.message) logContext.error = err.message;
+  if (err.name && err.name !== "Error") logContext.errorType = err.name;
   if (err.code) logContext.errorCode = err.code;
   if (err.data) logContext.errorData = err.data;
 

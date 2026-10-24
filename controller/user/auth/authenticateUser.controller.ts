@@ -6,6 +6,7 @@ import { logger } from "@logger/logger.js";
 import { AccountProgressModel, IpSecurityModel } from "@lib/mongo/index.js";
 import { invalidateProfileCache } from "@root/services/redis/entityCache.service.js";
 import type { GoogleVerifiedRequest } from "@root/middleware/user/auth/index.js";
+import { metrics } from "@services/metrics/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -40,6 +41,9 @@ export const authenticateUser = catchAsync(
     // For IIT BHU users: always ensure college is set
     // ─────────────────────────────────────────────────────────────────
 
+    // Check if user exists before upsert (to track new signups)
+    const existingUser = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+
     const user = await prisma.user.upsert({
       where: { email },
       update: {
@@ -63,6 +67,11 @@ export const authenticateUser = catchAsync(
         role: true,
       },
     });
+
+    // Track new user signups
+    if (!existingUser) {
+      metrics.incrementUsers();
+    }
 
     // ─────────────────────────────────────────────────────────────────
     // Step 2: MongoDB operations (parallel)
