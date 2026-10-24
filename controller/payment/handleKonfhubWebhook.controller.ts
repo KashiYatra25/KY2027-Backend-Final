@@ -200,7 +200,7 @@ async function handleRegistration(
   
   if (existingPurchase) {
     metrics.recordWebhook("repeat", "main");
-    logger.info({ msg: "KonfHub webhook: booking already processed", ...logContext });
+    logger.info({ msg: "KonfHub webhook: booking already processed", webhookStatus: "repeat", ...logContext });
     return { success: true, skipped: true, reason: "already_processed" };
   }
 
@@ -213,6 +213,7 @@ async function handleRegistration(
   if (!matchResult) {
     logger.warn({
       msg: "KonfHub webhook: could not match attendee to user",
+      webhookStatus: "unmatched",
       ...logContext,
       kyId: attendee.kyId,
     });
@@ -343,6 +344,7 @@ async function handleRegistration(
 
   logger.info({
     msg: "KonfHub webhook: registration successful",
+    webhookStatus: "processed",
     userId: user.id,
     matchedBy,
     passType,
@@ -374,7 +376,7 @@ async function handleCancellation(attendee: KonfHubAttendee, webhookId: string, 
   );
 
   if (!purchase) {
-    logger.warn({ msg: "KonfHub webhook: cancellation for unknown booking", ...logContext });
+    logger.warn({ msg: "KonfHub webhook: cancellation for unknown booking", webhookStatus: "failed", ...logContext });
     return { success: false, error: "Purchase not found" };
   }
 
@@ -395,13 +397,14 @@ async function handleCancellation(attendee: KonfHubAttendee, webhookId: string, 
       await invalidateProfileCache(purchase.userId);
       logger.info({
         msg: "KonfHub webhook: revoked paid status (no active purchases)",
+        webhookStatus: "processed",
         userId: purchase.userId,
         ...logContext,
       });
     }
   }
 
-  logger.info({ msg: "KonfHub webhook: cancellation processed", ...logContext });
+  logger.info({ msg: "KonfHub webhook: cancellation processed", webhookStatus: "processed", ...logContext });
   return { success: true };
 }
 
@@ -422,6 +425,7 @@ async function handleCheckIn(attendee: KonfHubAttendee, webhookId: string, event
   if (!purchase) {
     logger.warn({
       msg: "KonfHub webhook: check-in for unknown booking",
+      webhookStatus: "failed",
       webhookId,
       bookingId: attendee.bookingId,
     });
@@ -430,6 +434,7 @@ async function handleCheckIn(attendee: KonfHubAttendee, webhookId: string, event
 
   logger.info({
     msg: "KonfHub webhook: check-in processed",
+    webhookStatus: "processed",
     webhookId,
     bookingId: attendee.bookingId,
     userId: purchase.userId,
@@ -455,6 +460,7 @@ async function handleCheckOut(attendee: KonfHubAttendee, webhookId: string, even
   if (!purchase) {
     logger.warn({
       msg: "KonfHub webhook: check-out for unknown booking",
+      webhookStatus: "failed",
       webhookId,
       bookingId: attendee.bookingId,
     });
@@ -463,6 +469,7 @@ async function handleCheckOut(attendee: KonfHubAttendee, webhookId: string, even
 
   logger.info({
     msg: "KonfHub webhook: check-out processed",
+    webhookStatus: "processed",
     webhookId,
     bookingId: attendee.bookingId,
     userId: purchase.userId,
@@ -584,6 +591,7 @@ export const handleKonfhubWebhook = async (
     
     logger.error({
       msg: "KonfHub webhook: error processing",
+      webhookStatus: "failed",
       webhookId,
       error: errorMsg,
       stack: error instanceof Error ? error.stack : undefined,

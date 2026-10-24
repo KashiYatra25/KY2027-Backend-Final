@@ -114,7 +114,7 @@
         {
           "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
           "editorMode": "code",
-          "expr": "count_over_time({app=\"ky-2027-backend\"} |= \"webhook processed\" [24h])",
+          "expr": "count_over_time({app=\"ky-2027-backend\"} | json | webhookStatus=\"processed\" [24h])",
           "queryType": "instant",
           "refId": "A"
         }
@@ -146,7 +146,7 @@
         {
           "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
           "editorMode": "code",
-          "expr": "count_over_time({app=\"ky-2027-backend\"} |= \"email sent\" [24h])",
+          "expr": "count_over_time({app=\"ky-2027-backend\"} | json | emailStatus=\"sent\" [24h])",
           "queryType": "instant",
           "refId": "A"
         }
@@ -240,7 +240,7 @@
         {
           "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
           "editorMode": "code",
-          "expr": "{app=\"ky-2027-backend\"} |= \"webhook\" | json",
+          "expr": "{app=\"ky-2027-backend\"} | json | webhookStatus != \"\" | line_format \"{{.webhookStatus}} | {{.msg}}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -266,7 +266,7 @@
         {
           "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
           "editorMode": "code",
-          "expr": "{app=\"ky-2027-backend\"} |= \"webhook\" |= \"processed\" | json",
+          "expr": "{app=\"ky-2027-backend\"} | json | webhookStatus=\"processed\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -292,7 +292,7 @@
         {
           "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
           "editorMode": "code",
-          "expr": "{app=\"ky-2027-backend\"} |= \"webhook\" |= \"error\" | json",
+          "expr": "{app=\"ky-2027-backend\"} | json | webhookStatus=\"failed\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -318,7 +318,7 @@
         {
           "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
           "editorMode": "code",
-          "expr": "{app=\"ky-2027-backend\"} |= \"could not match attendee\" | json",
+          "expr": "{app=\"ky-2027-backend\"} | json | webhookStatus=\"unmatched\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -327,8 +327,34 @@
       "type": "logs"
     },
     {
+      "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 29 },
+      "id": 15,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
+          "editorMode": "code",
+          "expr": "{app=\"ky-2027-backend\"} | json | webhookStatus=\"repeat\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "🔁 Repeat",
+      "type": "logs"
+    },
+    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
       "id": 103,
       "panels": [],
       "title": "📧 Emails",
@@ -336,7 +362,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 30 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 36 },
       "id": 11,
       "options": {
         "dedupStrategy": "none",
@@ -352,7 +378,7 @@
         {
           "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
           "editorMode": "code",
-          "expr": "{app=\"ky-2027-backend\"} |~ \"[Ee]mail\" | json",
+          "expr": "{app=\"ky-2027-backend\"} | json | emailStatus != \"\" | line_format \"{{.emailStatus}} | {{.emailType}} | {{.email}}\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -362,7 +388,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
-      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 38 },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 44 },
       "id": 12,
       "options": {
         "dedupStrategy": "none",
@@ -378,7 +404,7 @@
         {
           "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
           "editorMode": "code",
-          "expr": "{app=\"ky-2027-backend\"} |= \"email sent\" | json",
+          "expr": "{app=\"ky-2027-backend\"} | json | emailStatus=\"sent\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -388,7 +414,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
-      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 38 },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 44 },
       "id": 13,
       "options": {
         "dedupStrategy": "none",
@@ -404,7 +430,7 @@
         {
           "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
           "editorMode": "code",
-          "expr": "{app=\"ky-2027-backend\", level=\"error\"} |~ \"[Ee]mail\" | json",
+          "expr": "{app=\"ky-2027-backend\"} | json | emailStatus=\"failed\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -414,7 +440,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 44 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 50 },
       "id": 104,
       "panels": [],
       "title": "📋 All Logs",
@@ -422,7 +448,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "grafanacloud-logs" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 45 },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 51 },
       "id": 14,
       "options": {
         "dedupStrategy": "none",

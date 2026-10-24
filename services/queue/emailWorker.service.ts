@@ -39,7 +39,7 @@ async function processAdminOnboardCredsEmail(data: AdminOnboardCredsEmailJobData
     "adminInvite"
   );
 
-  logger.info("Admin onboard creds email sent", { email });
+  logger.info("Admin onboard creds email sent", { emailStatus: "sent", emailType: "admin-onboard", email });
 }
 
 /**
@@ -58,7 +58,7 @@ async function processForgotPasswordEmail(data: AdminForgotPasswordEmailJobData[
     "forgotPassword"
   );
 
-  logger.info("Forgot password email sent", { email });
+  logger.info("Forgot password email sent", { emailStatus: "sent", emailType: "forgot-password", email });
 }
 
 /**
@@ -81,7 +81,7 @@ async function processAccountStatusChangeEmail(data: AccountStatusChangeEmailJob
 
   await emailService.sendEmail(subject, "accountStatusChange");
 
-  logger.info("Account status change email sent", { email, action });
+  logger.info("Account status change email sent", { emailStatus: "sent", emailType: "account-status", email, action });
 }
 
 /**
@@ -104,7 +104,7 @@ async function processPassesInvoiceEmail(data: PassesInvoiceEmailJobData["payloa
     "passesInvoice",
   );
 
-  logger.info("Passes invoice email sent", { email });
+  logger.info("Passes invoice email sent", { emailStatus: "sent", emailType: "passes-invoice", email });
 }
 
 /**
@@ -130,7 +130,7 @@ async function processCaApplicationStatusEmail(data: CaApplicationStatusEmailJob
 
   await emailService.sendEmail(subject, "caApplicationStatus");
 
-  logger.info("CA application status email sent", { email, status });
+  logger.info("CA application status email sent", { emailStatus: "sent", emailType: "ca-application", email, status });
 }
 
 /**
@@ -156,7 +156,7 @@ async function processPaymentFailedEmail(data: PaymentFailedEmailJobData["payloa
 
   await emailService.sendEmail(subject, "paymentFailed");
 
-  logger.info("Payment failed email sent", { email, orderId, status });
+  logger.info("Payment failed email sent", { emailStatus: "sent", emailType: "payment-failed", email, orderId, status });
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -246,6 +246,8 @@ export function startEmailWorker(): Worker<EmailJobData> {
 
   emailWorker.on("failed", (job, error) => {
     logger.error("Email job failed", {
+      emailStatus: "failed",
+      emailType: job?.data.type,
       jobId: job?.id,
       type: job?.data.type,
       error: error.message,

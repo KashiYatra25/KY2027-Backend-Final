@@ -144,6 +144,7 @@ async function handleRegistration(
   if (!matchResult) {
     logger.warn({
       msg: "Zonals webhook: could not match attendee to user",
+      webhookStatus: "unmatched",
       ...logContext,
       kyId: attendee.kyId,
     });
@@ -174,7 +175,7 @@ async function handleRegistration(
         "passes.paymentId": attendee.bookingId
       });
       if (existingDoc) {
-        logger.info({ msg: "Zonals webhook: booking already processed (unmatched)", ...logContext });
+        logger.info({ msg: "Zonals webhook: booking already processed (unmatched)", webhookStatus: "repeat", ...logContext });
         return { success: true, skipped: true, reason: "already_processed" };
       }
     }
@@ -269,7 +270,7 @@ async function handleRegistration(
     });
     
     if (existingDoc) {
-      logger.info({ msg: "Zonals webhook: booking already processed", ...logContext });
+      logger.info({ msg: "Zonals webhook: booking already processed", webhookStatus: "repeat", ...logContext });
       return { success: true, skipped: true, reason: "already_processed" };
     }
     
@@ -359,6 +360,7 @@ async function handleRegistration(
 
   logger.info({
     msg: "Zonals webhook: pass added successfully",
+    webhookStatus: "processed",
     userId: user.id,
     matchedBy,
     eventLimit: result.eventLimit,
@@ -482,6 +484,7 @@ export const handleZonalsKonfhubWebhook = async (
     
     logger.error({
       msg: "Zonals KonfHub webhook: error processing",
+      webhookStatus: "failed",
       webhookId,
       error: errorMsg,
       stack: error instanceof Error ? error.stack : undefined,
