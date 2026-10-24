@@ -58,7 +58,7 @@ export const applyReferral = catchAsync(
 
     // Find the CA profile with this referral ID
     const caProfile = await prisma.caProfile.findUnique({
-      where: { referralId: referralId.toUpperCase() },
+      where: { referralId },
       select: {
         id: true,
         userId: true,
@@ -107,7 +107,7 @@ export const applyReferral = catchAsync(
     logger.info("Referral applied successfully", {
       userId,
       caProfileId: caProfile.id,
-      referralId: referralId.toUpperCase(),
+      referralId,
     });
 
     await invalidateProfileCache(userId);
