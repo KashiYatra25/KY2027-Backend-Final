@@ -72,7 +72,10 @@ class ReferralIdService {
         rangeSize: RANGE_SIZE,
       });
     } catch (error) {
-      logger.error("Failed to initialize ReferralIdService", { error });
+      logger.error("Failed to initialize ReferralIdService", { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw error;
     }
   }

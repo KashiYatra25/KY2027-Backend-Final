@@ -65,7 +65,8 @@ export async function autoSetPaidForIITBhuUserHook(doc: AccountProgressDoc): Pro
   } catch (error) {
     logger.error("Error in autoSetPaidForIITBhuUser hook", {
       userId: doc.userId,
-      error,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     });
     // Don't throw - hook errors shouldn't break the main operation
   }

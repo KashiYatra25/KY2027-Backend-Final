@@ -106,7 +106,10 @@ export const checkRateLimit = async (
     };
   } catch (error) {
     // On Redis error, allow the request (fail open)
-    logger.error("Rate limiter Redis error - failing open", { key, error });
+    logger.error("Rate limiter Redis error - failing open", { 
+      key, 
+      error: error instanceof Error ? error.message : String(error),
+    });
     return {
       allowed: true,
       currentCount: 0,
