@@ -5,6 +5,7 @@ import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
 import { invalidateProfileCache } from "@root/services/redis/entityCache.service.js";
+import { metrics } from "@services/metrics/index.js";
 
 /**
  * Normalize a ticket name for robust comparison:
@@ -198,6 +199,7 @@ async function handleRegistration(
   });
   
   if (existingPurchase) {
+    metrics.recordWebhook("repeat", "main");
     logger.info({ msg: "KonfHub webhook: booking already processed", ...logContext });
     return { success: true, skipped: true, reason: "already_processed" };
   }
@@ -335,6 +337,9 @@ async function handleRegistration(
       viewPassUrl: attendee.ticketUrl || "https://kashiyatra.in/profile",
     },
   });
+
+  // Record payment metrics
+  metrics.recordPayment("main", attendee.amountPaid);
 
   logger.info({
     msg: "KonfHub webhook: registration successful",
@@ -562,12 +567,20 @@ export const handleKonfhubWebhook = async (
       result,
     });
 
+    // Record webhook accepted (if not a repeat)
+    if (!("skipped" in result && result.skipped)) {
+      metrics.recordWebhook("accepted", "main");
+    }
+
     res.status(200).json({
       webhookId,
       ...result,
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
+    
+    // Record failed webhook
+    metrics.recordWebhook("failed", "main");
     
     logger.error({
       msg: "KonfHub webhook: error processing",

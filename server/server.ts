@@ -15,6 +15,7 @@ import {
   closeEmailQueue,
 } from "@services/queue/index.js";
 import { clearAllCachesOnStartup } from "@services/redis/clearCacheOnStartup.service.js";
+import { initMetrics } from "@services/metrics/index.js";
 
 // Create HTTP server from Express app (required for Apollo drain plugin)
 const httpServer = http.createServer(app);
@@ -68,6 +69,9 @@ export async function startServer() {
 
     // Initialize KyIdService (for KY-2027-XXXXX user IDs)
     await kyIdService.initialize();
+
+    // Initialize metrics (push to Grafana Cloud if configured)
+    await initMetrics();
 
     // Clear all application caches on startup (ensures fresh data after deploy)
     await clearAllCachesOnStartup();

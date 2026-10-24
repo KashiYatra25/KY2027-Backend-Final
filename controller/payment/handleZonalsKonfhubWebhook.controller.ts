@@ -3,6 +3,7 @@ import { prisma } from "@root/prisma.js";
 import { ZonalUserCollegeModel, PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
+import { metrics } from "@services/metrics/index.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // ZONALS KONFHUB WEBHOOK HANDLER
@@ -418,6 +419,14 @@ export const handleZonalsKonfhubWebhook = async (
     
     const result = await handleRegistration(attendee, college, passType, webhookId, eventAt);
 
+    // Record metrics (if not a repeat)
+    if (!result.skipped) {
+      metrics.recordWebhook("accepted", "zonal");
+      metrics.recordPayment("zonal", attendee.amountPaid);
+    } else {
+      metrics.recordWebhook("repeat", "zonal");
+    }
+
     logger.info({
       msg: "Zonals KonfHub webhook processed",
       webhookId,
@@ -434,6 +443,9 @@ export const handleZonalsKonfhubWebhook = async (
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
+    
+    // Record failed webhook
+    metrics.recordWebhook("failed", "zonal");
     
     logger.error({
       msg: "Zonals KonfHub webhook: error processing",

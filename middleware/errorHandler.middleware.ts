@@ -1,6 +1,7 @@
 import { logger } from "@logger/logger.js";
 import type { ErrorRequestHandler } from "express";
 import { globalErrorHandler as zodexErrorHandler } from "zodex-axon/errors";
+import { metrics } from "@services/metrics/index.js";
 
 /**
  * Patterns that indicate an internal error message that should not be exposed.
@@ -83,6 +84,9 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => 
     }
 
     logger.error("Internal server error", logContext);
+
+    // Record error metric
+    metrics.recordError(err.name || "internal");
 
     // SANITIZE: Don't expose internal error details to client
     // Only sanitize non-operational errors (operational errors are intentional user-facing messages)

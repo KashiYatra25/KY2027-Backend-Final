@@ -139,6 +139,15 @@ function createRuntimeEnvironment(
       // Get these from: Grafana Cloud → Your Stack → Loki → Details
       LOKI_USER: z.string().optional(),
       LOKI_API_KEY: z.string().optional(),
+
+      // Grafana Cloud OTLP for metrics (optional)
+      // Get these from: Grafana Cloud → Your Stack → OpenTelemetry → Configure
+      GRAFANA_OTLP_ENDPOINT: z.string().url().optional(),
+      GRAFANA_OTLP_INSTANCE_ID: z.string().optional(),
+      GRAFANA_OTLP_TOKEN: z.string().optional(),
+
+      // Runtime
+      NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     },
     clientPrefix: "CLIENT",
     client: {
