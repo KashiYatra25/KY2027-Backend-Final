@@ -8,10 +8,10 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
 /**
  * GET /user/search?searchQuery=<query>&limit=<limit>
  *
- * Search for PAID users by name or email.
- * Only returns users who:
- * - Have completed profile (have firstName)
- * - Have isPaidUser = true (paid pass or IIT BHU)
+ * Search for users by name or email.
+ * Returns users who have completed profile (have firstName).
+ * Includes isPaidUser field so frontend can show badge for unpaid users.
+ * Results are sorted with paid users first.
  *
  * Frontend should debounce this (300ms recommended)
  */
@@ -27,12 +27,11 @@ const searchUsers = catchAsync(
     const { id: currentUserId } = req.user;
     const { searchQuery, limit = 10 } = req.validatedQuery;
 
-    // Search users who are paid and match query
+    // Search users who match query (both paid and unpaid, let frontend show badge)
     const users = await prisma.user.findMany({
       where: {
         AND: [
           { id: { not: currentUserId } }, // Exclude current user
-          { isPaidUser: true }, // Only paid users
           { firstName: { not: null } }, // Only completed profiles
           {
             OR: [
@@ -54,8 +53,9 @@ const searchUsers = catchAsync(
         googleAvatarUrl: true,
         candidatePhotoUrl: true,
         college: true,
+        isPaidUser: true,
       },
-      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+      orderBy: [{ isPaidUser: "desc" }, { firstName: "asc" }, { lastName: "asc" }], // Paid users first
     });
 
     new OkResponseStrategy().handleResponse(res, {
