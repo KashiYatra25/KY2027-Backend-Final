@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import { expressMiddleware } from "@as-integrations/express5";
 import { userRoutesGQLProtectMiddleware } from "@root/middleware/user/protect/index.js";
 import { referralIdService } from "@root/services/referral/index.js";
+import { kyIdService } from "@services/kyId/kyId.service.js";
 import { initializeGoogleOAuthClient } from "@services/google/googleOAuth.service.js";
 import {
   startEmailWorker,
@@ -64,6 +65,9 @@ export async function startServer() {
     // Initialize ReferralIdService (allocates ID range from Redis)
     await referralIdService.initialize();
     logger.info("ReferralIdService initialized", referralIdService.getRangeInfo());
+
+    // Initialize KyIdService (for KY-2027-XXXXX user IDs)
+    await kyIdService.initialize();
 
     // Clear all application caches on startup (ensures fresh data after deploy)
     await clearAllCachesOnStartup();

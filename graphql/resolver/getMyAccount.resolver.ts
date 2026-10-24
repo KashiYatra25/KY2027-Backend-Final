@@ -76,6 +76,14 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
 
       // Fetch account progress from MongoDB
       const accountProgress = await AccountProgressModel.findOne({ userId });
+      
+      // DEBUG: Log what we got from MongoDB
+      const { logger } = await import("@logger/logger.js");
+      logger.debug("getMyAccount: MongoDB data", {
+        userId,
+        hasAccountProgress: !!accountProgress,
+        rawVerification: accountProgress?.profileCompletionAndVerification,
+      });
 
       // Step completion flags (new 3-step system)
       const steps = {
@@ -120,6 +128,31 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
       );
       const isProfileComplete = completedSteps === totalSteps;
 
+      // ─────────────────────────────────────────────────────────────────
+      // Lazy KY ID assignment: If profile is complete but no kyId, assign now.
+      // This catches users who completed profile before kyIdService was fixed.
+      // ─────────────────────────────────────────────────────────────────
+      let kyId = user.kyId;
+      if (isProfileComplete && !kyId) {
+        try {
+          const { generateUniqueKyId } = await import("@services/kyId/index.js");
+          kyId = await generateUniqueKyId();
+          
+          await prisma.user.update({
+            where: { id: userId },
+            data: { kyId },
+          });
+          
+          logger.info("Lazy-assigned kyId on profile fetch", { userId, kyId });
+        } catch (error) {
+          logger.error("Failed to lazy-assign kyId", {
+            userId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          // Don't fail the request - just continue without kyId
+        }
+      }
+
       // Resolve the referrer's display name (if a CA referral was applied).
       const { referredByCa, caProfile, ...userFields } = user;
       const referredBy = referredByCa?.user
@@ -132,6 +165,7 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
       const response: MyAccountResponse = {
         profile: {
           ...userFields,
+          kyId, // Use potentially lazy-assigned kyId
           dob: user.dob?.toISOString() ?? null,
           joinedAt: user.createdAt.toISOString(),
           referredBy,
