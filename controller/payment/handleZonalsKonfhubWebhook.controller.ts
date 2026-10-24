@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "@root/prisma.js";
 import { ZonalUserCollegeModel, PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
+import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
 import { metrics } from "@services/metrics/index.js";
@@ -323,6 +324,38 @@ async function handleRegistration(
     },
     { upsert: true }
   );
+
+  // ═══════════════════════════════════════════════════════════════════
+  // QUEUE CONFIRMATION EMAIL
+  // Send pass confirmation email to the user
+  // ═══════════════════════════════════════════════════════════════════
+  const userName = attendee.name || "Attendee";
+  const registeredDate = eventAt.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const passDisplayName = `Zonals ${college.toUpperCase()} - ${passType === "MULTI_EVENT" ? "Multi Event Pass" : "Single Event Pass"}`;
+
+  await queuePassesInvoiceEmail({
+    userName,
+    email: user.email,
+    invoiceUrl: attendee.invoiceUrl || "",
+    orderDetails: {
+      orderId: attendee.bookingId,
+      paidAt: registeredDate,
+      items: [
+        {
+          passName: passDisplayName,
+          quantity: 1,
+          unitPrice: attendee.ticketPrice,
+        },
+      ],
+      subtotal: attendee.ticketPrice,
+      totalAmount: attendee.amountPaid,
+      viewPassUrl: attendee.ticketUrl || "https://kashiyatra.org/zonals",
+    },
+  });
 
   logger.info({
     msg: "Zonals webhook: pass added successfully",

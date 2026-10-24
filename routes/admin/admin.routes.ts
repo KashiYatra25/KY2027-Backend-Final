@@ -20,6 +20,7 @@ import { getAllTeams } from "@controller/admin/teams/getAllTeams.controller.js";
 import { getAllRegistrations } from "@controller/admin/registrations/getAllRegistrations.controller.js";
 import { getRevenueAnalytics } from "@controller/admin/purchases/index.js";
 import { invalidateAllCaches } from "@controller/admin/cache/invalidateAllCaches.controller.js";
+import { invalidateUserCache } from "@controller/admin/cache/invalidateUserCache.controller.js";
 import {
   getVenuesAdmin,
   getVenueByIdAdmin,
@@ -487,5 +488,16 @@ adminRouter.post(
   "/cache/invalidate",
   adminRoleCheckerMiddleware("MASTER_ADMIN"),
   invalidateAllCaches,
+);
+
+/**
+ * POST /admin/cache/invalidate-user
+ * Invalidate all cached data for a specific user.
+ * Body: { userId: string }
+ */
+adminRouter.post(
+  "/cache/invalidate-user",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  invalidateUserCache,
 );
 
