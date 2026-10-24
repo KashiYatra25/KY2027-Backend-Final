@@ -51,6 +51,18 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
           isFromIITBhu: true,
           isPaidUser: true,
           kyId: true,
+          // Check if user is a Campus Ambassador
+          caProfile: {
+            select: { id: true },
+          },
+          // Referral: who referred this user (CA's name), if any.
+          referredByCa: {
+            select: {
+              user: {
+                select: { firstName: true, lastName: true },
+              },
+            },
+          },
           role: {
             select: {
               id: true,
@@ -108,11 +120,22 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
       );
       const isProfileComplete = completedSteps === totalSteps;
 
+      // Resolve the referrer's display name (if a CA referral was applied).
+      const { referredByCa, caProfile, ...userFields } = user;
+      const referredBy = referredByCa?.user
+        ? [referredByCa.user.firstName, referredByCa.user.lastName]
+            .filter(Boolean)
+            .join(" ") || "Campus Ambassador"
+        : null;
+      const isCa = !!caProfile;
+
       const response: MyAccountResponse = {
         profile: {
-          ...user,
+          ...userFields,
           dob: user.dob?.toISOString() ?? null,
           joinedAt: user.createdAt.toISOString(),
+          referredBy,
+          isCa,
         },
         progress: {
           steps,

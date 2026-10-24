@@ -19,6 +19,7 @@ import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
 import { getAllTeams } from "@controller/admin/teams/getAllTeams.controller.js";
 import { getAllRegistrations } from "@controller/admin/registrations/getAllRegistrations.controller.js";
 import { getRevenueAnalytics } from "@controller/admin/purchases/index.js";
+import { invalidateAllCaches } from "@controller/admin/cache/invalidateAllCaches.controller.js";
 import {
   getVenuesAdmin,
   getVenueByIdAdmin,
@@ -470,5 +471,21 @@ adminRouter.get(
   "/partners",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
   getPartners,
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// CACHE MANAGEMENT ROUTES
+// Requires: MASTER_ADMIN only (dangerous operation)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * POST /admin/cache/invalidate
+ * Invalidate all application caches (schedule, events, passes, per-user caches).
+ * Does NOT flush rate-limit state, OTP state, or admin tokens.
+ */
+adminRouter.post(
+  "/cache/invalidate",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  invalidateAllCaches,
 );
 

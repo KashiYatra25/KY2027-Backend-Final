@@ -52,15 +52,6 @@ const getScheduleFestDaysCacheKey = (version: number) =>
 const getVenueScheduleCacheKey = (version: number, venueSlug: string) =>
   `cache:${CACHE_VERSION}:schedule:venue:${version}:${venueSlug}`;
 
-// ── Passes cache (GLOBAL, shared across all users) ────────────────────
-// `GET /pass` returns the same active-passes list for everyone and is only
-// ever written by the offline seed script (no runtime admin endpoint). So a
-// single global key with a TTL backstop is sufficient — no per-user keys and
-// no version counter needed. A re-seed is picked up once the TTL lapses.
-
-/** Cached `GET /pass` response (all active passes). */
-const PASSES_CACHE_KEY = `cache:${CACHE_VERSION}:passes`;
-
 // ── Events cache (GLOBAL, shared across all users) ────────────────────
 // `GET /events` (filterable) and `GET /events/:slug` return the same data for
 // everyone and change only via the seed script (no runtime event-edit endpoint
@@ -200,7 +191,6 @@ export {
   getScheduleVenuesCacheKey,
   getScheduleFestDaysCacheKey,
   getVenueScheduleCacheKey,
-  PASSES_CACHE_KEY,
   EVENTS_CACHE_VERSION_KEY,
   getEventsListCacheKey,
   getEventBySlugCacheKey,

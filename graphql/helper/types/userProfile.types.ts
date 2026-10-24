@@ -25,6 +25,10 @@ export type UserProfileData = {
   isFromIITBhu: boolean;
   isPaidUser: boolean;
   kyId: string | null;
+  /** Name of the CA who referred this user; null if none applied. */
+  referredBy: string | null;
+  /** Whether this user is a Campus Ambassador. */
+  isCa: boolean;
   role: Pick<Role, "id" | "level"> | null;
 };
 

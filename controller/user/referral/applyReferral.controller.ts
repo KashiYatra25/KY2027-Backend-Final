@@ -30,11 +30,23 @@ export const applyReferral = catchAsync(
     const { id: userId } = req.user;
     const { referralId } = req.validatedData;
 
-    // Check if user already has a referral applied
+    // Check if user already has a referral applied OR is a CA themselves
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { referredByCaId: true },
+      select: { 
+        referredByCaId: true,
+        caProfile: { select: { id: true } },
+      },
     });
+
+    // CAs cannot apply referral codes (they ARE the referrers)
+    if (user?.caProfile) {
+      return next(
+        new BadRequest().handleResponse(res, {
+          info: "Campus Ambassadors cannot apply referral codes",
+        }),
+      );
+    }
 
     if (user?.referredByCaId) {
       return next(
