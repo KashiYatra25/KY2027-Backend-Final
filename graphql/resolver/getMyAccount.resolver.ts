@@ -133,23 +133,45 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
       // This catches users who completed profile before kyIdService was fixed.
       // ─────────────────────────────────────────────────────────────────
       let kyId = user.kyId;
-      if (isProfileComplete && !kyId) {
-        try {
-          const { generateUniqueKyId } = await import("@services/kyId/index.js");
-          kyId = await generateUniqueKyId();
-          
-          await prisma.user.update({
-            where: { id: userId },
-            data: { kyId },
-          });
-          
-          logger.info("Lazy-assigned kyId on profile fetch", { userId, kyId });
-        } catch (error) {
-          logger.error("Failed to lazy-assign kyId", {
-            userId,
-            error: error instanceof Error ? error.message : String(error),
-          });
-          // Don't fail the request - just continue without kyId
+      let isPaidUser = user.isPaidUser;
+      
+      if (isProfileComplete) {
+        // Lazy-assign kyId if missing
+        if (!kyId) {
+          try {
+            const { generateUniqueKyId } = await import("@services/kyId/index.js");
+            kyId = await generateUniqueKyId();
+            
+            await prisma.user.update({
+              where: { id: userId },
+              data: { kyId },
+            });
+            
+            logger.info("Lazy-assigned kyId on profile fetch", { userId, kyId });
+          } catch (error) {
+            logger.error("Failed to lazy-assign kyId", {
+              userId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+        
+        // Lazy-assign isPaidUser for IIT BHU users
+        if (user.isFromIITBhu && !isPaidUser) {
+          try {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { isPaidUser: true },
+            });
+            isPaidUser = true;
+            
+            logger.info("Lazy-set isPaidUser for IIT BHU user", { userId });
+          } catch (error) {
+            logger.error("Failed to lazy-set isPaidUser", {
+              userId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
         }
       }
 
@@ -166,6 +188,7 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
         profile: {
           ...userFields,
           kyId, // Use potentially lazy-assigned kyId
+          isPaidUser, // Use potentially lazy-assigned isPaidUser
           dob: user.dob?.toISOString() ?? null,
           joinedAt: user.createdAt.toISOString(),
           referredBy,
