@@ -27,22 +27,7 @@ const sendMasterAdminCredentials = async () => {
     //          or ending in "iitbhu.ac.in" (e.g. someone@iitbhu.ac.in).
     // ─────────────────────────────────────────────────────────────────
     const normalizedEmail = masterAdminEmail.trim().toLowerCase();
-    const isIitBhuEmail =
-      normalizedEmail.endsWith(".itbhu.ac.in") ||
-      normalizedEmail.endsWith("iitbhu.ac.in");
-  
-    if (!isIitBhuEmail) {
-      console.error("═".repeat(60));
-      console.error("❌ Cannot grant admin access.");
-      console.error(
-        `   The email "${masterAdminEmail}" is not an IIT (BHU) email.`,
-      );
-      console.error(
-        "   Only emails ending in '.itbhu.ac.in' or 'iitbhu.ac.in' can be admins.",
-      );
-      console.error("═".repeat(60));
-      return;
-    }
+
 
   try {
     // Find user by email
