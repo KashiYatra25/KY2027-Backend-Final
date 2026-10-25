@@ -16,6 +16,7 @@ import { changeAccountStatus } from "@controller/admin/suspend/changeAccountStat
 import { makeUserAdminOrPromoteAdmin } from "@controller/admin/promote/makeUserAdminOrPromoteAdmin.controller.js";
 import { getAdminUsers } from "@controller/admin/users/getAdminUsers.controller.js";
 import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
+import { toggleUserPaidStatus } from "@controller/admin/user/toggleUserPaidStatus.controller.js";
 import { getAllTeams } from "@controller/admin/teams/getAllTeams.controller.js";
 import { getAllRegistrations } from "@controller/admin/registrations/getAllRegistrations.controller.js";
 import { getRevenueAnalytics } from "@controller/admin/purchases/index.js";
@@ -197,6 +198,18 @@ adminRouter.get(
   "/get-all-users",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
   getAllUsers,
+);
+
+/**
+ * POST /toggle-user-paid-status
+ * Toggle a user's isPaidUser status (true <-> false)
+ * Body: { userId: string }
+ * Requires: MASTER_ADMIN role only
+ */
+adminRouter.post(
+  "/toggle-user-paid-status",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  toggleUserPaidStatus,
 );
 
 /**
