@@ -33,7 +33,7 @@ export const verifyGoogleTokenMiddleware = catchAsync(
 
     if (!verifiedUser) {
       logger.warn("Authentication failed - invalid Google ID token", {
-        ip: req.ip,
+        ip: req.clientIp,
         userAgent: req.headers["user-agent"],
       });
       return next(

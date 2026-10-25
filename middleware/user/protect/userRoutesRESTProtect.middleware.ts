@@ -15,7 +15,7 @@ export const userRoutesRESTProtectMiddleware = catchAsync(
 
     if (!sessionToken) {
       logger.warn("REST auth: no session token", {
-        ip: req.ip,
+        ip: req.clientIp,
         path: req.path,
       });
       return next(
@@ -29,7 +29,7 @@ export const userRoutesRESTProtectMiddleware = catchAsync(
 
     if (!user) {
       logger.warn("REST auth: invalid session or user not found", {
-        ip: req.ip,
+        ip: req.clientIp,
         path: req.path,
       });
       return next(

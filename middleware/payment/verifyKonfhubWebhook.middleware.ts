@@ -31,7 +31,7 @@ export const verifyKonfhubWebhookMiddleware = (
   if (!configuredSecret || configuredSecret.length === 0) {
     logger.warn({
       msg: "KonfHub webhook secret not configured - skipping verification",
-      ip: req.ip,
+      ip: req.clientIp,
     });
     return next();
   }
@@ -42,7 +42,7 @@ export const verifyKonfhubWebhookMiddleware = (
   if (!providedSecret) {
     logger.warn({
       msg: "KonfHub webhook rejected - no secret provided",
-      ip: req.ip,
+      ip: req.clientIp,
       headers: {
         "user-agent": req.headers["user-agent"],
         "x-forwarded-for": req.headers["x-forwarded-for"],
@@ -58,7 +58,7 @@ export const verifyKonfhubWebhookMiddleware = (
   if (providedSecret.length !== configuredSecret.length) {
     logger.warn({
       msg: "KonfHub webhook rejected - invalid secret",
-      ip: req.ip,
+      ip: req.clientIp,
     });
     return res.status(401).json({
       statusCode: 401,
@@ -74,7 +74,7 @@ export const verifyKonfhubWebhookMiddleware = (
   if (mismatch !== 0) {
     logger.warn({
       msg: "KonfHub webhook rejected - invalid secret",
-      ip: req.ip,
+      ip: req.clientIp,
     });
     return res.status(401).json({
       statusCode: 401,
@@ -85,7 +85,7 @@ export const verifyKonfhubWebhookMiddleware = (
   // Secret matches - proceed
   logger.debug({
     msg: "KonfHub webhook secret verified",
-    ip: req.ip,
+    ip: req.clientIp,
   });
   
   next();

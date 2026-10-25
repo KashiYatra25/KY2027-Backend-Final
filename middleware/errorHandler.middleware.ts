@@ -54,7 +54,7 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => 
     statusCode,
     method: req.method,
     path: req.path,
-    ip: req.ip,
+    ip: req.clientIp,
     userAgent: req.headers["user-agent"],
   };
 

@@ -41,11 +41,11 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
 
 /**
  * Extract client IP from request
- * With trust proxy configured in app.ts, req.ip returns the correct client IP
- * from X-Forwarded-For header (set by Nginx with $remote_addr).
+ * Uses req.clientIp which is set by requestContextMiddleware
+ * (extracts from CF-Connecting-IP > X-Forwarded-For > req.ip)
  */
 export const getClientIp = (req: Request): string => {
-  return req.ip ?? "unknown";
+  return req.clientIp ?? req.ip ?? "unknown";
 };
 
 /**

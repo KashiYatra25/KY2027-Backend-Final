@@ -91,7 +91,7 @@ export const authenticateUser = catchAsync(
 
       IpSecurityModel.create({
         userId: googleUserId,
-        ipAddress: req.ip ?? "unknown",
+        ipAddress: req.clientIp,
         userAgent: req.headers["user-agent"] || "unknown",
       }),
     ]);
