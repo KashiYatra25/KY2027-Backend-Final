@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
@@ -20,11 +20,10 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
  * the middleware check and register, exceeding the limit.
  */
 export const registerForZonalEvent = catchAsync(
-  async (req: Request, res: Response): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
+  async (req: AuthenticatedUserRequestWithVerifiedEmail, res: Response): Promise<void> => {
     const collegeSlug = req.params.collegeSlug as string;
     const eventSlug = req.params.eventSlug as string;
-    const userId = authReq.user.id;
+    const userId = req.user.id;
 
     // Atomic update with constraints:
     // 1. Not already registered for this event

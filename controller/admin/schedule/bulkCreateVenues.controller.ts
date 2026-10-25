@@ -1,48 +1,34 @@
-import type { Request, Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { Response, NextFunction } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { CreateResponseStrategy } from "zodex-axon/responses";
-import { BadRequest } from "zodex-axon/errors";
 import { VenueModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
 import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
-import type { CreateVenueRequestSchemaType } from "@schemas/admin/schedule.schema.js";
+import type { BulkCreateVenuesRequestSchemaType } from "@schemas/admin/schedule.schema.js";
+import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // BULK CREATE VENUES
 // ═══════════════════════════════════════════════════════════════════
 
 export const bulkCreateVenues = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { venues } = req.body as { venues: CreateVenueRequestSchemaType[] };
+  async (
+    req: VerifiedRequest<{ body: BulkCreateVenuesRequestSchemaType }, AdminRequestWithVerifiedCreds>,
+    res: Response,
+    _next: NextFunction,
+  ): Promise<void> => {
+    const { venues } = req.validatedData;
 
-    // Check for duplicate slugs in request
-    const slugs = venues.map((v) => v.slug);
-    const uniqueSlugs = new Set(slugs);
-    if (uniqueSlugs.size !== slugs.length) {
-      return next(new BadRequest().handleResponse(res, {
-        info: "Duplicate slugs in request",
-      }));
-    }
+    const created = await VenueModel.insertMany(venues, { ordered: false });
 
-    // Check for existing slugs
-    const existingSlugs = await VenueModel.find({ slug: { $in: slugs } }).select("slug").lean();
-    if (existingSlugs.length > 0) {
-      return next(new BadRequest().handleResponse(res, {
-        info: `Venues with these slugs already exist: ${existingSlugs.map((v) => v.slug).join(", ")}`,
-      }));
-    }
-
-    const createdVenues = await VenueModel.insertMany(venues);
     // Invalidate all schedule caches (version bump).
     await bumpScheduleCacheVersion();
 
-
-    logger.info("Bulk venues created", { count: createdVenues.length });
+    logger.info("Bulk venues created", { count: created.length });
 
     new CreateResponseStrategy().handleResponse(res, {
-      info: `${createdVenues.length} venues created successfully`,
-      venues: createdVenues,
-      count: createdVenues.length,
+      info: `${created.length} venues created successfully`,
+      venues: created,
     });
   },
 );

@@ -1,5 +1,5 @@
 import type { Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest, NotFound } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
@@ -8,62 +8,20 @@ import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
 import { logger } from "@logger/logger.js";
 import { invalidateProfileCache } from "@root/services/redis/entityCache.service.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
+import type { VerifyPaymentBody } from "@controller/admin/helper/types/purchases.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // VERIFY MANUAL PAYMENT (Admin)
 // Admin verifies a pending manual payment and sets custom benefits
 // ═══════════════════════════════════════════════════════════════════
 
-interface PassBenefitsInput {
-  // Core access
-  festivalEntry?: boolean;
-  allDaysAccess?: boolean;
-  
-  // Pro-nite access
-  proNiteAccess?: boolean;
-  proNiteSeating?: "none" | "general" | "priority" | "vip";
-  
-  // Merchandise & goodies
-  welcomeKit?: boolean;
-  tshirt?: boolean;
-  merchandise?: boolean;
-  
-  // Food & hospitality
-  mealsIncluded?: number;
-  refreshments?: boolean;
-  
-  // Special access
-  backstageAccess?: boolean;
-  workshopAccess?: boolean;
-  meetAndGreet?: boolean;
-  
-  // Accommodation
-  accommodationIncluded?: boolean;
-  accommodationType?: string;
-  
-  // Custom benefits
-  custom?: Array<{
-    name: string;
-    description?: string;
-    value?: unknown;
-  }>;
-}
-
-interface VerifyPaymentBody {
-  purchaseId: string;
-  passType: string;
-  amountPaid: number;
-  benefits: PassBenefitsInput;
-  verificationNote?: string;
-}
-
 export const verifyManualPayment = catchAsync(
   async (
-    req: AdminRequestWithVerifiedCreds & { body: VerifyPaymentBody },
+    req: VerifiedRequest<{ body: VerifyPaymentBody }, AdminRequestWithVerifiedCreds>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { purchaseId, passType, amountPaid, benefits, verificationNote } = req.body;
+    const { purchaseId, passType, amountPaid, benefits, verificationNote } = req.validatedData;
     const adminId = req.admin?.adminId;
 
     if (!adminId) {
@@ -89,7 +47,7 @@ export const verifyManualPayment = catchAsync(
     purchase.status = "VERIFIED";
     purchase.passType = passType;
     purchase.amountPaid = amountPaid;
-    purchase.benefits = benefits;
+    purchase.benefits = benefits as typeof purchase.benefits;
     purchase.manualVerification = {
       ...purchase.manualVerification,
       verifiedBy: adminId,

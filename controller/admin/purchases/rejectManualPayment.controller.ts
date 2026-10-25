@@ -1,28 +1,24 @@
 import type { Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest, NotFound } from "zodex-axon/errors";
 import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
+import type { RejectPaymentBody } from "@controller/admin/helper/types/purchases.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // REJECT MANUAL PAYMENT (Admin)
 // Admin rejects a pending manual payment request
 // ═══════════════════════════════════════════════════════════════════
 
-interface RejectPaymentBody {
-  purchaseId: string;
-  rejectionReason: string;
-}
-
 export const rejectManualPayment = catchAsync(
   async (
-    req: AdminRequestWithVerifiedCreds & { body: RejectPaymentBody },
+    req: VerifiedRequest<{ body: RejectPaymentBody }, AdminRequestWithVerifiedCreds>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { purchaseId, rejectionReason } = req.body;
+    const { purchaseId, rejectionReason } = req.validatedData;
     const adminId = req.admin?.adminId;
 
     if (!adminId) {

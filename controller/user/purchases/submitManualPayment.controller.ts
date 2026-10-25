@@ -1,34 +1,27 @@
 import type { Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest, NotFound } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
 import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { SubmitManualPaymentBody } from "@controller/user/helper/types/purchases.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // SUBMIT MANUAL PAYMENT VERIFICATION REQUEST (User)
 // User submits proof of QR/UPI payment for admin verification
 // ═══════════════════════════════════════════════════════════════════
 
-interface SubmitManualPaymentBody {
-  passType: string; // Which pass they're claiming to have paid for
-  transactionId: string; // UPI transaction ID / bank reference
-  paymentMethod: "upi" | "bank_transfer" | "cash" | "other";
-  paymentScreenshotS3Key?: string; // S3 key for uploaded screenshot
-  paymentNote?: string; // Any additional info
-}
-
 export const submitManualPaymentRequest = catchAsync(
   async (
-    req: AuthenticatedUserRequestWithVerifiedEmail & { body: SubmitManualPaymentBody },
+    req: VerifiedRequest<{ body: SubmitManualPaymentBody }, AuthenticatedUserRequestWithVerifiedEmail>,
     res: Response,
     next: NextFunction,
   ) => {
     const { id: userId } = req.user;
     const { passType, transactionId, paymentMethod, paymentScreenshotS3Key, paymentNote } =
-      req.body;
+      req.validatedData;
 
     // Get user details for snapshot
     const user = await prisma.user.findUnique({

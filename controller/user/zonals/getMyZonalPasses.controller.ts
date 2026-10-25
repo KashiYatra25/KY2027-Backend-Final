@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { ZonalUserCollegeModel } from "@root/databaseManagers/mongoose/zonals/index.js";
@@ -12,9 +12,8 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
  * GET /zonals/my-passes
  */
 export const getMyZonalPasses = catchAsync(
-  async (req: Request, res: Response): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
-    const userId = authReq.user.id;
+  async (req: AuthenticatedUserRequestWithVerifiedEmail, res: Response): Promise<void> => {
+    const userId = req.user.id;
 
     const docs = await ZonalUserCollegeModel.find({ userId })
       .select("-userSnapshot -__v")

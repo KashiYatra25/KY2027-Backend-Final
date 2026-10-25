@@ -1,4 +1,4 @@
-import type { NextFunction, Request, Response } from "express";
+import type { NextFunction, Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
@@ -13,9 +13,12 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
  * Get all event registrations for the current user
  */
 const getMyRegistrations = catchAsync(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
-    const userId = authReq.user.id;
+  async (
+    req: AuthenticatedUserRequestWithVerifiedEmail,
+    res: Response,
+    _next: NextFunction,
+  ): Promise<void> => {
+    const userId = req.user.id;
 
     // Get user's teams
     const userTeams = await TeamModel.find({

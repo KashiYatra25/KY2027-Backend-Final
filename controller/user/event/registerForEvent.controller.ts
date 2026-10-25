@@ -1,5 +1,5 @@
-import type { NextFunction, Request, Response } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { NextFunction, Response } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound, BadRequest } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
@@ -30,14 +30,16 @@ async function getTeamIdsForUsers(userIds: string[]): Promise<string[]> {
  */
 const registerForEvent = catchAsync(
   async (
-    req: Request & { validatedData?: RegisterForEventRequestSchemaType },
+    req: VerifiedRequest<
+      { body: RegisterForEventRequestSchemaType },
+      AuthenticatedUserRequestWithVerifiedEmail
+    >,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
     const slug = req.params.slug as string;
-    const { id: userId } = authReq.user;
-    const body = req.validatedData!;
+    const { id: userId } = req.user;
+    const body = req.validatedData;
 
     // 1. Check event exists and registration is open
     const event = await prisma.event.findUnique({

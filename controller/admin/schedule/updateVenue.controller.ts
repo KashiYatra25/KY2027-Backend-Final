@@ -1,20 +1,31 @@
-import type { Request, Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { Response, NextFunction } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound } from "zodex-axon/errors";
 import { VenueModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
 import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
-import type { UpdateVenueRequestSchemaType } from "@schemas/admin/schedule.schema.js";
+import type {
+  UpdateVenueRequestSchemaType,
+  VenueIdParamRequestSchemaType,
+} from "@schemas/admin/schedule.schema.js";
+import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // UPDATE VENUE
 // ═══════════════════════════════════════════════════════════════════
 
 export const updateVenue = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { venueId } = req.params;
-    const data = req.body as UpdateVenueRequestSchemaType;
+  async (
+    req: VerifiedRequest<
+      { body: UpdateVenueRequestSchemaType; params: VenueIdParamRequestSchemaType },
+      AdminRequestWithVerifiedCreds
+    >,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    const { venueId } = req.validatedParams;
+    const data = req.validatedData;
 
     const venue = await VenueModel.findByIdAndUpdate(
       venueId,
@@ -23,7 +34,6 @@ export const updateVenue = catchAsync(
     );
     // Invalidate all schedule caches (version bump).
     await bumpScheduleCacheVersion();
-
 
     if (!venue) {
       return next(new NotFound().handleResponse(res, { info: "Venue not found" }));

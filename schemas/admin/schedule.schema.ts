@@ -154,7 +154,13 @@ export const bulkCreateScheduleEntriesRequestSchema = z.object({
 
 export type CreateVenueRequestSchemaType = z.infer<typeof createVenueRequestSchema>;
 export type UpdateVenueRequestSchemaType = z.infer<typeof updateVenueRequestSchema>;
+export type VenueIdParamRequestSchemaType = z.infer<typeof venueIdParamRequestSchema>;
 export type CreateFestDayRequestSchemaType = z.infer<typeof createFestDayRequestSchema>;
 export type UpdateFestDayRequestSchemaType = z.infer<typeof updateFestDayRequestSchema>;
+export type FestDayIdParamRequestSchemaType = z.infer<typeof festDayIdParamRequestSchema>;
 export type CreateScheduleEntryRequestSchemaType = z.infer<typeof createScheduleEntryRequestSchema>;
 export type UpdateScheduleEntryRequestSchemaType = z.infer<typeof updateScheduleEntryRequestSchema>;
+export type ScheduleEntryIdParamRequestSchemaType = z.infer<typeof scheduleEntryIdParamRequestSchema>;
+export type BulkCreateVenuesRequestSchemaType = z.infer<typeof bulkCreateVenuesRequestSchema>;
+export type BulkCreateFestDaysRequestSchemaType = z.infer<typeof bulkCreateFestDaysRequestSchema>;
+export type BulkCreateScheduleEntriesRequestSchemaType = z.infer<typeof bulkCreateScheduleEntriesRequestSchema>;

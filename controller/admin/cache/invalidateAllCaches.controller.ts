@@ -1,10 +1,11 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { logger } from "@logger/logger.js";
 import { redisService } from "@redis/index.js";
 import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
 import { bumpEventsCacheVersion } from "@redis/eventsCache.service.js";
+import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // INVALIDATE ALL CACHES
@@ -21,7 +22,7 @@ import { bumpEventsCacheVersion } from "@redis/eventsCache.service.js";
 // ═══════════════════════════════════════════════════════════════════
 
 export const invalidateAllCaches = catchAsync(
-  async (_req: Request, res: Response) => {
+  async (_req: AdminRequestWithVerifiedCreds, res: Response) => {
     const results: Record<string, string> = {};
 
     // 1. Bump schedule cache version (orphans all schedule:* variant keys)

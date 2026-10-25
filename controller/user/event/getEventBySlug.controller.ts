@@ -1,5 +1,5 @@
-import type { NextFunction, Request, Response } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { NextFunction, Response } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
@@ -10,6 +10,7 @@ import {
   getEventsCached,
   setEventsCached,
 } from "@redis/eventsCache.service.js";
+import type { EventSlugParamRequestSchemaType } from "@schemas/event/event.schema.js";
 
 /**
  * GET /events/:slug
@@ -20,8 +21,12 @@ import {
  * visible immediately.
  */
 const getEventBySlug = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const slug = req.params.slug as string;
+  async (
+    req: VerifiedRequest<{ params: EventSlugParamRequestSchemaType }>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    const { slug } = req.validatedParams;
 
     const version = await getEventsVersion();
     const cacheKey = getEventBySlugCacheKey(version, slug);

@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
@@ -9,6 +9,7 @@ import {
   getMyTeamsCacheKey,
   getMyRegistrationsCacheKey,
 } from "@redis/keys/redis.keys.js";
+import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // INVALIDATE USER CACHE
@@ -26,7 +27,7 @@ import {
 // ═══════════════════════════════════════════════════════════════════
 
 export const invalidateUserCache = catchAsync(
-  async (req: Request, res: Response) => {
+  async (req: AdminRequestWithVerifiedCreds, res: Response) => {
     const { userId } = req.body as { userId?: string };
 
     if (!userId || typeof userId !== "string" || userId.trim() === "") {

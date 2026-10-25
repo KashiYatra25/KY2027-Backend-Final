@@ -1,5 +1,5 @@
-import type { NextFunction, Request, Response } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { NextFunction, Response } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { prisma } from "@root/prisma.js";
 import type { GetEventsQueryRequestSchemaType } from "@schemas/event/event.schema.js";
@@ -21,12 +21,11 @@ import {
  */
 const getEvents = catchAsync(
   async (
-    req: Request & { validatedQuery?: GetEventsQueryRequestSchemaType },
+    req: VerifiedRequest<{ query: GetEventsQueryRequestSchemaType }>,
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
-    const { category, participationType, registrationOpen } =
-      req.validatedQuery ?? {};
+    const { category, participationType, registrationOpen } = req.validatedQuery;
 
     // Build a deterministic cache variant from the (normalised) filters.
     const variant = [

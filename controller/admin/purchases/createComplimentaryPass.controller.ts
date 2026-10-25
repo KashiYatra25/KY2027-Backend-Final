@@ -1,5 +1,5 @@
 import type { Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest, NotFound } from "zodex-axon/errors";
 import { prisma } from "@root/prisma.js";
@@ -8,48 +8,20 @@ import { queuePassesInvoiceEmail } from "@services/queue/emailQueue.service.js";
 import { logger } from "@logger/logger.js";
 import { invalidateProfileCache } from "@root/services/redis/entityCache.service.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
+import type { CreateComplimentaryPassBody } from "@controller/admin/helper/types/purchases.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // CREATE COMPLIMENTARY PASS (Admin)
 // Admin grants a free pass to a user with custom benefits
 // ═══════════════════════════════════════════════════════════════════
 
-interface PassBenefitsInput {
-  festivalEntry?: boolean;
-  allDaysAccess?: boolean;
-  proNiteAccess?: boolean;
-  proNiteSeating?: "none" | "general" | "priority" | "vip";
-  welcomeKit?: boolean;
-  tshirt?: boolean;
-  merchandise?: boolean;
-  mealsIncluded?: number;
-  refreshments?: boolean;
-  backstageAccess?: boolean;
-  workshopAccess?: boolean;
-  meetAndGreet?: boolean;
-  accommodationIncluded?: boolean;
-  accommodationType?: string;
-  custom?: Array<{
-    name: string;
-    description?: string;
-    value?: unknown;
-  }>;
-}
-
-interface CreateComplimentaryPassBody {
-  userId: string;           // Our user ID
-  passType: string;         // e.g., "VIP Complimentary", "Sponsor Pass"
-  benefits: PassBenefitsInput;
-  reason: string;           // Why the pass is being given
-}
-
 export const createComplimentaryPass = catchAsync(
   async (
-    req: AdminRequestWithVerifiedCreds & { body: CreateComplimentaryPassBody },
+    req: VerifiedRequest<{ body: CreateComplimentaryPassBody }, AdminRequestWithVerifiedCreds>,
     res: Response,
     next: NextFunction,
   ) => {
-    const { userId, passType, benefits, reason } = req.body;
+    const { userId, passType, benefits, reason } = req.validatedData;
     const adminId = req.admin?.adminId;
 
     if (!adminId) {

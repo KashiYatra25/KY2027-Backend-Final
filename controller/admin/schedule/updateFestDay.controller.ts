@@ -1,47 +1,40 @@
-import type { Request, Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { Response, NextFunction } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
-import { BadRequest, NotFound } from "zodex-axon/errors";
+import { NotFound } from "zodex-axon/errors";
 import { FestDayModel } from "@root/databaseManagers/mongoose/index.js";
 import { logger } from "@logger/logger.js";
 import { bumpScheduleCacheVersion } from "@redis/scheduleCache.service.js";
-import type { UpdateFestDayRequestSchemaType } from "@schemas/admin/schedule.schema.js";
+import type {
+  UpdateFestDayRequestSchemaType,
+  FestDayIdParamRequestSchemaType,
+} from "@schemas/admin/schedule.schema.js";
+import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // UPDATE FEST DAY
 // ═══════════════════════════════════════════════════════════════════
 
 export const updateFestDay = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { festDayId } = req.params;
-    const data = req.body as UpdateFestDayRequestSchemaType;
-
-    // If updating dayNumber, check for conflicts
-    if (data.dayNumber) {
-      const existing = await FestDayModel.findOne({
-        dayNumber: data.dayNumber,
-        _id: { $ne: festDayId },
-      });
-      if (existing) {
-        return next(new BadRequest().handleResponse(res, {
-          info: `Day ${data.dayNumber} already exists`,
-        }));
-      }
-    }
-
-    const updateData = { ...data };
-    if (data.date) {
-      (updateData as Record<string, unknown>).date = new Date(data.date);
-    }
+  async (
+    req: VerifiedRequest<
+      { body: UpdateFestDayRequestSchemaType; params: FestDayIdParamRequestSchemaType },
+      AdminRequestWithVerifiedCreds
+    >,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    const { festDayId } = req.validatedParams;
+    const data = req.validatedData;
 
     const festDay = await FestDayModel.findByIdAndUpdate(
       festDayId,
-      { $set: updateData },
+      { $set: data },
       { new: true, runValidators: true },
     );
+
     // Invalidate all schedule caches (version bump).
     await bumpScheduleCacheVersion();
-
 
     if (!festDay) {
       return next(new NotFound().handleResponse(res, { info: "Fest day not found" }));

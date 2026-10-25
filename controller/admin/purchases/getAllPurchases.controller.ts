@@ -1,24 +1,21 @@
-import type { Request, Response } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { Response } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { PurchaseModel } from "@root/databaseManagers/mongoose/index.js";
+import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
+import type { GetPurchasesQuery } from "@controller/admin/helper/types/purchases.types.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // GET ALL PURCHASES (Admin)
 // Lists all purchases with filtering by status, source, etc.
 // ═══════════════════════════════════════════════════════════════════
 
-interface GetPurchasesQuery {
-  status?: string;
-  source?: string;
-  search?: string;
-  page?: string;
-  limit?: string;
-}
-
 export const getAllPurchases = catchAsync(
-  async (req: Request<unknown, unknown, unknown, GetPurchasesQuery>, res: Response) => {
-    const { status, source, search, page = "1", limit = "20" } = req.query;
+  async (
+    req: VerifiedRequest<{ query: GetPurchasesQuery }, AdminRequestWithVerifiedCreds>,
+    res: Response,
+  ) => {
+    const { status, source, search, page = "1", limit = "20" } = req.validatedQuery;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
