@@ -126,7 +126,7 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
       // This catches users who completed profile before kyIdService was fixed.
       // ─────────────────────────────────────────────────────────────────
       let kyId = user.kyId;
-      let isPaidUser = user.isPaidUser;
+      const isPaidUser = user.isPaidUser;
       
       if (isProfileComplete) {
         // Lazy-assign kyId if missing
@@ -143,24 +143,6 @@ export const getMyAccountResolver = new MiddlewareChainPipeline()
             logger.info("Lazy-assigned kyId on profile fetch", { userId, kyId });
           } catch (error) {
             logger.error("Failed to lazy-assign kyId", {
-              userId,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          }
-        }
-        
-        // Lazy-assign isPaidUser for IIT BHU users
-        if (user.isFromIITBhu && !isPaidUser) {
-          try {
-            await prisma.user.update({
-              where: { id: userId },
-              data: { isPaidUser: true },
-            });
-            isPaidUser = true;
-            
-            logger.info("Lazy-set isPaidUser for IIT BHU user", { userId });
-          } catch (error) {
-            logger.error("Failed to lazy-set isPaidUser", {
               userId,
               error: error instanceof Error ? error.message : String(error),
             });
