@@ -91,8 +91,9 @@ export const authenticateUser = catchAsync(
 
       IpSecurityModel.create({
         userId: googleUserId,
-        ipAddress: req.clientIp,
-        userAgent: req.headers["user-agent"] || "unknown",
+        // Use forwarded headers from Next.js (original browser values) or fallback to direct values
+        ipAddress: (req.headers["x-forwarded-client-ip"] as string) || req.clientIp,
+        userAgent: (req.headers["x-forwarded-user-agent"] as string) || req.headers["user-agent"] || "unknown",
       }),
     ]);
 
