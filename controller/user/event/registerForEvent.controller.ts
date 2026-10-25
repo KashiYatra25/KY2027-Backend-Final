@@ -82,13 +82,29 @@ const registerForEvent = catchAsync(
 
       // Note: isPaidUser check is handled by checkUserHasPaidMiddleware
 
-      // Check if already registered
-      const existingRegistration = await EventRegistrationModel.findOne({
+      // Single query - check existing registration regardless of status
+      const existingReg = await EventRegistrationModel.findOne({
         eventSlug: slug,
         userId,
       });
 
-      if (existingRegistration) {
+      if (existingReg) {
+        if (existingReg.status === "cancelled") {
+          // Reactivate cancelled registration
+          existingReg.status = "confirmed";
+          await existingReg.save();
+
+          new OkResponseStrategy().handleResponse(res, {
+            info: "Successfully re-registered for event",
+            registrationId: existingReg._id,
+            eventSlug: event.slug,
+            eventName: event.name,
+            status: existingReg.status,
+          });
+          return;
+        }
+
+        // Already active
         return next(
           new BadRequest().handleResponse(res, {
             info: "You are already registered for this event",
@@ -96,7 +112,7 @@ const registerForEvent = catchAsync(
         );
       }
 
-      // Create registration
+      // Create new registration
       const registration = await EventRegistrationModel.create({
         eventSlug: slug,
         participationType: "individual",
@@ -190,13 +206,32 @@ const registerForEvent = catchAsync(
         );
       }
 
-      // 4. Check team not already registered for this event
+      // 4. Single query - check existing team registration regardless of status
       const existingTeamReg = await EventRegistrationModel.findOne({
         eventSlug: slug,
         teamId,
       });
 
       if (existingTeamReg) {
+        if (existingTeamReg.status === "cancelled") {
+          // Reactivate cancelled registration
+          existingTeamReg.status = "confirmed";
+          await existingTeamReg.save();
+
+          new OkResponseStrategy().handleResponse(res, {
+            info: "Team successfully re-registered for event",
+            registrationId: existingTeamReg._id,
+            eventSlug: event.slug,
+            eventName: event.name,
+            teamId: team.teamId,
+            teamName: team.name,
+            memberCount: teamSize,
+            status: existingTeamReg.status,
+          });
+          return;
+        }
+
+        // Already active
         return next(
           new BadRequest().handleResponse(res, {
             info: "This team is already registered for this event",
@@ -205,10 +240,12 @@ const registerForEvent = catchAsync(
       }
 
       // 5. Check no team member is already registered (individually or via another team)
+      // Exclude cancelled registrations
       const memberTeamIds = await getTeamIdsForUsers(memberIds);
 
       const existingMemberRegs = await EventRegistrationModel.find({
         eventSlug: slug,
+        status: { $ne: "cancelled" },
         $or: [
           { userId: { $in: memberIds } },
           { teamId: { $in: memberTeamIds } },
