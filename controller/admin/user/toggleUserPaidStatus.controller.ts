@@ -3,7 +3,7 @@ import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { logger } from "@logger/logger.js";
-import { prisma } from "@db/prisma.js";
+import { prisma } from "@root/prisma.js";
 import { redisService } from "@redis/index.js";
 import { getMyAccountCacheKey } from "@redis/keys/redis.keys.js";
 
