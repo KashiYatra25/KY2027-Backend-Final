@@ -3,7 +3,9 @@ import { catchAsync } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { logger } from "@logger/logger.js";
-import { prisma } from "@root/prisma";
+import { prisma } from "@db/prisma.js";
+import { redisService } from "@redis/index.js";
+import { getMyAccountCacheKey } from "@redis/keys/redis.keys.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // TOGGLE USER PAID STATUS
@@ -17,6 +19,7 @@ import { prisma } from "@root/prisma";
 //
 // Body: { userId: string }
 // Toggles: isPaidUser true <-> false
+// Also invalidates user's myAccount cache so they see the update.
 // ═══════════════════════════════════════════════════════════════════
 
 export const toggleUserPaidStatus = catchAsync(
@@ -51,6 +54,22 @@ export const toggleUserPaidStatus = catchAsync(
       data: { isPaidUser: newStatus },
       select: { id: true, email: true, isPaidUser: true },
     });
+
+    // Invalidate user's myAccount cache so they see the update immediately
+    try {
+      const client = redisService.redisConnection;
+      if (client) {
+        const cacheKey = getMyAccountCacheKey(userId);
+        await client.del(cacheKey);
+        logger.info("User myAccount cache invalidated", { userId, cacheKey });
+      }
+    } catch (err) {
+      logger.error("Failed to invalidate user cache", {
+        userId,
+        error: (err as Error).message,
+      });
+      // Don't fail the request if cache invalidation fails
+    }
 
     logger.info("Admin: User paid status toggled", {
       userId: updatedUser.id,
