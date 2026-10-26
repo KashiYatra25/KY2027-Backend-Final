@@ -159,10 +159,15 @@ async function handleRegistration(
         collegeSlug: college,
         "passes.paymentId": { $ne: attendee.bookingId } // Only if this payment not already recorded
       },
-      {
-        $push: { passes: newPass },
-        $max: { eventLimit: eventLimit },
-      },
+      [
+        { $set: { passes: { $concatArrays: [{ $ifNull: ["$passes", []] }, [newPass]] } } },
+        // eventLimit: if MULTI_EVENT → -1, else if current is 0 or undefined → 1, else keep current
+        { $set: { 
+          eventLimit: passType === "MULTI_EVENT" 
+            ? -1 
+            : { $cond: [{ $in: ["$eventLimit", [0, null]] }, 1, "$eventLimit"] }
+        }},
+      ],
       { upsert: true, new: true }
     );
 
@@ -234,22 +239,26 @@ async function handleRegistration(
       collegeSlug: college,
       "passes.paymentId": { $ne: attendee.bookingId } // Only if this payment not already recorded
     },
-    {
-      $push: { passes: newPass },
-      // Set event limit - use $max so MULTI (-1) always wins, but don't downgrade
-      // If currently -1 (unlimited), keep it. If currently 0, set to eventLimit.
-      // If currently 1 and new is -1, set to -1.
-      $max: { eventLimit: eventLimit },
-      $setOnInsert: {
-        registeredEvents: [],
-        userSnapshot: {
+    [
+      // Push new pass
+      { $set: { passes: { $concatArrays: [{ $ifNull: ["$passes", []] }, [newPass]] } } },
+      // eventLimit: MULTI_EVENT always wins (-1), SINGLE only sets if currently 0/null
+      { $set: { 
+        eventLimit: passType === "MULTI_EVENT" 
+          ? -1 
+          : { $cond: [{ $in: ["$eventLimit", [0, null]] }, 1, "$eventLimit"] }
+      }},
+      // Set user snapshot on insert
+      { $set: {
+        registeredEvents: { $ifNull: ["$registeredEvents", []] },
+        userSnapshot: { $ifNull: ["$userSnapshot", {
           email: user.email,
           name: attendee.name,
           phone: attendee.phone,
           kyId: attendee.kyId,
-        },
-      },
-    },
+        }] },
+      }},
+    ],
     { 
       upsert: true, 
       new: true,
