@@ -6,10 +6,16 @@ import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/typ
 import type { RoleLevel } from "@lib/prisma/index.js";
 
 /**
- * GET /admin/users
- * Fetch admin users based on requester's role:
- * - MASTER_ADMIN: Can see MANAGER and OPERATOR
+ * GET /admin/get-admin-users
+ * Fetch admin users from the Admin table (source of truth) based on requester's role:
+ * - MASTER_ADMIN: Can see all admins (MASTER_ADMIN, MANAGER, OPERATOR)
  * - MANAGER: Can see only OPERATOR
+ * - OPERATOR: Cannot see any admins (empty list)
+ *
+ * NOTE: We query from prisma.admin (not prisma.user) because:
+ * - The Admin table is the source of truth for who has admin access
+ * - A User can have an admin Role without having an Admin record (stale data)
+ * - Only users with an Admin record can actually log into the admin panel
  */
 export const getAdminUsers = catchAsync(
   async (
@@ -23,48 +29,93 @@ export const getAdminUsers = catchAsync(
     let visibleRoles: RoleLevel[];
 
     if (requesterRole === "MASTER_ADMIN") {
+      // MASTER_ADMIN can see all admin roles
       visibleRoles = ["MASTER_ADMIN", "MANAGER", "OPERATOR"];
     } else if (requesterRole === "MANAGER") {
+      // MANAGER can only see OPERATORs
       visibleRoles = ["OPERATOR"];
     } else {
-      // Should not reach here due to roleChecker middleware, but safety fallback
+      // OPERATOR cannot see any admins
       visibleRoles = [];
     }
 
-    const adminUsers = await prisma.user.findMany({
+    // If no visible roles, return empty list immediately
+    if (visibleRoles.length === 0) {
+      new OkResponseStrategy().handleResponse(res, {
+        info: "Admin users fetched successfully",
+        adminUsers: [],
+        count: 0,
+      });
+      return;
+    }
+
+    // Query from Admin table (source of truth) and join with User/Role
+    const admins = await prisma.admin.findMany({
       where: {
-        role: {
-          level: {
-            in: visibleRoles,
+        user: {
+          role: {
+            level: {
+              in: visibleRoles,
+            },
           },
         },
       },
       select: {
         id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        slugName: true,
-        googleAvatarUrl: true,
         createdAt: true,
-        role: {
+        user: {
           select: {
             id: true,
-            level: true,
-            createdAt: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            slugName: true,
+            googleAvatarUrl: true,
+            isSuspended: true,
+            role: {
+              select: {
+                id: true,
+                level: true,
+                createdAt: true,
+              },
+            },
           },
         },
       },
-      orderBy: [
-        {
-          role: {
-            level: "asc", // MANAGER first, then OPERATOR
-          },
-        },
-        {
-          createdAt: "asc",
-        },
-      ],
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    // Transform to flatten the response structure for frontend compatibility
+    const adminUsers = admins.map((admin) => ({
+      id: admin.user.id,
+      visibleAdminId: admin.id,
+      email: admin.user.email,
+      firstName: admin.user.firstName,
+      lastName: admin.user.lastName,
+      slugName: admin.user.slugName,
+      googleAvatarUrl: admin.user.googleAvatarUrl,
+      isSuspended: admin.user.isSuspended,
+      createdAt: admin.createdAt, // Use admin record creation date
+      role: admin.user.role,
+    }));
+
+    // Sort by role level (MASTER_ADMIN first, then MANAGER, then OPERATOR)
+    const rolePriority: Record<string, number> = {
+      MASTER_ADMIN: 1,
+      MANAGER: 2,
+      OPERATOR: 3,
+    };
+
+    adminUsers.sort((a, b) => {
+      const aPriority = rolePriority[a.role?.level ?? ""] ?? 99;
+      const bPriority = rolePriority[b.role?.level ?? ""] ?? 99;
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      // Secondary sort by createdAt
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
 
     new OkResponseStrategy().handleResponse(res, {
