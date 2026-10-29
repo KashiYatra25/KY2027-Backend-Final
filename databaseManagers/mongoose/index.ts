@@ -63,4 +63,11 @@ export {
   type ZonalUserCollegeSchemaType,
 } from "./zonals/index.js";
 
+export {
+  ManualPaymentRequestModel,
+  ManualPaymentRequestSchema,
+  type ManualPaymentRequestDoc,
+  type ManualPaymentRequestSchemaType,
+} from "./manualPayment/index.js";
+
 export { connInstance, MongoDbConnection } from "./connection.js";

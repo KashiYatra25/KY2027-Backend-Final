@@ -81,6 +81,13 @@ function createRuntimeEnvironment(
       // S3 Configuration
       S3_BUCKET: z.string().min(3, "S3 Bucket is required"),
 
+      // Cloudflare R2 Configuration
+      R2_ACCOUNT_ID: z.string().min(10, "R2 Account ID is required"),
+      R2_ACCESS_KEY_ID: z.string().min(10, "R2 Access Key ID is required"),
+      R2_SECRET_ACCESS_KEY: z.string().min(10, "R2 Secret Access Key is required"),
+      R2_BUCKET_NAME: z.string().min(3, "R2 Bucket Name is required"),
+      R2_PUBLIC_URL: z.string().url("R2 Public URL must be valid").optional(),
+
       // Google OAuth Configuration (for server-side token verification)
       GOOGLE_CLIENT_ID: z
         .string()

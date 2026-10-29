@@ -18,6 +18,7 @@ import { changeAdminRole } from "@controller/admin/promote/changeAdminRole.contr
 import { demoteAdminToUser } from "@controller/admin/promote/demoteAdminToUser.controller.js";
 import { getAdminUsers } from "@controller/admin/users/getAdminUsers.controller.js";
 import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
+import { bulkUserLookup } from "@controller/admin/users/bulkUserLookup.controller.js";
 import { toggleUserPaidStatus } from "@controller/admin/user/toggleUserPaidStatus.controller.js";
 import { getAllTeams } from "@controller/admin/teams/getAllTeams.controller.js";
 import { getAllRegistrations } from "@controller/admin/registrations/getAllRegistrations.controller.js";
@@ -25,6 +26,13 @@ import { getZonalRegistrations } from "@controller/admin/zonals/index.js";
 import { getRevenueAnalytics } from "@controller/admin/purchases/index.js";
 import { invalidateAllCaches } from "@controller/admin/cache/invalidateAllCaches.controller.js";
 import { invalidateUserCache } from "@controller/admin/cache/invalidateUserCache.controller.js";
+import {
+  createManualPaymentRequest,
+  getManualPaymentRequests,
+  approveManualPaymentRequest,
+  rejectManualPaymentRequest,
+  getPresignedUploadUrls,
+} from "@controller/admin/manualPayment/index.js";
 import {
   getVenuesAdmin,
   getVenueByIdAdmin,
@@ -67,6 +75,13 @@ import {
 import { changePasswordRequestSchema } from "@schemas/admin/changePassword.schema.js";
 import { caApplicationApprovalRequestSchema } from "@schemas/admin/caApproval.schema.js";
 import { caApplicationStatusUpdateRequestSchema } from "@schemas/admin/caStatusUpdate.schema.js";
+import {
+  createManualPaymentRequestSchema,
+  approveManualPaymentRequestSchema,
+  rejectManualPaymentRequestSchema,
+  getPresignedUploadUrlsSchema,
+  getManualPaymentRequestsQuerySchema,
+} from "@schemas/admin/manualPayment.schema.js";
 import {
   createVenueRequestSchema,
   updateVenueRequestSchema,
@@ -204,6 +219,18 @@ adminRouter.get(
   "/get-all-users",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
   getAllUsers,
+);
+
+/**
+ * GET /admin/users/bulk-lookup
+ * Look up multiple users by their KY IDs
+ * Query params: kyIds (comma-separated)
+ * Requires: MASTER_ADMIN, MANAGER, or OPERATOR role
+ */
+adminRouter.get(
+  "/users/bulk-lookup",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
+  bulkUserLookup,
 );
 
 /**
@@ -565,5 +592,70 @@ adminRouter.post(
   "/cache/invalidate-user",
   adminRoleCheckerMiddleware("MASTER_ADMIN"),
   invalidateUserCache,
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// MANUAL PAYMENT REQUEST ROUTES
+// Admin-initiated bulk payment requests for offline payments
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * POST /admin/uploads/presign
+ * Get presigned URLs for uploading files to R2
+ * Body: { files: [{ filename, contentType }] }
+ */
+adminRouter.post(
+  "/uploads/presign",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
+  RequestGuardMiddleware({ body: getPresignedUploadUrlsSchema }),
+  getPresignedUploadUrls,
+);
+
+/**
+ * POST /admin/manual-payment/request
+ * Create a new manual payment request
+ * Body: { users, passType, paymentMethod, amount, bonafides? }
+ */
+adminRouter.post(
+  "/manual-payment/request",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
+  RequestGuardMiddleware({ body: createManualPaymentRequestSchema }),
+  createManualPaymentRequest,
+);
+
+/**
+ * GET /admin/manual-payment/requests
+ * List all manual payment requests (with optional status filter)
+ * Query: status?, page?, limit?
+ */
+adminRouter.get(
+  "/manual-payment/requests",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
+  RequestGuardMiddleware({ query: getManualPaymentRequestsQuerySchema }),
+  getManualPaymentRequests,
+);
+
+/**
+ * POST /admin/manual-payment/requests/:requestId/approve
+ * Approve a manual payment request (MASTER_ADMIN only)
+ * Body: { note? }
+ */
+adminRouter.post(
+  "/manual-payment/requests/:requestId/approve",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  RequestGuardMiddleware({ body: approveManualPaymentRequestSchema }),
+  approveManualPaymentRequest,
+);
+
+/**
+ * POST /admin/manual-payment/requests/:requestId/reject
+ * Reject a manual payment request (MASTER_ADMIN only)
+ * Body: { reason }
+ */
+adminRouter.post(
+  "/manual-payment/requests/:requestId/reject",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  RequestGuardMiddleware({ body: rejectManualPaymentRequestSchema }),
+  rejectManualPaymentRequest,
 );
 
