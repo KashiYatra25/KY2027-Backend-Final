@@ -31,8 +31,9 @@ export const getMyPaymentRequests = catchAsync(
     const status = (req.query.status as string)?.toUpperCase();
 
     // Build query - only requests created by this admin
+    // Note: requestedBy stores admin email, not adminId
     const query: Record<string, unknown> = {
-      requestedBy: req.admin.adminId,
+      requestedBy: req.admin.email,
     };
     
     if (status && ["PENDING", "APPROVED", "REJECTED"].includes(status)) {
