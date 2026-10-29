@@ -34,10 +34,10 @@ export const bulkUserLookup = catchAsync(
       return;
     }
 
-    // Parse and clean KY IDs
+    // Parse and clean KY IDs (preserve original case for matching)
     const kyIds = kyIdsParam
       .split(",")
-      .map((id) => id.trim().toUpperCase())
+      .map((id) => id.trim())
       .filter((id) => id.length > 0);
 
     if (kyIds.length === 0) {
@@ -54,10 +54,15 @@ export const bulkUserLookup = catchAsync(
       return;
     }
 
-    // Lookup users by KY IDs
+    // Lookup users by KY IDs (case-insensitive using OR with mode)
     const users = await prisma.user.findMany({
       where: {
-        kyId: { in: kyIds },
+        OR: kyIds.map((kyId) => ({
+          kyId: {
+            equals: kyId,
+            mode: "insensitive",
+          },
+        })),
       },
       select: {
         id: true,
@@ -68,19 +73,18 @@ export const bulkUserLookup = catchAsync(
         phone: true,
         college: true,
         isPaidUser: true,
-        identityVerified: true,
       },
     });
 
-    // Build results map
+    // Build results map (case-insensitive keys)
     const userMap = new Map(users.map((u) => [u.kyId?.toUpperCase(), u]));
 
     // Build response with found/not found status
     const results = kyIds.map((kyId) => {
-      const user = userMap.get(kyId);
+      const user = userMap.get(kyId.toUpperCase());
       if (user) {
         return {
-          kyId,
+          kyId: user.kyId, // Return the actual kyId from DB
           found: true,
           user: {
             id: user.id,
