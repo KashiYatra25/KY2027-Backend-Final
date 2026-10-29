@@ -4,3 +4,4 @@ export { getMyPaymentRequests } from "./getMyPaymentRequests.controller.js";
 export { approveManualPaymentRequest } from "./approveManualPaymentRequest.controller.js";
 export { rejectManualPaymentRequest } from "./rejectManualPaymentRequest.controller.js";
 export { getPresignedUploadUrls } from "./getPresignedUploadUrls.controller.js";
+export { getBonafideUrls } from "./getBonafideUrls.controller.js";

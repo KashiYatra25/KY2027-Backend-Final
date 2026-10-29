@@ -33,6 +33,7 @@ import {
   approveManualPaymentRequest,
   rejectManualPaymentRequest,
   getPresignedUploadUrls,
+  getBonafideUrls,
 } from "@controller/admin/manualPayment/index.js";
 import {
   getVenuesAdmin,
@@ -672,5 +673,15 @@ adminRouter.post(
   adminRoleCheckerMiddleware("MASTER_ADMIN"),
   RequestGuardMiddleware({ body: rejectManualPaymentRequestSchema }),
   rejectManualPaymentRequest,
+);
+
+/**
+ * GET /admin/manual-payment/requests/:requestId/bonafides
+ * Get presigned download URLs for bonafide files
+ */
+adminRouter.get(
+  "/manual-payment/requests/:requestId/bonafides",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
+  getBonafideUrls,
 );
 
