@@ -1,9 +1,11 @@
 export {
   promoteUserOrAdminRoleRequestSchema,
+  changeAdminRoleRequestSchema,
   adminOnboardingRequestSchema,
   adminAccountStatusChangeRequestSchema,
   adminLoginRequestSchema,
   type PromoteUserOrAdminRoleRequestSchemaType,
+  type ChangeAdminRoleRequestSchemaType,
   type AdminOnboardingRequestSchemaType,
   type AdminAccountStatusChangeRequestSchemaType,
   type AdminLoginRequestSchemaType,

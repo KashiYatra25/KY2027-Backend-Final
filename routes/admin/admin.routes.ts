@@ -14,6 +14,7 @@ import { updateCaApplicationStatus } from "@controller/admin/ca/updateCaApplicat
 import { getPartners } from "@controller/admin/partner/getPartners.controller.js";
 import { changeAccountStatus } from "@controller/admin/suspend/changeAccountStatus.controller.js";
 import { makeUserAdminOrPromoteAdmin } from "@controller/admin/promote/makeUserAdminOrPromoteAdmin.controller.js";
+import { changeAdminRole } from "@controller/admin/promote/changeAdminRole.controller.js";
 import { getAdminUsers } from "@controller/admin/users/getAdminUsers.controller.js";
 import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
 import { toggleUserPaidStatus } from "@controller/admin/user/toggleUserPaidStatus.controller.js";
@@ -51,6 +52,7 @@ import {
   adminLoginRequestSchema,
   adminAccountStatusChangeRequestSchema,
   promoteUserOrAdminRoleRequestSchema,
+  changeAdminRoleRequestSchema,
   getTeamsQuerySchema,
   getRegistrationsQuerySchema,
 } from "@schemas/admin/admin.schema.js";
@@ -243,6 +245,21 @@ adminRouter.post(
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
   RequestGuardMiddleware({ body: promoteUserOrAdminRoleRequestSchema }),
   makeUserAdminOrPromoteAdmin,
+);
+
+/**
+ * POST /change-admin-role
+ * Change an existing admin's role (promote/demote)
+ * Body: { targetEmail, newRole: "MANAGER" | "OPERATOR" }
+ * Valid transitions: MANAGER ↔ OPERATOR
+ * Cannot change MASTER_ADMIN's role or your own role
+ * Requires: MASTER_ADMIN role only
+ */
+adminRouter.post(
+  "/change-admin-role",
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
+  RequestGuardMiddleware({ body: changeAdminRoleRequestSchema }),
+  changeAdminRole,
 );
 
 /**

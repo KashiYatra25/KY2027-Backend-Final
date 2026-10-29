@@ -17,6 +17,7 @@ export { getPartners } from "./partner/getPartners.controller.js";
 
 // Admin invite
 export { makeUserAdminOrPromoteAdmin } from "./promote/makeUserAdminOrPromoteAdmin.controller.js";
+export { changeAdminRole } from "./promote/changeAdminRole.controller.js";
 
 // Account status change (suspend/reactivate)
 export { changeAccountStatus } from "./suspend/changeAccountStatus.controller.js";

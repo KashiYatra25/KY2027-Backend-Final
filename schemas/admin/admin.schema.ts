@@ -5,6 +5,16 @@ export const promoteUserOrAdminRoleRequestSchema = z.object({
   role: z.enum(["MANAGER", "OPERATOR"]),
 });
 
+/**
+ * Schema for changing an existing admin's role (promote/demote).
+ * Only MASTER_ADMIN can use this endpoint.
+ * Valid transitions: MANAGER ↔ OPERATOR
+ */
+export const changeAdminRoleRequestSchema = z.object({
+  targetEmail: z.email("Invalid email address"),
+  newRole: z.enum(["MANAGER", "OPERATOR"]),
+});
+
 export const adminOnboardingRequestSchema = z.object({
   email: z.email("Invalid email address"),
   adminPassword: z.string().min(8, "Password must be at least 8 characters long"),
@@ -56,6 +66,7 @@ export const getRegistrationsQuerySchema = z.object({
 });
 
 export type PromoteUserOrAdminRoleRequestSchemaType = z.infer<typeof promoteUserOrAdminRoleRequestSchema>;
+export type ChangeAdminRoleRequestSchemaType = z.infer<typeof changeAdminRoleRequestSchema>;
 export type AdminOnboardingRequestSchemaType = z.infer<typeof adminOnboardingRequestSchema>;
 export type AdminAccountStatusChangeRequestSchemaType = z.infer<typeof adminAccountStatusChangeRequestSchema>;
 export type AdminLoginRequestSchemaType = z.infer<typeof adminLoginRequestSchema>;
