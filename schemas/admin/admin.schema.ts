@@ -80,5 +80,23 @@ export type DemoteAdminToUserRequestSchemaType = z.infer<typeof demoteAdminToUse
 export type AdminOnboardingRequestSchemaType = z.infer<typeof adminOnboardingRequestSchema>;
 export type AdminAccountStatusChangeRequestSchemaType = z.infer<typeof adminAccountStatusChangeRequestSchema>;
 export type AdminLoginRequestSchemaType = z.infer<typeof adminLoginRequestSchema>;
+/**
+ * Query-param schema for GET /admin/zonals/registrations.
+ * Validates pagination and bounds all free-text filters.
+ */
+export const getZonalRegistrationsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  collegeSlug: z
+    .string()
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, "collegeSlug must be lowercase alphanumeric with hyphens")
+    .optional(),
+  passType: z.enum(["SINGLE_EVENT", "MULTI_EVENT"]).optional(),
+  paymentStatus: z.enum(["pending", "completed", "failed", "refunded"]).optional(),
+  search: z.string().max(100).optional(),
+});
+
 export type GetTeamsQuerySchemaType = z.infer<typeof getTeamsQuerySchema>;
 export type GetRegistrationsQuerySchemaType = z.infer<typeof getRegistrationsQuerySchema>;
+export type GetZonalRegistrationsQuerySchemaType = z.infer<typeof getZonalRegistrationsQuerySchema>;

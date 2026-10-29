@@ -21,6 +21,7 @@ import { getAllUsers } from "@controller/admin/users/getAllUsers.controller.js";
 import { toggleUserPaidStatus } from "@controller/admin/user/toggleUserPaidStatus.controller.js";
 import { getAllTeams } from "@controller/admin/teams/getAllTeams.controller.js";
 import { getAllRegistrations } from "@controller/admin/registrations/getAllRegistrations.controller.js";
+import { getZonalRegistrations } from "@controller/admin/zonals/index.js";
 import { getRevenueAnalytics } from "@controller/admin/purchases/index.js";
 import { invalidateAllCaches } from "@controller/admin/cache/invalidateAllCaches.controller.js";
 import { invalidateUserCache } from "@controller/admin/cache/invalidateUserCache.controller.js";
@@ -57,6 +58,7 @@ import {
   demoteAdminToUserRequestSchema,
   getTeamsQuerySchema,
   getRegistrationsQuerySchema,
+  getZonalRegistrationsQuerySchema,
 } from "@schemas/admin/admin.schema.js";
 import {
   forgotPasswordRequestSchema,
@@ -348,6 +350,23 @@ adminRouter.get(
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
   RequestGuardMiddleware({ query: getRegistrationsQuerySchema }),
   getAllRegistrations,
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// ZONAL REGISTRATION MANAGEMENT ROUTES
+// Requires: MASTER_ADMIN or MANAGER role
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * GET /admin/zonals/registrations
+ * Get all zonal passes/registrations with details (paginated)
+ * Query params: page, limit, collegeSlug, passType, paymentStatus, search
+ */
+adminRouter.get(
+  "/zonals/registrations",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER"),
+  RequestGuardMiddleware({ query: getZonalRegistrationsQuerySchema }),
+  getZonalRegistrations,
 );
 
 // ═══════════════════════════════════════════════════════════════════
