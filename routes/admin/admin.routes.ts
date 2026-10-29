@@ -29,6 +29,7 @@ import { invalidateUserCache } from "@controller/admin/cache/invalidateUserCache
 import {
   createManualPaymentRequest,
   getManualPaymentRequests,
+  getMyPaymentRequests,
   approveManualPaymentRequest,
   rejectManualPaymentRequest,
   getPresignedUploadUrls,
@@ -627,12 +628,26 @@ adminRouter.post(
  * GET /admin/manual-payment/requests
  * List all manual payment requests (with optional status filter)
  * Query: status?, page?, limit?
+ * Requires: MASTER_ADMIN only (sees all requests from all admins)
  */
 adminRouter.get(
   "/manual-payment/requests",
-  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
+  adminRoleCheckerMiddleware("MASTER_ADMIN"),
   RequestGuardMiddleware({ query: getManualPaymentRequestsQuerySchema }),
   getManualPaymentRequests,
+);
+
+/**
+ * GET /admin/manual-payment/my-requests
+ * List manual payment requests created by the current admin
+ * Query: status?, page?, limit?
+ * Requires: Any admin role
+ */
+adminRouter.get(
+  "/manual-payment/my-requests",
+  adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
+  RequestGuardMiddleware({ query: getManualPaymentRequestsQuerySchema }),
+  getMyPaymentRequests,
 );
 
 /**
