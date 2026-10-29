@@ -19,7 +19,7 @@ import { logger } from "@logger/logger.js";
 // JOB TYPES
 // ═══════════════════════════════════════════════════════════════════
 
-export type EmailJobType = "admin-onboard-creds" | "admin-forgot-password" | "account-status-change" | "passes-invoice" | "payment-failed" | "ca-application-status" | "otp" | "welcome";
+export type EmailJobType = "admin-onboard-creds" | "admin-forgot-password" | "account-status-change" | "passes-invoice" | "payment-failed" | "ca-application-status" | "otp" | "welcome" | "manual-payment-request-status";
 
 export interface AdminOnboardCredsEmailJobData {
   type: "admin-onboard-creds";
@@ -91,8 +91,25 @@ export interface PaymentFailedEmailJobData {
   };
 }
 
+export interface ManualPaymentRequestStatusEmailJobData {
+  type: "manual-payment-request-status";
+  payload: {
+    requestorName: string;
+    requestorEmail: string;
+    requestId: string;
+    status: "APPROVED" | "REJECTED";
+    passType: string;
+    numberOfUsers: number;
+    totalAmount: number;
+    processedBy: string;
+    processNote?: string | null;
+    rejectionReason?: string | null;
+    dashboardUrl: string;
+  };
+}
+
 // Union type for all email jobs
-export type EmailJobData = AdminOnboardCredsEmailJobData | AdminForgotPasswordEmailJobData | AccountStatusChangeEmailJobData | PassesInvoiceEmailJobData | PaymentFailedEmailJobData | CaApplicationStatusEmailJobData;
+export type EmailJobData = AdminOnboardCredsEmailJobData | AdminForgotPasswordEmailJobData | AccountStatusChangeEmailJobData | PassesInvoiceEmailJobData | PaymentFailedEmailJobData | CaApplicationStatusEmailJobData | ManualPaymentRequestStatusEmailJobData;
 
 // ═══════════════════════════════════════════════════════════════════
 // QUEUE CONFIGURATION
@@ -278,6 +295,31 @@ export async function queuePaymentFailedEmail(data: PaymentFailedEmailJobData["p
     jobId: job.id,
     email: data.email,
     orderId: data.orderId,
+    status: data.status,
+  });
+
+  return job.id!;
+}
+
+/**
+ * Add a manual payment request status email job to the queue
+ */
+export async function queueManualPaymentRequestStatusEmail(data: ManualPaymentRequestStatusEmailJobData["payload"]): Promise<string> {
+  const job = await emailQueue.add(
+    "manual-payment-request-status",
+    {
+      type: "manual-payment-request-status",
+      payload: data,
+    },
+    {
+      priority: 1, // High priority for request status updates
+    }
+  );
+
+  logger.debug("Manual payment request status email job queued", {
+    jobId: job.id,
+    email: data.requestorEmail,
+    requestId: data.requestId,
     status: data.status,
   });
 

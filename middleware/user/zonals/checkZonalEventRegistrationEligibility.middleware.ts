@@ -1,8 +1,9 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { BadRequest, NotFound } from "zodex-axon/errors";
-import { catchAsync } from "zodex-axon/core";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { ZonalUserCollegeModel } from "@root/databaseManagers/mongoose/zonals/index.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { ZonalEventParamsRequestSchemaType } from "@schemas/zonals/zonals.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // ZONAL EVENT REGISTRATION ELIGIBILITY MIDDLEWARE
@@ -23,14 +24,20 @@ export interface ZonalEligibilityRequest extends AuthenticatedUserRequestWithVer
 
 /**
  * Middleware to check if user is eligible to register for a zonal event.
- * Expects `collegeSlug` and `eventSlug` in request params.
+ * Expects validated `collegeSlug` and `eventSlug` in request validatedParams.
+ * Must be placed AFTER RequestGuardMiddleware in the route chain.
  */
 export const checkZonalEventRegistrationEligibilityMiddleware = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const authReq = req as AuthenticatedUserRequestWithVerifiedEmail;
-    const collegeSlug = req.params.collegeSlug as string;
-    const eventSlug = req.params.eventSlug as string;
-    const userId = authReq.user.id;
+  async (
+    req: VerifiedRequest<
+      { params: ZonalEventParamsRequestSchemaType },
+      AuthenticatedUserRequestWithVerifiedEmail
+    >,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    const { collegeSlug, eventSlug } = req.validatedParams;
+    const userId = req.user.id;
 
     // 1. Find user's document for this college
     const doc = await ZonalUserCollegeModel.findOne({ userId, collegeSlug });

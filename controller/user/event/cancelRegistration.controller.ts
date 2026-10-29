@@ -1,5 +1,5 @@
 import type { NextFunction, Response } from "express";
-import { catchAsync } from "zodex-axon/core";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound, BadRequest, ForbiddenErrorResponse } from "zodex-axon/errors";
 import {
@@ -7,6 +7,7 @@ import {
   TeamModel,
 } from "@root/databaseManagers/mongoose/index.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { EventSlugParamRequestSchemaType } from "@schemas/event/event.schema.js";
 
 /**
  * DELETE /events/:slug/registration
@@ -17,11 +18,14 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
  */
 const cancelRegistration = catchAsync(
   async (
-    req: AuthenticatedUserRequestWithVerifiedEmail,
+    req: VerifiedRequest<
+      { params: EventSlugParamRequestSchemaType },
+      AuthenticatedUserRequestWithVerifiedEmail
+    >,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    const slug = req.params.slug as string;
+    const { slug } = req.validatedParams;
     const { id: userId } = req.user;
 
     // 1. Find user's individual registration for this event

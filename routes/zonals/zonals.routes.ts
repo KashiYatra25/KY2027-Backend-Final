@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { RequestGuardMiddleware } from "zodex-axon/core";
 import {
   getZonalColleges,
   getMyZonalPasses,
@@ -11,6 +12,7 @@ import {
   publicReadRateLimiterMiddleware,
   eventRegistrationRateLimiterMiddleware,
 } from "@root/middleware/limiters/index.js";
+import { zonalEventParamsRequestSchema } from "@schemas/zonals/zonals.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // ZONALS ROUTES
@@ -42,6 +44,7 @@ zonalsRouter.post(
   "/:collegeSlug/events/:eventSlug/register",
   eventRegistrationRateLimiterMiddleware,
   userRoutesRESTProtectMiddleware,
+  RequestGuardMiddleware({ params: zonalEventParamsRequestSchema }),
   checkZonalEventRegistrationEligibilityMiddleware,
   registerForZonalEvent
 );
@@ -51,6 +54,7 @@ zonalsRouter.delete(
   "/:collegeSlug/events/:eventSlug/registration",
   eventRegistrationRateLimiterMiddleware,
   userRoutesRESTProtectMiddleware,
+  RequestGuardMiddleware({ params: zonalEventParamsRequestSchema }),
   cancelZonalEventRegistration
 );
 

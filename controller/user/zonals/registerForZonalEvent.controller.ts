@@ -1,9 +1,10 @@
 import type { Response } from "express";
-import { catchAsync } from "zodex-axon/core";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { ZonalUserCollegeModel } from "@root/databaseManagers/mongoose/zonals/index.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { ZonalEventParamsRequestSchemaType } from "@schemas/zonals/zonals.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // REGISTER FOR ZONAL EVENT - ATOMIC VERSION
@@ -20,9 +21,14 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
  * the middleware check and register, exceeding the limit.
  */
 export const registerForZonalEvent = catchAsync(
-  async (req: AuthenticatedUserRequestWithVerifiedEmail, res: Response): Promise<void> => {
-    const collegeSlug = req.params.collegeSlug as string;
-    const eventSlug = req.params.eventSlug as string;
+  async (
+    req: VerifiedRequest<
+      { params: ZonalEventParamsRequestSchemaType },
+      AuthenticatedUserRequestWithVerifiedEmail
+    >,
+    res: Response,
+  ): Promise<void> => {
+    const { collegeSlug, eventSlug } = req.validatedParams;
     const userId = req.user.id;
 
     // Atomic update with constraints:

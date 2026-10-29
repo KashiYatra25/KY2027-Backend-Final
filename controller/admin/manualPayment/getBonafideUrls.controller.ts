@@ -1,10 +1,11 @@
 import type { Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound } from "zodex-axon/errors";
 import { ManualPaymentRequestModel } from "@root/databaseManagers/mongoose/index.js";
 import { r2 } from "@root/services/r2/instance.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
+import type { ManualPaymentRequestIdParamRequestSchemaType } from "@schemas/admin/manualPayment.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // GET BONAFIDE URLS
@@ -18,11 +19,14 @@ import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/typ
  */
 export const getBonafideUrls = catchAsync(
   async (
-    req: AdminRequestWithVerifiedCreds,
+    req: VerifiedRequest<
+      { params: ManualPaymentRequestIdParamRequestSchemaType },
+      AdminRequestWithVerifiedCreds
+    >,
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
-    const { requestId } = req.params;
+    const { requestId } = req.validatedParams;
 
     // Find the request
     const request = await ManualPaymentRequestModel.findOne({ requestId }).lean();

@@ -43,9 +43,16 @@ export const rejectManualPaymentRequestSchema = z.object({
 });
 
 /**
+ * Schema for request ID param (approve/reject/bonafides)
+ */
+export const manualPaymentRequestIdParamRequestSchema = z.object({
+  requestId: z.string().min(1, "Request ID is required"),
+});
+
+/**
  * Schema for getting presigned upload URLs
  */
-export const getPresignedUploadUrlsSchema = z.object({
+export const getPresignedUploadUrlsRequestSchema = z.object({
   files: z
     .array(
       z.object({
@@ -75,5 +82,6 @@ export const getManualPaymentRequestsQuerySchema = z.object({
 export type CreateManualPaymentRequestSchemaType = z.infer<typeof createManualPaymentRequestSchema>;
 export type ApproveManualPaymentRequestSchemaType = z.infer<typeof approveManualPaymentRequestSchema>;
 export type RejectManualPaymentRequestSchemaType = z.infer<typeof rejectManualPaymentRequestSchema>;
-export type GetPresignedUploadUrlsSchemaType = z.infer<typeof getPresignedUploadUrlsSchema>;
+export type ManualPaymentRequestIdParamRequestSchemaType = z.infer<typeof manualPaymentRequestIdParamRequestSchema>;
+export type GetPresignedUploadUrlsRequestSchemaType = z.infer<typeof getPresignedUploadUrlsRequestSchema>;
 export type GetManualPaymentRequestsQuerySchemaType = z.infer<typeof getManualPaymentRequestsQuerySchema>;

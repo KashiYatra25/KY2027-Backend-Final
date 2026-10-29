@@ -81,7 +81,8 @@ import {
   createManualPaymentRequestSchema,
   approveManualPaymentRequestSchema,
   rejectManualPaymentRequestSchema,
-  getPresignedUploadUrlsSchema,
+  manualPaymentRequestIdParamRequestSchema,
+  getPresignedUploadUrlsRequestSchema,
   getManualPaymentRequestsQuerySchema,
 } from "@schemas/admin/manualPayment.schema.js";
 import {
@@ -609,7 +610,7 @@ adminRouter.post(
 adminRouter.post(
   "/uploads/presign",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
-  RequestGuardMiddleware({ body: getPresignedUploadUrlsSchema }),
+  RequestGuardMiddleware({ body: getPresignedUploadUrlsRequestSchema }),
   getPresignedUploadUrls,
 );
 
@@ -659,7 +660,7 @@ adminRouter.get(
 adminRouter.post(
   "/manual-payment/requests/:requestId/approve",
   adminRoleCheckerMiddleware("MASTER_ADMIN"),
-  RequestGuardMiddleware({ body: approveManualPaymentRequestSchema }),
+  RequestGuardMiddleware({ params: manualPaymentRequestIdParamRequestSchema, body: approveManualPaymentRequestSchema }),
   approveManualPaymentRequest,
 );
 
@@ -671,7 +672,7 @@ adminRouter.post(
 adminRouter.post(
   "/manual-payment/requests/:requestId/reject",
   adminRoleCheckerMiddleware("MASTER_ADMIN"),
-  RequestGuardMiddleware({ body: rejectManualPaymentRequestSchema }),
+  RequestGuardMiddleware({ params: manualPaymentRequestIdParamRequestSchema, body: rejectManualPaymentRequestSchema }),
   rejectManualPaymentRequest,
 );
 
@@ -682,6 +683,7 @@ adminRouter.post(
 adminRouter.get(
   "/manual-payment/requests/:requestId/bonafides",
   adminRoleCheckerMiddleware("MASTER_ADMIN", "MANAGER", "OPERATOR"),
+  RequestGuardMiddleware({ params: manualPaymentRequestIdParamRequestSchema }),
   getBonafideUrls,
 );
 

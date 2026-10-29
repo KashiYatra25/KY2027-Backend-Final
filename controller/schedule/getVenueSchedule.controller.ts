@@ -1,9 +1,11 @@
-import type { Request, Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import type { Response, NextFunction } from "express";
+import type { Request } from "express";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { NotFound } from "zodex-axon/errors";
 import { ScheduleEntryModel, VenueModel, FestDayModel } from "@root/databaseManagers/mongoose/index.js";
 import { prisma } from "@root/prisma.js";
+import type { VenueSlugParamSchemaType } from "@schemas/schedule/schedule.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // GET VENUE SCHEDULE CONTROLLER
@@ -12,14 +14,12 @@ import { prisma } from "@root/prisma.js";
 // ═══════════════════════════════════════════════════════════════════
 
 export const getVenueSchedule = catchAsync(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const venueSlug = req.params.venueSlug as string;
-
-    if (!venueSlug) {
-      return next(new NotFound().handleResponse(res, {
-        info: "Venue slug is required",
-      }));
-    }
+  async (
+    req: VerifiedRequest<{ params: VenueSlugParamSchemaType }, Request>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    const { venueSlug } = req.validatedParams;
 
     // Find venue
     const venue = await VenueModel.findOne({

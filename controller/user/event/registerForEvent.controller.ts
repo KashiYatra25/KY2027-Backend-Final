@@ -8,7 +8,10 @@ import {
   TeamModel,
 } from "@root/databaseManagers/mongoose/index.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
-import type { RegisterForEventRequestSchemaType } from "@schemas/event/event.schema.js";
+import type {
+  EventSlugParamRequestSchemaType,
+  RegisterForEventRequestSchemaType,
+} from "@schemas/event/event.schema.js";
 
 /**
  * Get all team IDs that any of the given users belong to
@@ -31,13 +34,13 @@ async function getTeamIdsForUsers(userIds: string[]): Promise<string[]> {
 const registerForEvent = catchAsync(
   async (
     req: VerifiedRequest<
-      { body: RegisterForEventRequestSchemaType },
+      { body: RegisterForEventRequestSchemaType; params: EventSlugParamRequestSchemaType },
       AuthenticatedUserRequestWithVerifiedEmail
     >,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    const slug = req.params.slug as string;
+    const { slug } = req.validatedParams;
     const { id: userId } = req.user;
     const body = req.validatedData;
 

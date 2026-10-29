@@ -1,9 +1,10 @@
 import type { Response, NextFunction } from "express";
-import { catchAsync } from "zodex-axon/core";
+import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest, NotFound } from "zodex-axon/errors";
 import { ZonalUserCollegeModel } from "@root/databaseManagers/mongoose/zonals/index.js";
 import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/auth.types.js";
+import type { ZonalEventParamsRequestSchemaType } from "@schemas/zonals/zonals.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // CANCEL ZONAL EVENT REGISTRATION
@@ -14,12 +15,14 @@ import type { AuthenticatedUserRequestWithVerifiedEmail } from "@helper/types/au
  */
 export const cancelZonalEventRegistration = catchAsync(
   async (
-    req: AuthenticatedUserRequestWithVerifiedEmail,
+    req: VerifiedRequest<
+      { params: ZonalEventParamsRequestSchemaType },
+      AuthenticatedUserRequestWithVerifiedEmail
+    >,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    const collegeSlug = req.params.collegeSlug as string;
-    const eventSlug = req.params.eventSlug as string;
+    const { collegeSlug, eventSlug } = req.validatedParams;
     const userId = req.user.id;
 
     const doc = await ZonalUserCollegeModel.findOne({ userId, collegeSlug });

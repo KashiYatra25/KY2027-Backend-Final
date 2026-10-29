@@ -8,19 +8,31 @@ import {
   PurchaseModel,
   ZonalUserCollegeModel,
 } from "@root/databaseManagers/mongoose/index.js";
+import { queueManualPaymentRequestStatusEmail } from "@services/queue/emailQueue.service.js";
+import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
+import type {
+  ApproveManualPaymentRequestSchemaType,
+  ManualPaymentRequestIdParamRequestSchemaType,
+} from "@schemas/admin/manualPayment.schema.js";
 
 // ═══════════════════════════════════════════════════════════════════
 // APPROVE MANUAL PAYMENT REQUEST
 // 
 // MASTER_ADMIN approves a pending manual payment request.
 // Creates purchase records for all users in the request.
+// Sends email notification to the requestor.
 // ═══════════════════════════════════════════════════════════════════
 
-interface ApproveRequestBody {
-  note?: string;
-}
+// Pass type display names
+const PASS_TYPE_NAMES: Record<string, string> = {
+  YATRI: "Yatri Pass",
+  DARBAR: "Darbar Pass",
+  SWARNIM: "Swarnim Pass",
+  ZONAL_SINGLE: "Zonal Single Event Pass",
+  ZONAL_MULTI: "Zonal Multi Event Pass",
+};
 
 /**
  * POST /admin/manual-payment/requests/:requestId/approve
@@ -31,11 +43,14 @@ interface ApproveRequestBody {
  */
 export const approveManualPaymentRequest = catchAsync(
   async (
-    req: VerifiedRequest<{ body: ApproveRequestBody }, AdminRequestWithVerifiedCreds>,
+    req: VerifiedRequest<
+      { body: ApproveManualPaymentRequestSchemaType; params: ManualPaymentRequestIdParamRequestSchemaType },
+      AdminRequestWithVerifiedCreds
+    >,
     res: Response,
     _next: NextFunction,
   ): Promise<void> => {
-    const { requestId } = req.params;
+    const { requestId } = req.validatedParams;
     const { note } = req.validatedData || {};
     const adminEmail = req.admin.email;
 
@@ -90,6 +105,12 @@ export const approveManualPaymentRequest = catchAsync(
             },
             { upsert: true, new: true },
           );
+          
+          // Also update user's isPaidUser status for zonal passes
+          await prisma.user.update({
+            where: { id: user.userId },
+            data: { isPaidUser: true },
+          });
         } else {
           // Create main festival purchase
           await PurchaseModel.create({
@@ -141,6 +162,41 @@ export const approveManualPaymentRequest = catchAsync(
         },
       },
     );
+
+    // Get requestor's info to send email notification
+    try {
+      const requestorAdmin = await prisma.admin.findUnique({
+        where: { id: request.requestedBy },
+        include: { user: { select: { email: true, firstName: true, lastName: true } } },
+      });
+
+      if (requestorAdmin?.user) {
+        const { firstName, lastName, email } = requestorAdmin.user;
+        const requestorName = firstName 
+          ? `${firstName} ${lastName ?? ""}`.trim()
+          : email.split("@")[0] ?? "User";
+
+        await queueManualPaymentRequestStatusEmail({
+          requestorName,
+          requestorEmail: requestorAdmin.user.email,
+          requestId,
+          status: "APPROVED",
+          passType: PASS_TYPE_NAMES[request.passType] || request.passType,
+          numberOfUsers: request.users.length,
+          totalAmount: request.amount,
+          processedBy: adminEmail,
+          processNote: note || null,
+          dashboardUrl: env.CLIENT_ADMIN_PANEL_ORIGIN + "/manual-payments",
+        });
+      }
+    } catch (emailError) {
+      // Don't fail the request if email queuing fails
+      logger.error({
+        msg: "Failed to queue approval email",
+        requestId,
+        error: emailError instanceof Error ? emailError.message : "Unknown error",
+      });
+    }
 
     logger.info({
       msg: "Manual payment request approved",
