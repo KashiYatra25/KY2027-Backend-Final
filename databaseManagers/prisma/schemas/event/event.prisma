@@ -35,6 +35,12 @@ model Event {
   endsAt               DateTime?
   registrationDeadline DateTime?
   maxParticipants      Int?                                     // null = unlimited
+  
+  // Category-level coordinators (3 main coordinators per category)
+  coordinators         Json?                                    // Array of {name, phone}
+  // Event-specific student coordinators
+  studentCoordinators  String[]          @default([])           // List of student names
+  
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 }

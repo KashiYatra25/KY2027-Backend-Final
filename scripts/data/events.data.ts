@@ -5,6 +5,77 @@
 
 import type { EventCategory, ParticipationType } from "@prisma/client";
 
+// ═══════════════════════════════════════════════════════════════════
+// CATEGORY COORDINATORS
+// Main coordinators for each event category (3 per category)
+// ═══════════════════════════════════════════════════════════════════
+
+type Coordinator = { name: string; phone: string };
+
+const CATEGORY_COORDINATORS: Record<EventCategory, Coordinator[]> = {
+  ABHINAY: [
+    { name: "Anand Manmora", phone: "9352445131" },
+    { name: "Sumit", phone: "8949328424" },
+    { name: "Akash", phone: "9166343505" },
+  ],
+  MIRAGE: [
+    { name: "Anand Manmora", phone: "9352445131" },
+    { name: "Sumit", phone: "8949328424" },
+    { name: "Akash", phone: "9166343505" },
+  ],
+  TOOLIKA: [
+    { name: "Anand Manmora", phone: "9352445131" },
+    { name: "Sumit", phone: "8949328424" },
+    { name: "Akash", phone: "9166343505" },
+  ],
+  BANDISH: [
+    { name: "Sagnik Maity", phone: "8078635105" },
+    { name: "JSC", phone: "8309723081" },
+    { name: "Shyam Sundar", phone: "9929715288" },
+  ],
+  CROSSWINDZ: [
+    { name: "Sagnik Maity", phone: "8078635105" },
+    { name: "JSC", phone: "8309723081" },
+    { name: "Shyam Sundar", phone: "9929715288" },
+  ],
+  NATRAJ: [
+    { name: "Sagnik Maity", phone: "8078635105" },
+    { name: "JSC", phone: "8309723081" },
+    { name: "Shyam Sundar", phone: "9929715288" },
+  ],
+  SAMWAAD: [
+    { name: "Mourya", phone: "9356774728" },
+    { name: "Jagatjyoti", phone: "8837013300" },
+    { name: "Adhiraj Chandawat", phone: "9950576406" },
+  ],
+  ENQUIZTA: [
+    { name: "Mourya", phone: "9356774728" },
+    { name: "Jagatjyoti", phone: "8837013300" },
+    { name: "Adhiraj Chandawat", phone: "9950576406" },
+  ],
+  ZAIKA: [
+    { name: "Mourya", phone: "9356774728" },
+    { name: "Jagatjyoti", phone: "8837013300" },
+    { name: "Adhiraj Chandawat", phone: "9950576406" },
+  ],
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// STUDENT COORDINATORS BY CATEGORY
+// ═══════════════════════════════════════════════════════════════════
+
+const STUDENT_COORDINATORS: Record<EventCategory, string[]> = {
+  ABHINAY: ["Aadi", "Aniket Mahto", "Moses Vivek", "Avnish"],
+  MIRAGE: ["Harshita", "Aaditya Pipara", "Gargi", "Mayank"],
+  TOOLIKA: ["Gaurav", "Sanchit", "Jayesh", "Anju", "Abeer Chhabra"],
+  BANDISH: ["Priyanshu Alwariya", "Anand Garwa", "Mohit Burdak", "Samar Singh Daiya", "Kartikey Chaudhary"],
+  CROSSWINDZ: ["Avneet Badgujar", "Devash", "Aman", "Bhupendra"],
+  NATRAJ: ["Tella Amrutha Tulasi", "Karthikeya Kampa", "Shambu", "Sayantan Mandal"],
+  SAMWAAD: ["Jayad Khaitan", "Ayush Das", "Harshit Shrivastav", "Harshit Asiwal", "Rishab Ranjan"],
+  ENQUIZTA: ["Hamsika", "Thanusree", "Shashank"],
+  ZAIKA: [],
+};
+
 type EventSeedData = {
   slug: string;
   name: string;
@@ -18,13 +89,24 @@ type EventSeedData = {
   rules: string[];
   prizePool?: string;
   venue?: string;
+  coordinators?: Coordinator[];
+  studentCoordinators?: string[];
 };
+
+// Helper to add coordinators to event data
+function withCoordinators(event: Omit<EventSeedData, 'coordinators' | 'studentCoordinators'>): EventSeedData {
+  return {
+    ...event,
+    coordinators: CATEGORY_COORDINATORS[event.category],
+    studentCoordinators: STUDENT_COORDINATORS[event.category],
+  };
+}
 
 export const eventsData: EventSeedData[] = [
   // ═══════════════════════════════════════════════════════════════════
   // NATRAJ - Dance Events
   // ═══════════════════════════════════════════════════════════════════
-  {
+  withCoordinators({
     slug: "cut-a-rug",
     name: "Cut-a-Rug",
     tagline: "Solo Dance Battle",
@@ -42,8 +124,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹25,000",
     venue: "Main Stage",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "sync-or-sink",
     name: "Sync or Sink",
     tagline: "Duo Dance Showdown",
@@ -63,8 +145,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹30,000",
     venue: "Main Stage",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "footloose",
     name: "Footloose",
     tagline: "Group Dance Competition",
@@ -84,12 +166,12 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹50,000",
     venue: "Main Stage",
-  },
+  }),
 
   // ═══════════════════════════════════════════════════════════════════
   // CROSSWINDZ - Music Events
   // ═══════════════════════════════════════════════════════════════════
-  {
+  withCoordinators({
     slug: "sur-sangam",
     name: "Sur Sangam",
     tagline: "Solo Singing",
@@ -107,8 +189,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹20,000",
     venue: "Amphitheatre",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "battle-of-bands",
     name: "Battle of Bands",
     tagline: "Rock the Stage",
@@ -128,8 +210,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹60,000",
     venue: "Main Stage",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "instrumental-solo",
     name: "Instrumental Solo",
     tagline: "Strings, Keys & Beats",
@@ -147,12 +229,12 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹15,000",
     venue: "Amphitheatre",
-  },
+  }),
 
   // ═══════════════════════════════════════════════════════════════════
   // BANDISH - Classical Events
   // ═══════════════════════════════════════════════════════════════════
-  {
+  withCoordinators({
     slug: "raag-rang",
     name: "Raag Rang",
     tagline: "Classical Vocal",
@@ -170,8 +252,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹25,000",
     venue: "Takshila Auditorium",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "taal-vadya",
     name: "Taal Vadya",
     tagline: "Classical Instrumental",
@@ -189,8 +271,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹25,000",
     venue: "Takshila Auditorium",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "nritya-natya",
     name: "Nritya Natya",
     tagline: "Classical Dance",
@@ -208,12 +290,12 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹25,000",
     venue: "Takshila Auditorium",
-  },
+  }),
 
   // ═══════════════════════════════════════════════════════════════════
   // ABHINAY - Drama & Theatre
   // ═══════════════════════════════════════════════════════════════════
-  {
+  withCoordinators({
     slug: "nukkad-natak",
     name: "Nukkad Natak",
     tagline: "Street Play",
@@ -234,8 +316,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹40,000",
     venue: "Open Ground",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "stage-play",
     name: "Stage Play",
     tagline: "Theatre Production",
@@ -255,8 +337,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹50,000",
     venue: "Auditorium",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "mono-act",
     name: "Mono Act",
     tagline: "One Person Show",
@@ -274,12 +356,12 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹15,000",
     venue: "Mini Auditorium",
-  },
+  }),
 
   // ═══════════════════════════════════════════════════════════════════
   // MIRAGE - Fashion & Lifestyle
   // ═══════════════════════════════════════════════════════════════════
-  {
+  withCoordinators({
     slug: "runway-revolution",
     name: "Runway Revolution",
     tagline: "Fashion Show",
@@ -299,8 +381,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹60,000",
     venue: "Main Stage",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "mr-and-ms-ky",
     name: "Mr. & Ms. KY",
     tagline: "Personality Contest",
@@ -318,12 +400,12 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹30,000",
     venue: "Main Stage",
-  },
+  }),
 
   // ═══════════════════════════════════════════════════════════════════
   // TOOLIKA - Art & Design
   // ═══════════════════════════════════════════════════════════════════
-  {
+  withCoordinators({
     slug: "canvas-clash",
     name: "Canvas Clash",
     tagline: "Painting Competition",
@@ -341,8 +423,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹15,000",
     venue: "Art Gallery",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "sketch-storm",
     name: "Sketch Storm",
     tagline: "Speed Sketching",
@@ -360,8 +442,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹10,000",
     venue: "Art Gallery",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "digital-dreams",
     name: "Digital Dreams",
     tagline: "Digital Art Competition",
@@ -379,12 +461,12 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹15,000",
     venue: "Computer Lab",
-  },
+  }),
 
   // ═══════════════════════════════════════════════════════════════════
   // ENQUIZTA - Quiz & Knowledge
   // ═══════════════════════════════════════════════════════════════════
-  {
+  withCoordinators({
     slug: "general-quiz",
     name: "General Quiz",
     tagline: "Test Your Knowledge",
@@ -404,8 +486,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹20,000",
     venue: "Seminar Hall",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "tech-trivia",
     name: "Tech Trivia",
     tagline: "Geek Out",
@@ -425,8 +507,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹20,000",
     venue: "Computer Lab",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "biz-quiz",
     name: "Biz Quiz",
     tagline: "Business & Finance",
@@ -446,12 +528,12 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹20,000",
     venue: "Seminar Hall",
-  },
+  }),
 
   // ═══════════════════════════════════════════════════════════════════
   // SAMWAAD - Literary Events
   // ═══════════════════════════════════════════════════════════════════
-  {
+  withCoordinators({
     slug: "debate",
     name: "Debate",
     tagline: "Battle of Words",
@@ -471,8 +553,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹15,000",
     venue: "Seminar Hall",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "poetry-slam",
     name: "Poetry Slam",
     tagline: "Verses & Voices",
@@ -490,8 +572,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹10,000",
     venue: "Open Mic Stage",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "creative-writing",
     name: "Creative Writing",
     tagline: "Pen Your Imagination",
@@ -509,12 +591,12 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹10,000",
     venue: "Seminar Hall",
-  },
+  }),
 
   // ═══════════════════════════════════════════════════════════════════
   // ZAIKA - Food & Culinary
   // ═══════════════════════════════════════════════════════════════════
-  {
+  withCoordinators({
     slug: "masterchef-ky",
     name: "MasterChef KY",
     tagline: "Cooking Competition",
@@ -534,8 +616,8 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹20,000",
     venue: "Food Court",
-  },
-  {
+  }),
+  withCoordinators({
     slug: "mocktail-madness",
     name: "Mocktail Madness",
     tagline: "Mix & Shake",
@@ -553,5 +635,5 @@ export const eventsData: EventSeedData[] = [
     ],
     prizePool: "₹10,000",
     venue: "Food Court",
-  },
+  }),
 ];
