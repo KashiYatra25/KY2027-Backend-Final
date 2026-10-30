@@ -53,6 +53,16 @@ export const approveManualPaymentRequest = catchAsync(
     const { requestId } = req.validatedParams;
     const { note } = req.validatedData || {};
     const adminEmail = req.admin.email;
+    const adminRole = req.admin.role;
+
+    // Look up admin's name from User table
+    const adminUser = await prisma.user.findUnique({
+      where: { id: req.admin.userId },
+      select: { firstName: true, lastName: true },
+    });
+    const adminName = adminUser?.firstName 
+      ? `${adminUser.firstName}${adminUser.lastName ? ` ${adminUser.lastName}` : ""}` 
+      : null;
 
     // Find the request
     const request = await ManualPaymentRequestModel.findOne({ requestId });
@@ -157,6 +167,8 @@ export const approveManualPaymentRequest = catchAsync(
         $set: {
           status: "APPROVED",
           processedBy: adminEmail,
+          processedByName: adminName,
+          processedByRole: adminRole,
           processedAt: new Date(),
           processNote: note || null,
         },

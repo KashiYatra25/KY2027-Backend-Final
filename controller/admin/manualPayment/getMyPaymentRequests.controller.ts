@@ -57,6 +57,8 @@ export const getMyPaymentRequests = catchAsync(
       requests: requests.map((r) => ({
         requestId: r.requestId,
         requestedBy: r.requestedBy,
+        requestedByName: r.requestedByName || null,
+        requestedByRole: r.requestedByRole || null,
         users: r.users,
         numberOfPasses: r.numberOfPasses,
         passType: r.passType,
@@ -66,6 +68,8 @@ export const getMyPaymentRequests = catchAsync(
         bonafides: r.bonafides,
         status: r.status,
         processedBy: r.processedBy,
+        processedByName: r.processedByName || null,
+        processedByRole: r.processedByRole || null,
         processedAt: r.processedAt,
         processNote: r.processNote,
         createdAt: r.createdAt,

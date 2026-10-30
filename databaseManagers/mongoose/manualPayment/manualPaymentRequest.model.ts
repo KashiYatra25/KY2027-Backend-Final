@@ -33,11 +33,20 @@ export const ManualPaymentRequestSchema = new Schema(
       index: true,
     },
 
-    // Admin who created this request
+    // Admin who created this request (store full info for history)
     requestedBy: {
       type: String,
       required: true,
       index: true,
+    },
+    requestedByName: {
+      type: String,
+      default: null,
+    },
+    requestedByRole: {
+      type: String,
+      enum: ["MASTER_ADMIN", "MANAGER", "OPERATOR"],
+      default: null,
     },
 
     // Users this payment covers
@@ -99,9 +108,18 @@ export const ManualPaymentRequestSchema = new Schema(
       index: true,
     },
 
-    // Processing details
+    // Processing details (who approved/rejected)
     processedBy: {
       type: String,
+      default: null,
+    },
+    processedByName: {
+      type: String,
+      default: null,
+    },
+    processedByRole: {
+      type: String,
+      enum: ["MASTER_ADMIN", "MANAGER", "OPERATOR"],
       default: null,
     },
     processedAt: {

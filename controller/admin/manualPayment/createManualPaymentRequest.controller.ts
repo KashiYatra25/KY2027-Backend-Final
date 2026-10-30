@@ -3,6 +3,7 @@ import { catchAsync, type VerifiedRequest } from "zodex-axon/core";
 import { OkResponseStrategy } from "zodex-axon/responses";
 import { BadRequest } from "zodex-axon/errors";
 import { ManualPaymentRequestModel } from "@root/databaseManagers/mongoose/index.js";
+import { prisma } from "@root/prisma.js";
 import { logger } from "@logger/logger.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
 import crypto from "crypto";
@@ -48,8 +49,17 @@ export const createManualPaymentRequest = catchAsync(
     _next: NextFunction,
   ): Promise<void> => {
     const { users, passType, collegeSlug, paymentMethod, amount, bonafides } = req.validatedData;
-    const adminId = req.admin.adminId;
     const adminEmail = req.admin.email;
+    const adminRole = req.admin.role;
+
+    // Look up admin's name from User table
+    const adminUser = await prisma.user.findUnique({
+      where: { id: req.admin.userId },
+      select: { firstName: true, lastName: true },
+    });
+    const adminName = adminUser?.firstName 
+      ? `${adminUser.firstName}${adminUser.lastName ? ` ${adminUser.lastName}` : ""}` 
+      : null;
 
     // Validate users array
     if (!users || users.length === 0) {
@@ -75,6 +85,8 @@ export const createManualPaymentRequest = catchAsync(
     const request = await ManualPaymentRequestModel.create({
       requestId,
       requestedBy: adminEmail,
+      requestedByName: adminName,
+      requestedByRole: adminRole,
       users,
       numberOfPasses: users.length,
       passType,
