@@ -20,9 +20,11 @@ import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/typ
 // - Revokes all admin access
 //
 // Restrictions:
-// - Only MASTER_ADMIN can perform this action
+// - MASTER_ADMIN can demote MANAGER or OPERATOR
+// - MANAGER can demote OPERATOR only
 // - Cannot demote MASTER_ADMIN
 // - Cannot demote yourself
+// - Cannot demote someone of equal or higher rank
 // ═══════════════════════════════════════════════════════════════════
 
 export const demoteAdminToUser = catchAsync(
@@ -38,12 +40,12 @@ export const demoteAdminToUser = catchAsync(
     const { adminId: performedById, userId: performedByUserId, role: incumbentRole } = req.admin;
 
     // ─────────────────────────────────────────────────────────────────
-    // Only MASTER_ADMIN can demote admins to users
+    // Only MASTER_ADMIN or MANAGER can demote admins to users
     // ─────────────────────────────────────────────────────────────────
-    if (incumbentRole !== "MASTER_ADMIN") {
+    if (incumbentRole !== "MASTER_ADMIN" && incumbentRole !== "MANAGER") {
       return next(
         new ForbiddenErrorResponse().handleResponse(res, {
-          info: "Only Master Admins can demote admins to users",
+          info: "Only Master Admins or Managers can demote admins to users",
         }),
       );
     }
@@ -105,6 +107,17 @@ export const demoteAdminToUser = catchAsync(
       return next(
         new ForbiddenErrorResponse().handleResponse(res, {
           info: "Cannot demote a Master Admin",
+        }),
+      );
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // MANAGER can only demote OPERATOR, not other MANAGERs
+    // ─────────────────────────────────────────────────────────────────
+    if (incumbentRole === "MANAGER" && currentRole !== "OPERATOR") {
+      return next(
+        new ForbiddenErrorResponse().handleResponse(res, {
+          info: "Managers can only demote Operators",
         }),
       );
     }
