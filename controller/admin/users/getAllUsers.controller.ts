@@ -9,6 +9,7 @@ import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/typ
 //
 // Returns users with role level "USER" only (not admins).
 // Includes isFromIITBhu flag so frontend can show "Upgrade to Admin" button.
+// Also returns aggregate stats for all users (independent of pagination).
 //
 // Query params:
 // - page: number (default 1)
@@ -35,12 +36,15 @@ export const getAllUsers = catchAsync(
     const search = (req.query.search as string)?.trim();
 
     // Build where clause - only users with role level "USER" (not admins)
-    const whereClause: Prisma.UserWhereInput = {
+    const baseWhereClause: Prisma.UserWhereInput = {
       OR: [
         { role: null }, // Users without a role record
         { role: { level: "USER" } }, // Users with USER role
       ],
     };
+
+    // Where clause with search filter
+    const whereClause: Prisma.UserWhereInput = { ...baseWhereClause };
 
     // Add search filter if provided
     if (search) {
@@ -55,8 +59,9 @@ export const getAllUsers = catchAsync(
       };
     }
 
-    // Get total count and users in parallel
-    const [totalCount, users] = await Promise.all([
+    // Get total count, users, and stats in parallel
+    // Stats are computed from ALL users (no search filter) to show global totals
+    const [totalCount, users, iitbhuCount, paidCount, suspendedCount, verifiedProfileCount] = await Promise.all([
       prisma.user.count({ where: whereClause }),
       prisma.user.findMany({
         where: whereClause,
@@ -86,7 +91,40 @@ export const getAllUsers = catchAsync(
         skip,
         take: limit,
       }),
+      // Stats: IIT BHU users (global, no search filter)
+      prisma.user.count({
+        where: {
+          ...baseWhereClause,
+          isFromIITBhu: true,
+        },
+      }),
+      // Stats: Paid users (global, no search filter)
+      prisma.user.count({
+        where: {
+          ...baseWhereClause,
+          isPaidUser: true,
+        },
+      }),
+      // Stats: Suspended users (global, no search filter)
+      prisma.user.count({
+        where: {
+          ...baseWhereClause,
+          isSuspended: true,
+        },
+      }),
+      // Stats: Verified profiles (users with kyId) (global, no search filter)
+      prisma.user.count({
+        where: {
+          ...baseWhereClause,
+          kyId: { not: null },
+        },
+      }),
     ]);
+
+    // Get total user count (without search filter) for stats
+    const totalUsersCount = search
+      ? await prisma.user.count({ where: baseWhereClause })
+      : totalCount;
 
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -100,6 +138,14 @@ export const getAllUsers = catchAsync(
         totalPages,
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
+      },
+      // Stats are global (independent of pagination/search)
+      stats: {
+        totalUsers: totalUsersCount,
+        iitbhuUsers: iitbhuCount,
+        paidUsers: paidCount,
+        suspendedUsers: suspendedCount,
+        verifiedProfiles: verifiedProfileCount,
       },
     });
   },
