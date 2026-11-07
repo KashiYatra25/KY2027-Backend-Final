@@ -9,6 +9,7 @@ import {
   ZonalUserCollegeModel,
 } from "@root/databaseManagers/mongoose/index.js";
 import { queueManualPaymentRequestStatusEmail } from "@services/queue/emailQueue.service.js";
+import { invalidateProfileCache } from "@services/redis/entityCache.service.js";
 import { env } from "@lib/env/environment.js";
 import { logger } from "@logger/logger.js";
 import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/types/jwt.types.js";
@@ -121,6 +122,9 @@ export const approveManualPaymentRequest = catchAsync(
             where: { id: user.userId },
             data: { isPaidUser: true },
           });
+          
+          // Invalidate cached profile so user sees updated isPaidUser status
+          await invalidateProfileCache(user.userId);
         } else {
           // Create main festival purchase
           await PurchaseModel.create({
@@ -145,6 +149,9 @@ export const approveManualPaymentRequest = catchAsync(
             where: { id: user.userId },
             data: { isPaidUser: true },
           });
+          
+          // Invalidate cached profile so user sees updated isPaidUser status
+          await invalidateProfileCache(user.userId);
         }
 
         processedUsers.push(user.kyId);
