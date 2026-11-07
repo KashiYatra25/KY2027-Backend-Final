@@ -64,19 +64,21 @@ function createRuntimeEnvironment(
         .min(5, "AWS Region is required")
         .default("ap-south-1"),
 
-      // Email Configuration (Brevo SMTP)
+      // Email Configuration (Brevo HTTP API)
+      // Uses Brevo's transactional email API instead of SMTP
+      // This bypasses port 587 restrictions on platforms like Render free tier
       EMAIL_FROM: z.email("Invalid email address").min(5, "Email is required"),
-      BREVO_SMTP_HOST: z
-        .string()
-        .min(1, "Brevo SMTP host is required")
-        .default("smtp-relay.brevo.com"),
+      BREVO_API_KEY: z.string().min(10, "Brevo API Key is required (must be xkeysib-* format for HTTP API)"),
+      
+      // Legacy SMTP config (optional - kept for backward compatibility, not used)
+      BREVO_SMTP_HOST: z.string().optional().default("smtp-relay.brevo.com"),
       BREVO_SMTP_PORT: z
         .string()
         .regex(/^\d+$/, "Brevo SMTP port must be a number")
+        .optional()
         .default("587")
         .transform(Number),
-      BREVO_SMTP_USER: z.string().min(1, "Brevo SMTP user is required"),
-      BREVO_API_KEY: z.string().min(10, "Brevo API Key is required"),
+      BREVO_SMTP_USER: z.string().optional(),
 
       // S3 Configuration
       S3_BUCKET: z.string().min(3, "S3 Bucket is required"),
