@@ -8,7 +8,7 @@ import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/typ
 // GET MY PAYMENT REQUESTS
 // 
 // Fetch manual payment requests created by the current admin.
-// Supports pagination and status filtering.
+// Supports pagination and status filtering. Returns global stats.
 // ═══════════════════════════════════════════════════════════════════
 
 /**
@@ -30,17 +30,18 @@ export const getMyPaymentRequests = catchAsync(
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const status = (req.query.status as string)?.toUpperCase();
 
-    // Build query - only requests created by this admin
-    // Note: requestedBy stores admin email, not adminId
-    const query: Record<string, unknown> = {
+    // Base query - only requests created by this admin
+    const baseQuery: Record<string, unknown> = {
       requestedBy: req.admin.email,
     };
-    
+
+    // Build query with optional status filter
+    const query: Record<string, unknown> = { ...baseQuery };
     if (status && ["PENDING", "APPROVED", "REJECTED"].includes(status)) {
       query.status = status;
     }
 
-    // Get total count
+    // Get total count for current filter
     const totalCount = await ManualPaymentRequestModel.countDocuments(query);
 
     // Get paginated requests
@@ -51,6 +52,23 @@ export const getMyPaymentRequests = catchAsync(
       .lean();
 
     const totalPages = Math.ceil(totalCount / limit);
+
+    // Get global stats for this admin's requests (independent of status filter)
+    const [pendingCount, approvedCount, rejectedCount, totalAmountResult] = await Promise.all([
+      ManualPaymentRequestModel.countDocuments({ ...baseQuery, status: "PENDING" }),
+      ManualPaymentRequestModel.countDocuments({ ...baseQuery, status: "APPROVED" }),
+      ManualPaymentRequestModel.countDocuments({ ...baseQuery, status: "REJECTED" }),
+      ManualPaymentRequestModel.aggregate([
+        { $match: baseQuery },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
+    ]);
+
+    // Get approved amount separately
+    const approvedAmountResult = await ManualPaymentRequestModel.aggregate([
+      { $match: { ...baseQuery, status: "APPROVED" } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]);
 
     new OkResponseStrategy().handleResponse(res, {
       info: "My payment requests fetched successfully",
@@ -81,6 +99,15 @@ export const getMyPaymentRequests = catchAsync(
         totalCount,
         totalPages,
         hasMore: page < totalPages,
+      },
+      // Global stats for this admin (independent of filters/pagination)
+      stats: {
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        total: pendingCount + approvedCount + rejectedCount,
+        totalAmount: totalAmountResult[0]?.total || 0,
+        approvedAmount: approvedAmountResult[0]?.total || 0,
       },
     });
   },

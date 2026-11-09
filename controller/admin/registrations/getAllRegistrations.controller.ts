@@ -30,19 +30,30 @@ const getAllRegistrations = catchAsync(
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const eventSlug = (req.query.eventSlug as string)?.trim() || "";
-    const status = (req.query.status as string)?.trim() || "";
-    const participationType = (req.query.participationType as string)?.trim() || "";
+    const statusParam = (req.query.status as string)?.trim() || "";
+    const participationTypeParam = (req.query.participationType as string)?.trim() || "";
 
     // Build query
     const query: Record<string, unknown> = {};
     if (eventSlug) {
       query.eventSlug = eventSlug;
     }
-    if (status) {
-      query.status = status;
+    // Support comma-separated values for multi-select filters
+    if (statusParam) {
+      const statuses = statusParam.split(",").map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        query.status = statuses[0];
+      } else if (statuses.length > 1) {
+        query.status = { $in: statuses };
+      }
     }
-    if (participationType) {
-      query.participationType = participationType;
+    if (participationTypeParam) {
+      const types = participationTypeParam.split(",").map(t => t.trim()).filter(Boolean);
+      if (types.length === 1) {
+        query.participationType = types[0];
+      } else if (types.length > 1) {
+        query.participationType = { $in: types };
+      }
     }
 
     // Get total count

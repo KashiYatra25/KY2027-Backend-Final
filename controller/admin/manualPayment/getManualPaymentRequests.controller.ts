@@ -8,7 +8,7 @@ import type { AdminRequestWithVerifiedCreds } from "@controller/admin/helper/typ
 // GET MANUAL PAYMENT REQUESTS
 // 
 // Fetch all manual payment requests with optional status filter.
-// Supports pagination.
+// Supports pagination. Returns global stats independent of filters.
 // ═══════════════════════════════════════════════════════════════════
 
 /**
@@ -36,7 +36,7 @@ export const getManualPaymentRequests = catchAsync(
       query.status = status;
     }
 
-    // Get total count
+    // Get total count for current filter
     const totalCount = await ManualPaymentRequestModel.countDocuments(query);
 
     // Get paginated requests
@@ -47,6 +47,22 @@ export const getManualPaymentRequests = catchAsync(
       .lean();
 
     const totalPages = Math.ceil(totalCount / limit);
+
+    // Get global stats (independent of status filter)
+    const [pendingCount, approvedCount, rejectedCount, totalAmountResult] = await Promise.all([
+      ManualPaymentRequestModel.countDocuments({ status: "PENDING" }),
+      ManualPaymentRequestModel.countDocuments({ status: "APPROVED" }),
+      ManualPaymentRequestModel.countDocuments({ status: "REJECTED" }),
+      ManualPaymentRequestModel.aggregate([
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
+    ]);
+
+    // Get approved amount separately
+    const approvedAmountResult = await ManualPaymentRequestModel.aggregate([
+      { $match: { status: "APPROVED" } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]);
 
     new OkResponseStrategy().handleResponse(res, {
       info: "Manual payment requests fetched successfully",
@@ -77,6 +93,15 @@ export const getManualPaymentRequests = catchAsync(
         totalCount,
         totalPages,
         hasMore: page < totalPages,
+      },
+      // Global stats (independent of filters/pagination)
+      stats: {
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        total: pendingCount + approvedCount + rejectedCount,
+        totalAmount: totalAmountResult[0]?.total || 0,
+        approvedAmount: approvedAmountResult[0]?.total || 0,
       },
     });
   },

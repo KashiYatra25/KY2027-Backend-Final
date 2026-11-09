@@ -28,8 +28,8 @@ const getZonalRegistrations = catchAsync(
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const collegeSlug = (req.query.collegeSlug as string)?.trim() || "";
-    const passType = (req.query.passType as string)?.trim() || "";
-    const paymentStatus = (req.query.paymentStatus as string)?.trim() || "";
+    const passTypeParam = (req.query.passType as string)?.trim() || "";
+    const paymentStatusParam = (req.query.paymentStatus as string)?.trim() || "";
     const search = (req.query.search as string)?.trim() || "";
 
     // Build query
@@ -39,14 +39,24 @@ const getZonalRegistrations = catchAsync(
       query.collegeSlug = collegeSlug;
     }
     
-    // Filter by pass type (at least one pass of this type)
-    if (passType) {
-      query["passes.passType"] = passType;
+    // Filter by pass type - support comma-separated values for multi-select
+    if (passTypeParam) {
+      const passTypes = passTypeParam.split(",").map(t => t.trim()).filter(Boolean);
+      if (passTypes.length === 1) {
+        query["passes.passType"] = passTypes[0];
+      } else if (passTypes.length > 1) {
+        query["passes.passType"] = { $in: passTypes };
+      }
     }
     
-    // Filter by payment status (at least one pass with this status)
-    if (paymentStatus) {
-      query["passes.paymentStatus"] = paymentStatus;
+    // Filter by payment status - support comma-separated values for multi-select
+    if (paymentStatusParam) {
+      const statuses = paymentStatusParam.split(",").map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        query["passes.paymentStatus"] = statuses[0];
+      } else if (statuses.length > 1) {
+        query["passes.paymentStatus"] = { $in: statuses };
+      }
     }
 
     // Search by user snapshot fields
