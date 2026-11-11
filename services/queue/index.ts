@@ -23,3 +23,15 @@ export {
   stopEmailWorker,
   isEmailWorkerRunning,
 } from "./emailWorker.service.js";
+
+export {
+  sheetsQueue,
+  queueUserProfileExport,
+  closeSheetsQueue,
+  type SheetsJobData,
+} from "./sheetsQueue.service.js";
+
+export {
+  startSheetsWorker,
+  stopSheetsWorker,
+} from "./sheetsWorker.service.js";

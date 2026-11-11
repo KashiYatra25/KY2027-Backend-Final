@@ -155,6 +155,15 @@ function createRuntimeEnvironment(
       GRAFANA_OTLP_INSTANCE_ID: z.string().optional(),
       GRAFANA_OTLP_TOKEN: z.string().optional(),
 
+      // Google Sheets export (optional)
+      // Completed user profiles are appended to a Google Sheet via a service account.
+      // If CLIENT_EMAIL, PRIVATE_KEY or SPREADSHEET_ID is missing, the server still
+      // starts but NO exports happen (an error is logged at startup and per skipped user).
+      GOOGLE_SHEETS_CLIENT_EMAIL: z.string().optional(),
+      GOOGLE_SHEETS_PRIVATE_KEY: z.string().optional(),
+      GOOGLE_SHEETS_SPREADSHEET_ID: z.string().optional(),
+      GOOGLE_SHEETS_TAB_NAME: z.string().min(1).default("Users"),
+
       // Runtime
       NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     },

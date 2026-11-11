@@ -13,6 +13,9 @@ import {
   startEmailWorker,
   stopEmailWorker,
   closeEmailQueue,
+  startSheetsWorker,
+  stopSheetsWorker,
+  closeSheetsQueue,
 } from "@services/queue/index.js";
 import { clearAllCachesOnStartup } from "@services/redis/clearCacheOnStartup.service.js";
 import { initMetrics } from "@services/metrics/index.js";
@@ -82,11 +85,16 @@ export async function startServer() {
     // Start BullMQ email worker for async email processing
     startEmailWorker();
 
+    // Start Google Sheets export worker (logs an error and stays off if GOOGLE_SHEETS_* env vars are missing)
+    startSheetsWorker();
+
     // Graceful shutdown for BullMQ
     const gracefulShutdown = async (signal: string) => {
       logger.info(`${signal} received - shutting down gracefully`);
       await stopEmailWorker();
+      await stopSheetsWorker();
       await closeEmailQueue();
+      await closeSheetsQueue();
       process.exit(0);
     };
     process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

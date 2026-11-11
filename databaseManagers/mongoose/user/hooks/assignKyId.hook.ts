@@ -53,9 +53,17 @@ export async function assignKyIdHook(doc: AccountProgressDoc): Promise<void> {
     // Generate and assign unique kyId
     const kyId = await generateUniqueKyId();
 
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { kyId },
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        college: true,
+        isFromIITBhu: true,
+      },
     });
 
     logger.info("Assigned kyId on profile completion", { userId, kyId });
@@ -65,6 +73,27 @@ export async function assignKyIdHook(doc: AccountProgressDoc): Promise<void> {
       "@root/services/redis/entityCache.service.js"
     );
     await invalidateProfileCache(userId);
+
+    // Export the completed profile to Google Sheets asynchronously.
+    // Isolated try/catch: a queue/Redis failure must never affect profile completion.
+    try {
+      const { queueUserProfileExport } = await import("@root/services/queue/index.js");
+      await queueUserProfileExport({
+        kyId,
+        name: `${updatedUser.firstName ?? ""} ${updatedUser.lastName ?? ""}`.trim(),
+        email: updatedUser.email,
+        phone: updatedUser.phone ?? "",
+        college: updatedUser.college ?? "",
+        isIITBHU: updatedUser.isFromIITBhu,
+        profileCompletedAt: new Date().toISOString(),
+      });
+    } catch (exportError) {
+      logger.error("Failed to queue Google Sheets export - user will not be exported until backfilled", {
+        userId,
+        kyId,
+        error: exportError instanceof Error ? exportError.message : String(exportError),
+      });
+    }
   } catch (error) {
     logger.error("Error in assignKyId hook", {
       userId: doc.userId,
