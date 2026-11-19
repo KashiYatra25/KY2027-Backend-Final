@@ -50,6 +50,47 @@ const ZONAL_COLLEGES = [
       second: "25%",
     },
   },
+  {
+    slug: "ogi",
+    name: "Oriental Group of Institutions",
+    shortName: "OGI",
+    city: "Bhopal",
+    state: "Madhya Pradesh",
+    venue: "TBD",
+    // date: "2026-12-02",
+    date: "Coming Soon",
+    status: "registration-open",
+    passes: [
+      {
+        type: "SINGLE_EVENT",
+        price: 199,
+        description: "Register for any 1 event of your choice",
+      },
+      {
+        type: "MULTI_EVENT",
+        price: 499,
+        description: "Register for unlimited events",
+      },
+    ],
+    events: [
+      { slug: "solo-dance", name: "Solo Dance", category: "DANCE" },
+      { slug: "solo-music", name: "Solo Music", category: "MUSIC" },
+      { slug: "solo-instrumental", name: "Solo Instrumental", category: "MUSIC" },
+      { slug: "mono-act", name: "Mono Act", category: "THEATRE" },
+      { slug: "mr-ms-oriental", name: "Mr. & Ms. Oriental", category: "PERSONALITY" },
+      { slug: "group-dance", name: "Group Dance", category: "DANCE" },
+      { slug: "debate", name: "Debate", category: "LITERARY" },
+      { slug: "quiz", name: "Quiz", category: "LITERARY" },
+      { slug: "open-mic", name: "Open Mic", category: "MUSIC" },
+      { slug: "face-painting", name: "Face Painting", category: "ART" },
+      { slug: "sketching", name: "Sketching", category: "ART" },
+      { slug: "nukkad-natak", name: "Nukkad Natak", category: "THEATRE" },
+    ],
+    prizeDistribution: {
+      first: "40%",
+      second: "30%",
+    },
+  },
 ];
 
 /**
